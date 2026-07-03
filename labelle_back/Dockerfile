@@ -3,10 +3,10 @@
 
 ARG ELIXIR_VERSION=1.17.2
 ARG OTP_VERSION=27.0.1
-ARG DEBIAN_VERSION=bookworm-20250113-slim
+ARG DEBIAN_VERSION=bookworm-20260112-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
-ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
+ARG RUNNER_IMAGE="debian:bookworm-slim"
 
 FROM ${BUILDER_IMAGE} AS builder
 
@@ -30,9 +30,10 @@ COPY lib lib
 COPY assets assets
 
 RUN mix assets.setup
-RUN mix assets.deploy
 
 RUN mix compile
+
+RUN mix assets.deploy
 
 RUN mix release
 

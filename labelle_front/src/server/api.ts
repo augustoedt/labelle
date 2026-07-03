@@ -3,6 +3,19 @@ import { useAppSession } from '~/utils/session'
 
 const API_BASE = process.env.LABELLE_API_URL || 'http://localhost:4000'
 
+// Node's fetch (undici) hangs/fails against Railway's *.railway.internal
+// private-network hostnames because of how it handles the IPv6+IPv4
+// happy-eyeballs DNS results there. Forcing the dispatcher to IPv4 avoids it.
+// Dynamic import (not a static one) so this Node-only module never gets
+// pulled into the client bundle.
+let internalNetworkingConfigured = false
+export async function ensureInternalNetworking() {
+  if (internalNetworkingConfigured) return
+  internalNetworkingConfigured = true
+  const { setGlobalDispatcher, Agent } = await import('undici')
+  setGlobalDispatcher(new Agent({ connect: { family: 6 } }))
+}
+
 type ListParams = {
   sort?: string
   limit?: number
@@ -31,6 +44,7 @@ function buildQuery({ sort, limit, filter }: ListParams = {}) {
 // invoked from client code instead.
 const authedRequest = createServerOnlyFn(
   async (path: string, options: RequestInit = {}) => {
+    await ensureInternalNetworking()
     const session = await useAppSession()
     const token = session.data.token
 
@@ -239,6 +253,7 @@ export const listUsers = createServerFn({ method: 'GET' })
 // ---------------------------------------------------------------------------
 
 async function publicRequest(path: string, body: Record<string, any>) {
+  await ensureInternalNetworking()
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

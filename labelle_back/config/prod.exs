@@ -11,12 +11,16 @@ config :labelle_back, LabelleBackWeb.Endpoint,
 # Force using SSL in production. This also sets the "strict-security-transport" header,
 # known as HSTS. If you have a health check endpoint, you may want to exclude it below.
 # Note `:force_ssl` is required to be set at compile-time.
+#
+# Excludes *.railway.internal: labelle_front talks to this service only over
+# Railway's private network (plain HTTP, no TLS termination there) — forcing
+# SSL on that traffic would break every request between the two services.
 config :labelle_back, LabelleBackWeb.Endpoint,
   force_ssl: [
     rewrite_on: [:x_forwarded_proto],
     exclude: [
       # paths: ["/health"],
-      hosts: ["localhost", "127.0.0.1"]
+      hosts: ["localhost", "127.0.0.1", "labelleback.railway.internal"]
     ]
   ]
 
@@ -25,6 +29,12 @@ config :swoosh, api_client: Swoosh.ApiClient.Req
 
 # Disable Swoosh Local Memory Storage
 config :swoosh, local: false
+
+# No transactional email provider is configured for this app (admin/staff
+# accounts are confirmed directly in priv/repo/seeds.exs, not via the
+# confirmation email link) — use the no-op Test adapter so notification
+# sends don't crash the enclosing Ash action.
+config :labelle_back, LabelleBack.Mailer, adapter: Swoosh.Adapters.Test
 
 # Do not print debug messages in production
 config :logger, level: :info

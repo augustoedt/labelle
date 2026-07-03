@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouteContext } from "@tanstack/react-router";
-import { ProfessionalsApi, AppointmentsApi } from "@/server/api";
+import { ProfessionalsApi, AppointmentsApi, ServicesApi } from "@/server/api";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PageHeader from "@/components/ui/PageHeader";
@@ -21,6 +21,18 @@ export default function MinhasComissoes() {
     enabled: !!myProfessional,
   });
 
+  // Comissão é calculada em cima do commission_percent cadastrado no Serviço
+  // (varia por categoria: química 30% / sem química 40% / manicure e
+  // pedicure 50%), não num percentual fixo do profissional.
+  const { data: services = [] } = useQuery({
+    queryKey: ["services"],
+    queryFn: () => ServicesApi.list(),
+    enabled: !!myProfessional,
+  });
+  const commissionRateByServiceId = Object.fromEntries(
+    services.map(s => [s.id, s.commission_percent || 0])
+  );
+
   const today = new Date();
   const monthStart = format(new Date(today.getFullYear(), today.getMonth(), 1), "yyyy-MM-dd");
 
@@ -28,9 +40,10 @@ export default function MinhasComissoes() {
     a => a.professional_id === myProfessional?.id && a.status === "concluido" && a.date >= monthStart
   );
 
+  const commissionFor = apt => (apt.price || 0) * ((commissionRateByServiceId[apt.service_id] || 0) / 100);
+
   const totalRevenue = myDone.reduce((s, a) => s + (a.price || 0), 0);
-  const commissionRate = myProfessional?.commission_percent || 0;
-  const myCommission = totalRevenue * (commissionRate / 100);
+  const myCommission = myDone.reduce((s, a) => s + commissionFor(a), 0);
 
   if (!myProfessional) {
     return (
@@ -59,7 +72,7 @@ export default function MinhasComissoes() {
             <p className="text-lg font-heading font-bold mt-1">R$ {totalRevenue.toFixed(0)}</p>
           </div>
           <div className="bg-primary/10 rounded-2xl border border-primary/20 p-4 text-center">
-            <p className="text-xs text-muted-foreground">Comissão ({commissionRate}%)</p>
+            <p className="text-xs text-muted-foreground">Comissão</p>
             <p className="text-lg font-heading font-bold text-primary mt-1">R$ {myCommission.toFixed(0)}</p>
           </div>
         </div>
@@ -70,7 +83,7 @@ export default function MinhasComissoes() {
           <p className="text-center text-sm text-muted-foreground py-8">Nenhum atendimento concluído este mês</p>
         ) : (
           myDone.map(apt => {
-            const commission = (apt.price || 0) * (commissionRate / 100);
+            const commission = commissionFor(apt);
             return (
               <div key={apt.id} className="bg-card rounded-2xl border border-border/50 p-4">
                 <div className="flex items-start justify-between">

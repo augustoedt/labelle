@@ -130,14 +130,20 @@ seed_service = fn attrs ->
   end
 end
 
+
+# Commission percent follows 3 categories (confirmed with the studio owner —
+# expect this to be revisited/refined later, e.g. loyalty bonuses):
+#   - "com química" (chemical services, e.g. coloring): 30%
+#   - "sem química" (everything else non-chemical): 40%
+#   - manicure/pedicure: 50%
 [
   %{name: "Corte Feminino", category: :cabelo, price: 80, duration_minutes: 60, commission_percent: 40},
   %{name: "Corte Masculino", category: :cabelo, price: 50, duration_minutes: 30, commission_percent: 40},
   %{name: "Escova / Penteado", category: :cabelo, price: 60, duration_minutes: 45, commission_percent: 40},
-  %{name: "Coloração", category: :cabelo, price: 150, duration_minutes: 120, commission_percent: 35},
+  %{name: "Coloração", category: :cabelo, price: 150, duration_minutes: 120, commission_percent: 30},
   %{name: "Manicure", category: :unha, price: 35, duration_minutes: 45, commission_percent: 50},
   %{name: "Pedicure", category: :unha, price: 40, duration_minutes: 50, commission_percent: 50},
-  %{name: "Design de Sobrancelha", category: :sobrancelha, price: 25, duration_minutes: 30, commission_percent: 50},
+  %{name: "Design de Sobrancelha", category: :sobrancelha, price: 25, duration_minutes: 30, commission_percent: 40},
   %{name: "Limpeza de Pele", category: :estetica, price: 90, duration_minutes: 60, commission_percent: 40},
   %{name: "Maquiagem Social", category: :maquiagem, price: 100, duration_minutes: 60, commission_percent: 40}
 ]

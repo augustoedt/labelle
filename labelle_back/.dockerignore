@@ -1,0 +1,9 @@
+_build/
+deps/
+.git/
+.gitignore
+.elixir_ls/
+*.md
+test/
+docker-compose.yml
+.claude/

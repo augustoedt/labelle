@@ -1,0 +1,210 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ServicesApi, PromotionsApi } from "@/server/api";
+import { Clock, X, CalendarPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const categoryEmojis = {
+  cabelo: "💇",
+  unha: "💅",
+  estetica: "✨",
+  sobrancelha: "🪒",
+  maquiagem: "💄",
+  outros: "🌟",
+};
+
+const categoryLabels = {
+  cabelo: "Cabelo",
+  unha: "Unhas",
+  estetica: "Estética",
+  sobrancelha: "Sobrancelha",
+  maquiagem: "Maquiagem",
+  outros: "Outros",
+};
+
+// Unsplash photos per category (curated, beauty-related)
+const categoryPhotos = {
+  cabelo: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80",
+  unha: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&q=80",
+  estetica: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80",
+  sobrancelha: "https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=600&q=80",
+  maquiagem: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80",
+  outros: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&q=80",
+};
+
+export default function ClientCatalog({ onNavigate }) {
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedService, setSelectedService] = useState(null);
+
+  const { data: services = [] } = useQuery({
+    queryKey: ["services"],
+    queryFn: () => ServicesApi.list(),
+  });
+
+  const { data: promotions = [] } = useQuery({
+    queryKey: ["promotions"],
+    queryFn: () => PromotionsApi.list(),
+  });
+
+  const activeServices = services.filter(s => s.is_active !== false);
+  const categories = ["all", ...new Set(activeServices.map(s => s.category))];
+
+  const filtered = selectedCategory === "all"
+    ? activeServices
+    : activeServices.filter(s => s.category === selectedCategory);
+
+  const getPromo = (svcId) => promotions.find(p => p.is_active && p.service_id === svcId);
+
+  const getFinalPrice = (svc) => {
+    const promo = getPromo(svc.id);
+    if (!promo) return svc.price;
+    return promo.discount_type === "percent"
+      ? svc.price * (1 - promo.discount_value / 100)
+      : svc.price - promo.discount_value;
+  };
+
+  return (
+    <div className="pb-6">
+      {/* Category filter */}
+      <div className="flex gap-2 overflow-x-auto px-5 py-4 -mx-0 scrollbar-hide">
+        {categories.map(cat => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-all shrink-0",
+              selectedCategory === cat
+                ? "bg-foreground text-background border-foreground"
+                : "bg-card border-border/50 text-muted-foreground"
+            )}
+          >
+            {cat === "all" ? "✦ Todos" : `${categoryEmojis[cat] || "🌟"} ${categoryLabels[cat] || cat}`}
+          </button>
+        ))}
+      </div>
+
+      {/* Service grid */}
+      <div className="px-5 grid grid-cols-2 gap-3">
+        {filtered.map(svc => {
+          const promo = getPromo(svc.id);
+          const finalPrice = getFinalPrice(svc);
+          return (
+            <button
+              key={svc.id}
+              onClick={() => setSelectedService(svc)}
+              className="bg-card border border-border/50 rounded-2xl overflow-hidden text-left hover:border-foreground/20 transition-all"
+            >
+              <div className="relative">
+                <img
+                  src={categoryPhotos[svc.category] || categoryPhotos.outros}
+                  alt={svc.name}
+                  className="w-full h-28 object-cover"
+                />
+                {promo && (
+                  <span className="absolute top-2 right-2 bg-foreground text-background text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    {promo.discount_type === "percent" ? `-${promo.discount_value}%` : `-R$${promo.discount_value}`}
+                  </span>
+                )}
+              </div>
+              <div className="p-3">
+                <p className="font-semibold text-sm leading-tight">{svc.name}</p>
+                <div className="flex items-center gap-1 mt-1 text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  <span className="text-[10px]">{svc.duration_minutes}min</span>
+                </div>
+                <div className="mt-1.5 flex items-baseline gap-1.5">
+                  {promo && <p className="text-[10px] line-through text-muted-foreground">R$ {svc.price}</p>}
+                  <p className="font-heading font-bold text-sm">R$ {finalPrice.toFixed(0)}</p>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Service detail sheet */}
+      {selectedService && (
+        <ServiceDetail
+          service={selectedService}
+          promo={getPromo(selectedService.id)}
+          finalPrice={getFinalPrice(selectedService)}
+          onClose={() => setSelectedService(null)}
+          onBook={() => { setSelectedService(null); onNavigate("agendar"); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-background rounded-t-3xl overflow-hidden max-h-[85vh] flex flex-col">
+        {/* Image */}
+        <div className="relative shrink-0">
+          <img
+            src={categoryPhotos[service.category] || categoryPhotos.outros}
+            alt={service.name}
+            className="w-full h-52 object-cover"
+          />
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+          {promo && (
+            <span className="absolute top-4 left-4 bg-foreground text-background text-xs font-bold px-2 py-1 rounded-full">
+              {promo.discount_type === "percent" ? `-${promo.discount_value}%` : `-R$ ${promo.discount_value}`}
+            </span>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+              {categoryEmojis[service.category]} {categoryLabels[service.category] || service.category}
+            </p>
+            <h2 className="text-2xl font-heading font-bold mt-1">{service.name}</h2>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 bg-muted rounded-xl px-3 py-2">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{service.duration_minutes} min</span>
+            </div>
+            <div>
+              {promo && <p className="text-xs line-through text-muted-foreground">R$ {service.price}</p>}
+              <p className="text-2xl font-heading font-bold">R$ {finalPrice.toFixed(0)}</p>
+            </div>
+          </div>
+
+          {service.description && (
+            <div>
+              <h3 className="text-sm font-semibold mb-1">Sobre o serviço</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p>
+            </div>
+          )}
+
+          {promo && (
+            <div className="bg-secondary/40 border border-secondary rounded-2xl p-4">
+              <p className="text-sm font-semibold">🏷️ {promo.name}</p>
+              {promo.description && <p className="text-xs text-muted-foreground mt-1">{promo.description}</p>}
+              {promo.rules && <p className="text-xs text-muted-foreground mt-1">{promo.rules}</p>}
+            </div>
+          )}
+        </div>
+
+        {/* CTA */}
+        <div className="p-5 pb-8 border-t border-border/50 shrink-0">
+          <Button className="w-full h-12 rounded-2xl font-semibold text-base" onClick={onBook}>
+            <CalendarPlus className="w-4 h-4 mr-2" /> Agendar este serviço
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

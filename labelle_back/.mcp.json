@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "phiaui-design": {
+      "command": "mix",
+      "args": ["phia.design.mcp"],
+      "env": {"MIX_ENV": "dev"}
+    }
+  }
+}

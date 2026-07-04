@@ -1,17 +1,21 @@
 # Deploy no Railway
 
-Este monorepo (`labelle_back` + `labelle_front`) está hospedado num único
-projeto Railway chamado **labelle**, com 3 serviços:
+Este monorepo (`labelle_back` + `labelle_front` + `labelle_proxy`) está
+hospedado num único projeto Railway chamado **labelle**, com 4 serviços:
 
 - **Postgres** — banco gerenciado do Railway (produção; separado do Postgres
   local em Docker usado em dev)
 - **labelle_back** — API Elixir/Phoenix/Ash. Sem domínio público — só
   acessível via rede privada do Railway
-- **labelle_front** — app TanStack Start (React). Único serviço com domínio
-  público, já que todo o tráfego do navegador passa por ele (padrão BFF: o
-  navegador nunca fala direto com `labelle_back`)
+- **labelle_front** — app TanStack Start (React). Domínio público principal,
+  já que todo o tráfego do navegador passa por ele (padrão BFF: o navegador
+  nunca fala direto com `labelle_back`)
+- **labelle_proxy** — Caddy, domínio público próprio, só encaminha
+  `/admin` (AshAdmin) pra rede interna do `labelle_back`. Existe pra dar
+  acesso externo ao painel admin sem expor o resto da API publicamente
 
-Domínio público atual: `https://labellefront-production.up.railway.app`
+Domínio público do app: `https://labellefront-production.up.railway.app`
+Domínio público do admin: `https://labelleproxy-production.up.railway.app/admin`
 
 ## Por que a rede privada
 
@@ -59,8 +63,31 @@ expor a API publicamente nem configurar CORS.
    `script -q /dev/null <comando>`.
 8. **`railway up` sobe a partir da raiz do projeto linkado**, não do
    diretório atual — use sempre `--path-as-root .` rodando de dentro da
-   pasta do serviço (`labelle_back/` ou `labelle_front/`), senão o Railpack
-   não encontra o Dockerfile/package.json certo.
+   pasta do serviço (`labelle_back/`, `labelle_front/` ou `labelle_proxy/`),
+   senão o Railpack não encontra o Dockerfile/package.json certo.
+9. **Caddy não executa diretivas na ordem escrita no Caddyfile** — ele
+   reordena por tipo de diretiva. Um `reverse_proxy /admin*` seguido de um
+   `respond` incondicional pode acabar com o `respond` disparando primeiro
+   mesmo pra `/admin`. Use blocos `handle { }` (avaliados em ordem, primeiro
+   que casar vence) pra roteamento por path exclusivo.
+10. **`labelle_proxy` reescreve o header `Host`** (`header_up Host
+    labelleback.railway.internal`) ao encaminhar pro backend — sem isso, o
+    `force_ssl` do `labelle_back` não reconhece a exceção configurada (que é
+    por host) e cria um loop de redirect pra uma URL interna inalcançável
+    pelo navegador.
+11. **`check_origin` do socket LiveView** (`lib/labelle_back_web/endpoint.ex`)
+    precisa incluir explicitamente a URL do `labelle_proxy` — por padrão só
+    aceita a origem que bate com `PHX_HOST`, e o navegador conecta a partir
+    do domínio do proxy, não do domínio interno.
+12. **`/admin` (AshAdmin) tem sua própria flag `admin_routes`**, separada de
+    `dev_routes` — precisa existir em produção (ao contrário de
+    `/dev/dashboard`/`/oban`, que continuam só em dev).
+13. **AshAuthentication sempre redireciona pra `/` depois do login**, sem
+    opção de configurar esse destino. `PageController.home` (em
+    `lib/labelle_back_web/controllers/page_controller.ex`) bounce admins
+    logados direto pra `/admin`; o Caddyfile também precisa liberar a raiz
+    exata (`handle /`, sem wildcard) pra esse redirect nem sequer chegar no
+    backend.
 
 ## Arquivos de deploy
 
@@ -72,6 +99,9 @@ expor a API publicamente nem configurar CORS.
   `srvx serve --prod --static ../client --entry ./dist/server/server.js`
   (o caminho do `--static` é relativo à pasta do arquivo de entrada, não do
   diretório atual — por isso `../client`, não `./dist/client`)
+- `labelle_proxy/Caddyfile` + `Dockerfile` (`FROM caddy:2-alpine`) — só
+  encaminha `/admin*`, `/live*`, `/sign-in*`, `/auth*`, `/assets*` e a raiz
+  exata (`/`) pro `labelle_back` interno; qualquer outro path dá 404
 
 ## Variáveis de ambiente
 
@@ -85,6 +115,9 @@ expor a API publicamente nem configurar CORS.
 - `LABELLE_API_URL` = `http://${{labelle_back.RAILWAY_PRIVATE_DOMAIN}}:8080`
 - `SESSION_SECRET` — gerado com `openssl rand -base64 32`
 
+**labelle_proxy**: nenhuma variável própria — o hostname interno do backend
+está hardcoded no `Caddyfile` (`labelleback.railway.internal:8080`).
+
 ## Redeployar depois de uma mudança de código
 
 ```bash
@@ -97,6 +130,10 @@ railway up --service labelle_back --ci --path-as-root .
 cd ../labelle_front
 npm run build                         # valida localmente antes
 railway up --service labelle_front --ci --path-as-root .
+
+# proxy do admin (só mexe se mudar o Caddyfile)
+cd ../labelle_proxy
+railway up --service labelle_proxy --ci --path-as-root .
 ```
 
 ## Rodar seed/migração manual contra produção

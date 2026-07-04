@@ -11,8 +11,19 @@ defmodule LabelleBackWeb.Endpoint do
     same_site: "Lax"
   ]
 
+  # check_origin defaults to only the endpoint's own configured PHX_HOST
+  # (labelleback.railway.internal). The browser connects to /admin through
+  # labelle_proxy's own public domain though, so that origin needs to be
+  # allowed too, or the LiveView websocket handshake gets rejected with 403.
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
+    websocket: [
+      connect_info: [session: @session_options],
+      check_origin: [
+        "https://labelleproxy-production.up.railway.app",
+        "https://labelleback.railway.internal",
+        "http://localhost:4000"
+      ]
+    ],
     longpoll: [connect_info: [session: @session_options]]
 
   # Serve at "/" the static files from "priv/static" directory.

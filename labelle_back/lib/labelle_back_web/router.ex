@@ -142,7 +142,10 @@ defmodule LabelleBackWeb.Router do
     end
   end
 
-  if Application.compile_env(:labelle_back, :dev_routes) do
+  # /admin (AshAdmin) has its own flag, separate from :dev_routes: it's
+  # meant to exist in production too (reached through labelle_proxy, not
+  # exposed directly), unlike LiveDashboard/Oban above which are dev-only.
+  if Application.compile_env(:labelle_back, :admin_routes) do
     import AshAdmin.Router
 
     scope "/admin" do

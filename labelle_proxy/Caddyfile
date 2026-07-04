@@ -1,0 +1,60 @@
+# Only forwards the paths needed for the AshAdmin login + UI flow to
+# labelle_back over Railway's private network. Everything else (in
+# particular /api/json/*, /api/session, /api/client/*) is refused — those
+# stay reachable only by labelle_front, over its own private-network path.
+#
+# header_up rewrites the Host header to labelle_back's own internal domain:
+# labelle_back's force_ssl config excludes that exact host from its
+# HTTPS-redirect check, and Caddy otherwise forwards the original public
+# Host (labelleproxy-production.up.railway.app), which doesn't match that
+# exclusion and causes a redirect loop to an unreachable internal URL.
+:{$PORT} {
+	handle /admin* {
+		reverse_proxy labelleback.railway.internal:8080 {
+			header_up Host labelleback.railway.internal
+		}
+	}
+
+	# LiveView's websocket connection (AshAdmin is built on LiveView) and
+	# its long-poll fallback — not under /admin, mounted at the endpoint
+	# level in lib/labelle_back_web/endpoint.ex.
+	handle /live* {
+		reverse_proxy labelleback.railway.internal:8080 {
+			header_up Host labelleback.railway.internal
+		}
+	}
+
+	# The sign-in page RequireAdmin redirects to, plus the actual
+	# AshAuthentication routes (form submit, sign-out, confirm, reset,
+	# magic link) mounted under /auth.
+	handle /sign-in* {
+		reverse_proxy labelleback.railway.internal:8080 {
+			header_up Host labelleback.railway.internal
+		}
+	}
+	handle /auth* {
+		reverse_proxy labelleback.railway.internal:8080 {
+			header_up Host labelleback.railway.internal
+		}
+	}
+
+	# Static assets (CSS/JS) needed to render the pages above.
+	handle /assets* {
+		reverse_proxy labelleback.railway.internal:8080 {
+			header_up Host labelleback.railway.internal
+		}
+	}
+
+	# Exact root only (not a wildcard) — AshAuthentication always redirects
+	# here after a successful sign-in with no way to configure that target,
+	# and PageController.home in turn bounces admins straight to /admin.
+	handle / {
+		reverse_proxy labelleback.railway.internal:8080 {
+			header_up Host labelleback.railway.internal
+		}
+	}
+
+	handle {
+		respond "Not found" 404
+	}
+}

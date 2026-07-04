@@ -70,7 +70,10 @@ config :labelle_back, LabelleBackWeb.Endpoint,
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :labelle_back, dev_routes: true, token_signing_secret: "ih0sUmBu9UPzgxV0a8KFxPeVkRp2tEg7"
+config :labelle_back,
+  dev_routes: true,
+  admin_routes: true,
+  token_signing_secret: "ih0sUmBu9UPzgxV0a8KFxPeVkRp2tEg7"
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"

@@ -61,7 +61,14 @@ defmodule LabelleBack.Studio.Client do
   end
 
   policies do
-    policy always() do
+    # Profissionais podem consultar a base de clientes para agendar
+    # atendimentos; escrita continua restrita ao staff.
+    policy action_type(:read) do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if actor_attribute_equals(:role, :profissional)
+    end
+
+    policy action_type([:create, :update, :destroy]) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
   end

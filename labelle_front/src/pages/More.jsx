@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Scissors, Users2, Package, Tag, BarChart3, Crown } from "lucide-react";
+import { Scissors, Users2, Package, Tag, BarChart3, Crown, BellRing, Settings2 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 
 const menuItems = [
@@ -8,7 +8,9 @@ const menuItems = [
   { path: "/produtos", icon: Package, label: "Estoque", desc: "Controle de produtos" },
   { path: "/promocoes", icon: Tag, label: "Promoções", desc: "Ofertas e descontos" },
   { path: "/fidelidade", icon: Crown, label: "Fidelidade", desc: "Programa de pontos" },
+  { path: "/lembretes", icon: BellRing, label: "Lembretes", desc: "Retorno de clientes (20/45 dias)" },
   { path: "/relatorios", icon: BarChart3, label: "Relatórios", desc: "Análises e métricas" },
+  { path: "/configuracoes", icon: Settings2, label: "Configurações", desc: "Telefone, endereço e mensagens" },
 ];
 
 export default function More() {

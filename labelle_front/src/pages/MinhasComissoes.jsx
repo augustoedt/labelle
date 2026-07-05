@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouteContext } from "@tanstack/react-router";
-import { ProfessionalsApi, AppointmentsApi, ServicesApi } from "@/server/api";
+import { ProfessionalsApi, AppointmentsApi, AppointmentServicesApi, ServicesApi } from "@/server/api";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PageHeader from "@/components/ui/PageHeader";
@@ -33,6 +33,18 @@ export default function MinhasComissoes() {
     services.map(s => [s.id, s.commission_percent || 0])
   );
 
+  // Serviços adicionais lançados durante o atendimento (a policy do backend
+  // já limita a lista aos atendimentos do próprio profissional).
+  const { data: extraItems = [] } = useQuery({
+    queryKey: ["appointment-services"],
+    queryFn: () => AppointmentServicesApi.list({ limit: 500 }),
+    enabled: !!myProfessional,
+  });
+  const itemsByAppointment = extraItems.reduce((acc, item) => {
+    (acc[item.appointment_id] ||= []).push(item);
+    return acc;
+  }, {});
+
   const today = new Date();
   const monthStart = format(new Date(today.getFullYear(), today.getMonth(), 1), "yyyy-MM-dd");
 
@@ -40,9 +52,17 @@ export default function MinhasComissoes() {
     a => a.professional_id === myProfessional?.id && a.status === "concluido" && a.date >= monthStart
   );
 
-  const commissionFor = apt => (apt.price || 0) * ((commissionRateByServiceId[apt.service_id] || 0) / 100);
+  const revenueFor = apt =>
+    (apt.price || 0) + (itemsByAppointment[apt.id] || []).reduce((s, i) => s + (i.price || 0), 0);
 
-  const totalRevenue = myDone.reduce((s, a) => s + (a.price || 0), 0);
+  const commissionFor = apt =>
+    (apt.price || 0) * ((commissionRateByServiceId[apt.service_id] || 0) / 100) +
+    (itemsByAppointment[apt.id] || []).reduce(
+      (s, i) => s + (i.price || 0) * ((commissionRateByServiceId[i.service_id] || 0) / 100),
+      0
+    );
+
+  const totalRevenue = myDone.reduce((s, a) => s + revenueFor(a), 0);
   const myCommission = myDone.reduce((s, a) => s + commissionFor(a), 0);
 
   if (!myProfessional) {
@@ -84,16 +104,18 @@ export default function MinhasComissoes() {
         ) : (
           myDone.map(apt => {
             const commission = commissionFor(apt);
+            const extras = itemsByAppointment[apt.id] || [];
+            const serviceNames = [apt.service_name, ...extras.map(i => i.service_name)].filter(Boolean).join(" + ");
             return (
               <div key={apt.id} className="bg-card rounded-2xl border border-border/50 p-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-semibold text-sm">{apt.client_name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{apt.service_name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{serviceNames}</p>
                     <p className="text-xs text-muted-foreground">{format(new Date(apt.date + "T12:00"), "dd/MM/yyyy")}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium">R$ {(apt.price || 0).toFixed(0)}</p>
+                    <p className="text-sm font-medium">R$ {revenueFor(apt).toFixed(0)}</p>
                     <p className="text-xs text-primary font-semibold">+ R$ {commission.toFixed(0)}</p>
                   </div>
                 </div>

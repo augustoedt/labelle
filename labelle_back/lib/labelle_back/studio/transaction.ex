@@ -54,7 +54,15 @@ defmodule LabelleBack.Studio.Transaction do
   end
 
   policies do
-    policy always() do
+    # O profissional enxerga os próprios lançamentos (comissões/atendimentos);
+    # escrita continua restrita ao staff — a transação do atendimento é criada
+    # pelo backend na action finalize do Appointment.
+    policy action_type(:read) do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if expr(professional.user_id == ^actor(:id))
+    end
+
+    policy action_type([:create, :update, :destroy]) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
   end

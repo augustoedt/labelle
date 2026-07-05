@@ -70,6 +70,7 @@ defmodule LabelleBackWeb.Router do
     post "/appointments", ClientController, :appointments
     post "/loyalty", ClientController, :loyalty
     post "/upsert", ClientController, :upsert
+    post "/settings", ClientController, :settings
   end
 
   scope "/", LabelleBackWeb do

@@ -145,6 +145,26 @@ async function jsonApiUpdate(
   return deserialize(json.data)
 }
 
+// PATCH em uma rota de action customizada (ex.: /appointments/:id/finalize).
+async function jsonApiAction(
+  path: string,
+  type: string,
+  id: string,
+  action: string,
+  attributes: Record<string, any> = {},
+) {
+  const json = await authedRequest(`/api/json/${path}/${id}/${action}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ data: { type, id, attributes: cleanAttributes(attributes) } }),
+  })
+  return deserialize(json.data)
+}
+
+async function jsonApiDelete(path: string, id: string) {
+  await authedRequest(`/api/json/${path}/${id}`, { method: 'DELETE' })
+  return { id }
+}
+
 // NOTE: TanStack Start's compiler requires each `createServerFn().handler()`
 // call to be its own top-level `export const NAME = ...` — it generates a
 // synthetic export per declaration for the client/server RPC split, and that
@@ -193,6 +213,42 @@ export const createAppointment = createServerFn({ method: 'POST' })
 export const updateAppointment = createServerFn({ method: 'POST' })
   .validator((data: { id: string; attributes: Record<string, any> }) => data)
   .handler(({ data }) => jsonApiUpdate('appointments', 'appointment', data.id, data.attributes))
+// Finaliza o atendimento cobrando: o backend soma serviço principal + itens
+// adicionais e registra a transação financeira como paga (action :finalize).
+export const finalizeAppointment = createServerFn({ method: 'POST' })
+  .validator((data: { id: string; payment_method: string }) => data)
+  .handler(({ data }) =>
+    jsonApiAction('appointments', 'appointment', data.id, 'finalize', {
+      payment_method: data.payment_method,
+    }),
+  )
+
+export const listAppointmentServices = createServerFn({ method: 'GET' })
+  .validator((data?: ListParams) => data)
+  .handler(({ data }) => jsonApiList('appointment_services', data))
+export const createAppointmentService = createServerFn({ method: 'POST' })
+  .validator((data: Record<string, any>) => data)
+  .handler(({ data }) => jsonApiCreate('appointment_services', 'appointment_service', data))
+export const updateAppointmentService = createServerFn({ method: 'POST' })
+  .validator((data: { id: string; attributes: Record<string, any> }) => data)
+  .handler(({ data }) =>
+    jsonApiUpdate('appointment_services', 'appointment_service', data.id, data.attributes),
+  )
+export const deleteAppointmentService = createServerFn({ method: 'POST' })
+  .validator((data: { id: string }) => data)
+  .handler(({ data }) => jsonApiDelete('appointment_services', data.id))
+
+export const listClientReminders = createServerFn({ method: 'GET' })
+  .validator((data?: ListParams) => data)
+  .handler(({ data }) => jsonApiList('client_reminders', data))
+export const markReminderSent = createServerFn({ method: 'POST' })
+  .validator((data: { id: string }) => data)
+  .handler(({ data }) =>
+    jsonApiAction('client_reminders', 'client_reminder', data.id, 'mark_sent'),
+  )
+export const cancelReminder = createServerFn({ method: 'POST' })
+  .validator((data: { id: string }) => data)
+  .handler(({ data }) => jsonApiAction('client_reminders', 'client_reminder', data.id, 'cancel'))
 
 export const listProducts = createServerFn({ method: 'GET' })
   .validator((data?: ListParams) => data)
@@ -234,14 +290,30 @@ export const updatePayment = createServerFn({ method: 'POST' })
   .validator((data: { id: string; attributes: Record<string, any> }) => data)
   .handler(({ data }) => jsonApiUpdate('payments', 'payment', data.id, data.attributes))
 
-export const ClientsApi = { list: listClients, create: createClient, update: updateClient }
-export const ProfessionalsApi = { list: listProfessionals, create: createProfessional, update: updateProfessional }
-export const ServicesApi = { list: listServices, create: createService, update: updateService }
-export const AppointmentsApi = { list: listAppointments, create: createAppointment, update: updateAppointment }
-export const ProductsApi = { list: listProducts, create: createProduct, update: updateProduct }
-export const PromotionsApi = { list: listPromotions, create: createPromotion, update: updatePromotion }
-export const TransactionsApi = { list: listTransactions, create: createTransaction, update: updateTransaction }
-export const PaymentsApi = { list: listPayments, create: createPayment, update: updatePayment }
+// As páginas chamam `XApi.list({ sort, filter })` e `XApi.update({ id,
+// attributes })` passando o payload direto, mas o TanStack Start invoca
+// server functions como `fn({ data: payload })` — sem o wrapper o servidor
+// recebia `data: undefined`: listas ignoravam sort/filtro/limite e TODO
+// update quebrava com 500 (era isso que travava confirmar/iniciar/concluir
+// atendimento). Os wrappers abaixo fazem a ponte. `create` já é chamado como
+// `create({ data })` nas páginas, então passa direto.
+const wrapList =
+  (fn: (ctx: { data?: ListParams }) => Promise<any>) => (params?: ListParams) =>
+    fn({ data: params })
+const wrapInput =
+  <T,>(fn: (ctx: { data: T }) => Promise<any>) => (input: T) =>
+    fn({ data: input })
+
+export const ClientsApi = { list: wrapList(listClients), create: createClient, update: wrapInput(updateClient) }
+export const ProfessionalsApi = { list: wrapList(listProfessionals), create: createProfessional, update: wrapInput(updateProfessional) }
+export const ServicesApi = { list: wrapList(listServices), create: createService, update: wrapInput(updateService) }
+export const AppointmentsApi = { list: wrapList(listAppointments), create: createAppointment, update: wrapInput(updateAppointment), finalize: wrapInput(finalizeAppointment) }
+export const AppointmentServicesApi = { list: wrapList(listAppointmentServices), create: createAppointmentService, update: wrapInput(updateAppointmentService), delete: wrapInput(deleteAppointmentService) }
+export const RemindersApi = { list: wrapList(listClientReminders), markSent: wrapInput(markReminderSent), cancel: wrapInput(cancelReminder) }
+export const ProductsApi = { list: wrapList(listProducts), create: createProduct, update: wrapInput(updateProduct) }
+export const PromotionsApi = { list: wrapList(listPromotions), create: createPromotion, update: wrapInput(updatePromotion) }
+export const TransactionsApi = { list: wrapList(listTransactions), create: createTransaction, update: wrapInput(updateTransaction) }
+export const PaymentsApi = { list: wrapList(listPayments), create: createPayment, update: wrapInput(updatePayment) }
 
 export const listUsers = createServerFn({ method: 'GET' })
   .validator((data?: ListParams) => data)
@@ -287,3 +359,42 @@ export const getClientLoyalty = createServerFn({ method: 'POST' })
 export const upsertClient = createServerFn({ method: 'POST' })
   .validator((data: { name: string; phone: string }) => data)
   .handler(({ data }) => publicRequest('/api/client/upsert', data))
+
+// Configurações do estúdio (telefone/endereço/templates de mensagem) —
+// subset público, sem autenticação, para o app da cliente montar a
+// notificação de novo agendamento endereçada ao estúdio.
+export const getStudioSettings = createServerFn({ method: 'POST' }).handler(() =>
+  publicRequest('/api/client/settings', {}),
+)
+
+// ---------------------------------------------------------------------------
+// Configurações (tela admin) — resource singleton, sem `:id` na URL
+// (GET/PATCH /api/json/settings sempre operam sobre a única linha).
+// ---------------------------------------------------------------------------
+
+async function jsonApiGetSingleton(path: string) {
+  const json = await authedRequest(`/api/json/${path}`)
+  return deserialize(json.data)
+}
+
+async function jsonApiUpdateSingleton(
+  path: string,
+  type: string,
+  id: string,
+  attributes: Record<string, any>,
+) {
+  const json = await authedRequest(`/api/json/${path}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ data: { type, id, attributes: cleanAttributes(attributes) } }),
+  })
+  return deserialize(json.data)
+}
+
+export const getSettings = createServerFn({ method: 'GET' }).handler(() =>
+  jsonApiGetSingleton('settings'),
+)
+export const updateSettings = createServerFn({ method: 'POST' })
+  .validator((data: { id: string; attributes: Record<string, any> }) => data)
+  .handler(({ data }) => jsonApiUpdateSingleton('settings', 'studio_settings', data.id, data.attributes))
+
+export const SettingsApi = { get: getSettings, update: wrapInput(updateSettings) }

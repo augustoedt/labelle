@@ -12,9 +12,15 @@ config :ash_oban, pro?: false
 config :labelle_back, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [default: 10],
+  queues: [default: 10, reminders: 5],
   repo: LabelleBack.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
+
+# Envio de WhatsApp (lembretes pós-atendimento). Nenhum provedor integrado
+# ainda: o adapter NotConfigured deixa os lembretes pendentes para envio
+# manual pela equipe. Ao contratar um provedor, implemente o behaviour
+# LabelleBack.Messaging.WhatsApp e troque o módulo aqui (ou em runtime.exs).
+config :labelle_back, :whatsapp_adapter, LabelleBack.Messaging.WhatsApp.NotConfigured
 
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},

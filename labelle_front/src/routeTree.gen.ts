@@ -24,8 +24,10 @@ import { Route as AdminPromocoesRouteImport } from './routes/_admin.promocoes'
 import { Route as AdminProfissionaisRouteImport } from './routes/_admin.profissionais'
 import { Route as AdminProdutosRouteImport } from './routes/_admin.produtos'
 import { Route as AdminMaisRouteImport } from './routes/_admin.mais'
+import { Route as AdminLembretesRouteImport } from './routes/_admin.lembretes'
 import { Route as AdminFinanceiroRouteImport } from './routes/_admin.financeiro'
 import { Route as AdminFidelidadeRouteImport } from './routes/_admin.fidelidade'
+import { Route as AdminConfiguracoesRouteImport } from './routes/_admin.configuracoes'
 import { Route as AdminClientesRouteImport } from './routes/_admin.clientes'
 import { Route as AdminAgendaRouteImport } from './routes/_admin.agenda'
 
@@ -103,6 +105,11 @@ const AdminMaisRoute = AdminMaisRouteImport.update({
   path: '/mais',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLembretesRoute = AdminLembretesRouteImport.update({
+  id: '/lembretes',
+  path: '/lembretes',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFinanceiroRoute = AdminFinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
@@ -111,6 +118,11 @@ const AdminFinanceiroRoute = AdminFinanceiroRouteImport.update({
 const AdminFidelidadeRoute = AdminFidelidadeRouteImport.update({
   id: '/fidelidade',
   path: '/fidelidade',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminClientesRoute = AdminClientesRouteImport.update({
@@ -132,8 +144,10 @@ export interface FileRoutesByFullPath {
   '/logout': typeof LogoutRoute
   '/agenda': typeof AdminAgendaRoute
   '/clientes': typeof AdminClientesRoute
+  '/configuracoes': typeof AdminConfiguracoesRoute
   '/fidelidade': typeof AdminFidelidadeRoute
   '/financeiro': typeof AdminFinanceiroRoute
+  '/lembretes': typeof AdminLembretesRoute
   '/mais': typeof AdminMaisRoute
   '/produtos': typeof AdminProdutosRoute
   '/profissionais': typeof AdminProfissionaisRoute
@@ -151,8 +165,10 @@ export interface FileRoutesByTo {
   '/logout': typeof LogoutRoute
   '/agenda': typeof AdminAgendaRoute
   '/clientes': typeof AdminClientesRoute
+  '/configuracoes': typeof AdminConfiguracoesRoute
   '/fidelidade': typeof AdminFidelidadeRoute
   '/financeiro': typeof AdminFinanceiroRoute
+  '/lembretes': typeof AdminLembretesRoute
   '/mais': typeof AdminMaisRoute
   '/produtos': typeof AdminProdutosRoute
   '/profissionais': typeof AdminProfissionaisRoute
@@ -173,8 +189,10 @@ export interface FileRoutesById {
   '/logout': typeof LogoutRoute
   '/_admin/agenda': typeof AdminAgendaRoute
   '/_admin/clientes': typeof AdminClientesRoute
+  '/_admin/configuracoes': typeof AdminConfiguracoesRoute
   '/_admin/fidelidade': typeof AdminFidelidadeRoute
   '/_admin/financeiro': typeof AdminFinanceiroRoute
+  '/_admin/lembretes': typeof AdminLembretesRoute
   '/_admin/mais': typeof AdminMaisRoute
   '/_admin/produtos': typeof AdminProdutosRoute
   '/_admin/profissionais': typeof AdminProfissionaisRoute
@@ -194,8 +212,10 @@ export interface FileRouteTypes {
     | '/logout'
     | '/agenda'
     | '/clientes'
+    | '/configuracoes'
     | '/fidelidade'
     | '/financeiro'
+    | '/lembretes'
     | '/mais'
     | '/produtos'
     | '/profissionais'
@@ -213,8 +233,10 @@ export interface FileRouteTypes {
     | '/logout'
     | '/agenda'
     | '/clientes'
+    | '/configuracoes'
     | '/fidelidade'
     | '/financeiro'
+    | '/lembretes'
     | '/mais'
     | '/produtos'
     | '/profissionais'
@@ -234,8 +256,10 @@ export interface FileRouteTypes {
     | '/logout'
     | '/_admin/agenda'
     | '/_admin/clientes'
+    | '/_admin/configuracoes'
     | '/_admin/fidelidade'
     | '/_admin/financeiro'
+    | '/_admin/lembretes'
     | '/_admin/mais'
     | '/_admin/produtos'
     | '/_admin/profissionais'
@@ -363,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMaisRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/lembretes': {
+      id: '/_admin/lembretes'
+      path: '/lembretes'
+      fullPath: '/lembretes'
+      preLoaderRoute: typeof AdminLembretesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/financeiro': {
       id: '/_admin/financeiro'
       path: '/financeiro'
@@ -375,6 +406,13 @@ declare module '@tanstack/react-router' {
       path: '/fidelidade'
       fullPath: '/fidelidade'
       preLoaderRoute: typeof AdminFidelidadeRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/configuracoes': {
+      id: '/_admin/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AdminConfiguracoesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/clientes': {
@@ -397,8 +435,10 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAgendaRoute: typeof AdminAgendaRoute
   AdminClientesRoute: typeof AdminClientesRoute
+  AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
   AdminFidelidadeRoute: typeof AdminFidelidadeRoute
   AdminFinanceiroRoute: typeof AdminFinanceiroRoute
+  AdminLembretesRoute: typeof AdminLembretesRoute
   AdminMaisRoute: typeof AdminMaisRoute
   AdminProdutosRoute: typeof AdminProdutosRoute
   AdminProfissionaisRoute: typeof AdminProfissionaisRoute
@@ -410,8 +450,10 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAgendaRoute: AdminAgendaRoute,
   AdminClientesRoute: AdminClientesRoute,
+  AdminConfiguracoesRoute: AdminConfiguracoesRoute,
   AdminFidelidadeRoute: AdminFidelidadeRoute,
   AdminFinanceiroRoute: AdminFinanceiroRoute,
+  AdminLembretesRoute: AdminLembretesRoute,
   AdminMaisRoute: AdminMaisRoute,
   AdminProdutosRoute: AdminProdutosRoute,
   AdminProfissionaisRoute: AdminProfissionaisRoute,

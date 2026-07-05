@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouteContext } from "@tanstack/react-router";
-import { AppointmentsApi, ProfessionalsApi, TransactionsApi } from "@/server/api";
-import { ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
+import { AppointmentsApi, ProfessionalsApi, ServicesApi, ClientsApi, SettingsApi } from "@/server/api";
+import { Plus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
+import AppointmentForm from "@/components/agenda/AppointmentForm";
+import FinalizeSheet from "@/components/agenda/FinalizeSheet";
 import { sendWhatsApp, buildConfirmationMessage, buildReminderMessage } from "@/lib/whatsapp";
 
 const statusColors = {
@@ -30,6 +32,8 @@ const statusLabels = {
 export default function MinhaAgenda() {
   const { user } = useRouteContext({ from: "__root__" });
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showForm, setShowForm] = useState(false);
+  const [finalizingApt, setFinalizingApt] = useState(null);
   const queryClient = useQueryClient();
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
@@ -49,10 +53,44 @@ export default function MinhaAgenda() {
     enabled: !!myProfessional,
   });
 
+  const { data: services = [] } = useQuery({
+    queryKey: ["services"],
+    queryFn: () => ServicesApi.list(),
+  });
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ["clients"],
+    queryFn: () => ClientsApi.list({ limit: 500 }),
+  });
+
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => SettingsApi.get(),
+  });
+
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => AppointmentsApi.update({ id, attributes: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["professional-appointments"] });
+    },
+  });
+
+  const createMutation = useMutation({
+    // O profissional só agenda para si mesmo
+    mutationFn: (data) =>
+      AppointmentsApi.create({ data: { ...data, professional_id: myProfessional.id } }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["professional-appointments"] });
+      setShowForm(false);
+      if (variables.client_phone && settings) {
+        sendWhatsApp(variables.client_phone, buildConfirmationMessage(settings, {
+          clientName: variables.client_name,
+          serviceName: variables.service_name,
+          professionalName: myProfessional?.name,
+          date: variables.date,
+          time: variables.time,
+        }));
+      }
     },
   });
 
@@ -67,36 +105,16 @@ export default function MinhaAgenda() {
     return d;
   });
 
-  const handleStatusChange = async (apt, newStatus) => {
+  const handleStatusChange = (apt, newStatus) => {
     updateMutation.mutate({ id: apt.id, data: { status: newStatus } });
-    if (newStatus === "confirmado" && apt.client_phone) {
-      sendWhatsApp(apt.client_phone, buildConfirmationMessage({
+    if (newStatus === "confirmado" && apt.client_phone && settings) {
+      sendWhatsApp(apt.client_phone, buildConfirmationMessage(settings, {
         clientName: apt.client_name,
         serviceName: apt.service_name,
         professionalName: apt.professional_name,
         date: apt.date,
         time: apt.time,
       }));
-    }
-    if (newStatus === "concluido") {
-      const existing = await TransactionsApi.list({ filter: { appointment_id: apt.id } });
-      if (!existing || existing.length === 0) {
-        await TransactionsApi.create({
-          data: {
-            type: "entrada",
-            category: "servico",
-            description: `${apt.service_name} – ${apt.client_name}`,
-            amount: apt.price || 0,
-            date: apt.date,
-            payment_method: "a_definir",
-            appointment_id: apt.id,
-            professional_id: apt.professional_id,
-            client_id: apt.client_id || "",
-            status: "pendente_confirmacao",
-          },
-        });
-        queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      }
     }
   };
 
@@ -116,6 +134,11 @@ export default function MinhaAgenda() {
       <PageHeader
         title="Minha Agenda"
         subtitle={myProfessional.name}
+        action={
+          <Button size="sm" className="rounded-xl gap-1.5" onClick={() => setShowForm(true)}>
+            <Plus className="w-4 h-4" /> Novo
+          </Button>
+        }
       />
 
       {/* Date navigation */}
@@ -188,11 +211,11 @@ export default function MinhaAgenda() {
                       <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => handleStatusChange(apt, "em_atendimento")}>Iniciar</Button>
                     )}
                     {apt.status === "em_atendimento" && (
-                      <Button size="sm" className="h-7 text-xs rounded-lg" onClick={() => handleStatusChange(apt, "concluido")}>Concluir</Button>
+                      <Button size="sm" className="h-7 text-xs rounded-lg" onClick={() => setFinalizingApt(apt)}>Serviços / Finalizar</Button>
                     )}
-                    {apt.client_phone && apt.status !== "cancelado" && apt.status !== "concluido" && (
+                    {apt.client_phone && apt.status !== "cancelado" && apt.status !== "concluido" && settings && (
                       <Button size="sm" variant="ghost" className="h-7 text-xs rounded-lg text-emerald-600 gap-1"
-                        onClick={() => sendWhatsApp(apt.client_phone, buildReminderMessage({
+                        onClick={() => sendWhatsApp(apt.client_phone, buildReminderMessage(settings, {
                           clientName: apt.client_name, serviceName: apt.service_name,
                           professionalName: apt.professional_name, date: apt.date, time: apt.time,
                         }))}>
@@ -206,6 +229,24 @@ export default function MinhaAgenda() {
           ))
         )}
       </div>
+
+      <AppointmentForm
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        onSubmit={(data) => createMutation.mutate(data)}
+        services={services}
+        professionals={[myProfessional]}
+        clients={clients}
+        appointment={null}
+      />
+
+      <FinalizeSheet
+        open={!!finalizingApt}
+        onClose={() => setFinalizingApt(null)}
+        appointment={finalizingApt}
+        services={services}
+        onFinalized={() => queryClient.invalidateQueries({ queryKey: ["professional-appointments"] })}
+      />
     </div>
   );
 }

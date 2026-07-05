@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AppointmentsApi, ServicesApi, ProfessionalsApi, ClientsApi, TransactionsApi } from "@/server/api";
+import { AppointmentsApi, ServicesApi, ProfessionalsApi, ClientsApi, SettingsApi } from "@/server/api";
 import { Plus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
 import AppointmentForm from "@/components/agenda/AppointmentForm";
+import FinalizeSheet from "@/components/agenda/FinalizeSheet";
 import { sendWhatsApp, buildConfirmationMessage, buildReminderMessage } from "@/lib/whatsapp";
 
 const statusColors = {
@@ -31,6 +32,7 @@ export default function Agenda() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showForm, setShowForm] = useState(false);
   const [editingApt, setEditingApt] = useState(null);
+  const [finalizingApt, setFinalizingApt] = useState(null);
   const queryClient = useQueryClient();
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
@@ -54,14 +56,19 @@ export default function Agenda() {
     queryFn: () => ClientsApi.list(),
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => SettingsApi.get(),
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => AppointmentsApi.create({ data }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       setShowForm(false);
       // Send WhatsApp confirmation when manager creates an appointment
-      if (variables.client_phone) {
-        sendWhatsApp(variables.client_phone, buildConfirmationMessage({
+      if (variables.client_phone && settings) {
+        sendWhatsApp(variables.client_phone, buildConfirmationMessage(settings, {
           clientName: variables.client_name,
           serviceName: variables.service_name,
           professionalName: variables.professional_name,
@@ -93,12 +100,12 @@ export default function Agenda() {
     }
   };
 
-  const handleStatusChange = async (apt, newStatus) => {
+  const handleStatusChange = (apt, newStatus) => {
     updateMutation.mutate({ id: apt.id, data: { status: newStatus } });
 
     // Send WhatsApp when confirming appointment
-    if (newStatus === "confirmado" && apt.client_phone) {
-      sendWhatsApp(apt.client_phone, buildConfirmationMessage({
+    if (newStatus === "confirmado" && apt.client_phone && settings) {
+      sendWhatsApp(apt.client_phone, buildConfirmationMessage(settings, {
         clientName: apt.client_name,
         serviceName: apt.service_name,
         professionalName: apt.professional_name,
@@ -106,35 +113,12 @@ export default function Agenda() {
         time: apt.time,
       }));
     }
-
-    // Criar pré-lançamento financeiro ao concluir
-    if (newStatus === "concluido") {
-      // Verificar duplicidade
-      const existing = await TransactionsApi.list({ filter: { appointment_id: apt.id } });
-      if (!existing || existing.length === 0) {
-        await TransactionsApi.create({
-          data: {
-            type: "entrada",
-            category: "servico",
-            description: `${apt.service_name} – ${apt.client_name}`,
-            amount: apt.price || 0,
-            date: apt.date,
-            payment_method: "a_definir",
-            appointment_id: apt.id,
-            professional_id: apt.professional_id,
-            client_id: apt.client_id || "",
-            status: "pendente_confirmacao",
-          },
-        });
-        queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      }
-    }
   };
 
   const handleSendReminder = (e, apt) => {
     e.stopPropagation();
-    if (apt.client_phone) {
-      sendWhatsApp(apt.client_phone, buildReminderMessage({
+    if (apt.client_phone && settings) {
+      sendWhatsApp(apt.client_phone, buildReminderMessage(settings, {
         clientName: apt.client_name,
         serviceName: apt.service_name,
         professionalName: apt.professional_name,
@@ -240,7 +224,7 @@ export default function Agenda() {
                       <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={(e) => { e.stopPropagation(); handleStatusChange(apt, "em_atendimento"); }}>Iniciar</Button>
                     )}
                     {apt.status === "em_atendimento" && (
-                      <Button size="sm" className="h-7 text-xs rounded-lg" onClick={(e) => { e.stopPropagation(); handleStatusChange(apt, "concluido"); }}>Concluir</Button>
+                      <Button size="sm" className="h-7 text-xs rounded-lg" onClick={(e) => { e.stopPropagation(); setFinalizingApt(apt); }}>Serviços / Finalizar</Button>
                     )}
                     {apt.status !== "cancelado" && apt.status !== "concluido" && (
                       <Button size="sm" variant="ghost" className="h-7 text-xs rounded-lg text-destructive" onClick={(e) => { e.stopPropagation(); handleStatusChange(apt, "cancelado"); }}>Cancelar</Button>
@@ -266,6 +250,14 @@ export default function Agenda() {
         professionals={professionals}
         clients={clients}
         appointment={editingApt}
+      />
+
+      <FinalizeSheet
+        open={!!finalizingApt}
+        onClose={() => setFinalizingApt(null)}
+        appointment={finalizingApt}
+        services={services}
+        onFinalized={() => queryClient.invalidateQueries({ queryKey: ["appointments"] })}
       />
     </div>
   );

@@ -55,6 +55,19 @@ defmodule LabelleBack.Studio.Appointment do
 
       change LabelleBack.Studio.Changes.SnapshotAppointmentFields
     end
+
+    update :finalize do
+      require_atomic? false
+
+      accept [:payment_method]
+
+      validate present(:payment_method) do
+        message "informe a forma de pagamento para finalizar o atendimento"
+      end
+
+      change set_attribute(:status, :concluido)
+      change LabelleBack.Studio.Changes.RegisterChargeOnFinalize
+    end
   end
 
   policies do
@@ -124,6 +137,7 @@ defmodule LabelleBack.Studio.Appointment do
       public? true
     end
 
+    has_many :service_items, LabelleBack.Studio.AppointmentService, public?: true
     has_many :transactions, LabelleBack.Studio.Transaction, public?: true
     has_many :payments, LabelleBack.Studio.Payment, public?: true
   end

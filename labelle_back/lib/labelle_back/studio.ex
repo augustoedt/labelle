@@ -45,7 +45,23 @@ defmodule LabelleBack.Studio do
         index :read
         post :create
         patch :update
+        patch :finalize, route: "/:id/finalize"
         delete :destroy
+      end
+
+      base_route "/appointment_services", LabelleBack.Studio.AppointmentService do
+        get :read
+        index :read
+        post :create
+        patch :update
+        delete :destroy
+      end
+
+      base_route "/client_reminders", LabelleBack.Studio.ClientReminder do
+        get :read
+        index :read
+        patch :mark_sent, route: "/:id/mark_sent"
+        patch :cancel, route: "/:id/cancel"
       end
 
       base_route "/products", LabelleBack.Studio.Product do
@@ -79,6 +95,11 @@ defmodule LabelleBack.Studio do
         patch :update
         delete :destroy
       end
+
+      base_route "/settings", LabelleBack.Studio.Settings do
+        get :read, route: "/"
+        patch :update, route: "/"
+      end
     end
   end
 
@@ -88,9 +109,12 @@ defmodule LabelleBack.Studio do
     resource LabelleBack.Studio.ProfessionalService
     resource LabelleBack.Studio.Service
     resource LabelleBack.Studio.Appointment
+    resource LabelleBack.Studio.AppointmentService
+    resource LabelleBack.Studio.ClientReminder
     resource LabelleBack.Studio.Product
     resource LabelleBack.Studio.Promotion
     resource LabelleBack.Studio.Transaction
     resource LabelleBack.Studio.Payment
+    resource LabelleBack.Studio.Settings
   end
 end

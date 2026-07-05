@@ -19,38 +19,68 @@ export function sendWhatsApp(phone, message) {
 }
 
 /**
- * Builds a confirmation message for a newly created appointment.
+ * Substitui os placeholders `{{chave}}` do template pelos valores fornecidos.
+ * Os templates em si vêm das Configurações do estúdio (Settings), editáveis
+ * pelo staff — este helper só faz a interpolação.
  */
-export function buildConfirmationMessage({ clientName, serviceName, professionalName, date, time }) {
-  const dateFormatted = date
-    ? new Date(date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })
-    : date;
-  return (
-    `Olá, ${clientName}! 🌸\n\n` +
-    `Seu agendamento na *La Belle Studio* foi confirmado:\n\n` +
-    `✂️ *Serviço:* ${serviceName}\n` +
-    `👩‍🎨 *Profissional:* ${professionalName}\n` +
-    `📅 *Data:* ${dateFormatted}\n` +
-    `🕐 *Horário:* ${time}\n\n` +
-    `Em caso de dúvidas ou necessidade de reagendamento, entre em contato conosco.\n\n` +
-    `Te esperamos! 💕`
+function renderTemplate(template, values) {
+  return Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{{${key}}}`, value ?? ""),
+    template
   );
 }
 
-/**
- * Builds a reminder message for an upcoming appointment.
- */
-export function buildReminderMessage({ clientName, serviceName, professionalName, date, time }) {
-  const dateFormatted = date
+function formatDate(date) {
+  return date
     ? new Date(date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })
     : date;
-  return (
-    `Olá, ${clientName}! 🌸\n\n` +
-    `Lembramos que você tem um horário marcado na *La Belle Studio* amanhã:\n\n` +
-    `✂️ *Serviço:* ${serviceName}\n` +
-    `👩‍🎨 *Profissional:* ${professionalName}\n` +
-    `📅 *Data:* ${dateFormatted}\n` +
-    `🕐 *Horário:* ${time}\n\n` +
-    `Até amanhã! 💕`
-  );
+}
+
+/**
+ * Builds a confirmation message for a newly created appointment, a partir do
+ * template configurável `settings.message_confirmation`.
+ */
+export function buildConfirmationMessage(settings, { clientName, serviceName, professionalName, date, time }) {
+  return renderTemplate(settings.message_confirmation, {
+    cliente: clientName,
+    estudio: settings.name,
+    servico: serviceName,
+    profissional: professionalName,
+    data: formatDate(date),
+    hora: time,
+  });
+}
+
+/**
+ * Builds a reminder message for an upcoming appointment, a partir do
+ * template configurável `settings.message_reminder`.
+ */
+export function buildReminderMessage(settings, { clientName, serviceName, professionalName, date, time }) {
+  return renderTemplate(settings.message_reminder, {
+    cliente: clientName,
+    estudio: settings.name,
+    servico: serviceName,
+    profissional: professionalName,
+    data: formatDate(date),
+    hora: time,
+  });
+}
+
+/**
+ * Builds the "acabei de agendar" message that the CLIENT sends TO the
+ * studio's WhatsApp right after booking via the client app — resolve o
+ * problema de o wa.me abrir endereçado para o telefone da própria cliente
+ * em vez do estúdio.
+ */
+export function buildNewBookingNotification(settings, { clientName, serviceName, professionalName, date, time, clientPhone }) {
+  return renderTemplate(settings.message_new_booking_notification, {
+    cliente: clientName,
+    estudio: settings.name,
+    servico: serviceName,
+    profissional: professionalName,
+    data: formatDate(date),
+    hora: time,
+    telefone_cliente: clientPhone,
+    endereco: settings.address,
+  });
 }

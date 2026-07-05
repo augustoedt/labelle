@@ -74,6 +74,18 @@ defmodule LabelleBackWeb.Api.ClientController do
     end
   end
 
+  @doc "POST /api/client/settings"
+  def settings(conn, _params) do
+    settings = Studio.Settings.current!(authorize?: false)
+
+    json(conn, %{
+      name: settings.name,
+      whatsapp_phone: settings.whatsapp_phone,
+      address: format_address(settings),
+      message_new_booking_notification: settings.message_new_booking_notification
+    })
+  end
+
   @doc "POST /api/client/upsert"
   def upsert(conn, %{"name" => name, "phone" => phone}) do
     phone_norm = normalize_phone(phone)
@@ -134,6 +146,17 @@ defmodule LabelleBackWeb.Api.ClientController do
       status: appt.status,
       price: decimal_to_number(appt.price)
     }
+  end
+
+  defp format_address(settings) do
+    [
+      settings.street,
+      settings.neighborhood,
+      settings.city && settings.state && "#{settings.city} - #{settings.state}",
+      settings.zip_code && "CEP #{settings.zip_code}"
+    ]
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> Enum.join(", ")
   end
 
   defp decimal_to_number(nil), do: nil

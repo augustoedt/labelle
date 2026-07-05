@@ -148,3 +148,81 @@ end
   %{name: "Maquiagem Social", category: :maquiagem, price: 100, duration_minutes: 60, commission_percent: 40}
 ]
 |> Enum.each(seed_service)
+
+# ---------------------------------------------------------------------------
+# Studio settings (singleton — telefone/endereço do estúdio + templates de
+# mensagem de WhatsApp). Textos default reproduzem exatamente o que estava
+# hardcoded antes desta seed existir, para não mudar comportamento no dia 1.
+# ---------------------------------------------------------------------------
+
+case Studio.Settings |> Ash.read_one!(authorize?: false) do
+  nil ->
+    Studio.Settings
+    |> Ash.Changeset.for_create(
+      :create,
+      %{
+        name: "La Belle Studio",
+        whatsapp_phone: System.get_env("STUDIO_WHATSAPP_PHONE") || "11999990000",
+        message_confirmation: """
+        Olá, {{cliente}}! 🌸
+
+        Seu agendamento na *{{estudio}}* foi confirmado:
+
+        ✂️ *Serviço:* {{servico}}
+        👩‍🎨 *Profissional:* {{profissional}}
+        📅 *Data:* {{data}}
+        🕐 *Horário:* {{hora}}
+
+        Em caso de dúvidas ou necessidade de reagendamento, entre em contato conosco.
+
+        Te esperamos! 💕
+        """,
+        message_reminder: """
+        Olá, {{cliente}}! 🌸
+
+        Lembramos que você tem um horário marcado na *{{estudio}}* amanhã:
+
+        ✂️ *Serviço:* {{servico}}
+        👩‍🎨 *Profissional:* {{profissional}}
+        📅 *Data:* {{data}}
+        🕐 *Horário:* {{hora}}
+
+        Até amanhã! 💕
+        """,
+        message_thank_you: """
+        Olá, {{cliente}}! 🌸
+
+        Obrigada pela preferência e pela sua visita à *{{estudio}}*! Esperamos que tenha amado o resultado. 💕
+
+        Que tal já garantir seu próximo horário? É só responder esta mensagem que agendamos para você. ✨
+
+        Até breve!
+        """,
+        message_reengagement: """
+        Olá, {{cliente}}! 🌸
+
+        Sentimos sua falta na *{{estudio}}*! Já faz um tempinho desde o seu último atendimento...
+
+        Que tal agendar um horário para se cuidar? Responda esta mensagem e encontramos o melhor horário para você. 💕
+        """,
+        message_new_booking_notification: """
+        Olá! Acabei de agendar pelo app da *{{estudio}}*:
+
+        ✂️ *Serviço:* {{servico}}
+        👩‍🎨 *Profissional:* {{profissional}}
+        📅 *Data:* {{data}}
+        🕐 *Horário:* {{hora}}
+
+        Meu nome: {{cliente}}
+        Meu telefone: {{telefone_cliente}}
+        """
+      },
+      authorize?: false
+    )
+    |> Ash.create!()
+
+    IO.puts("Seeded studio settings.")
+
+  _settings ->
+    IO.puts("Studio settings already exist, skipping.")
+end

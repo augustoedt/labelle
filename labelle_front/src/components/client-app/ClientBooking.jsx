@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ServicesApi, ProfessionalsApi, PromotionsApi, AppointmentsApi, getAvailableSlots, upsertClient, getStudioSettings } from "@/server/api";
+import { ServicesApi, ProfessionalsApi, ProfessionalServicesApi, PromotionsApi, AppointmentsApi, getAvailableSlots, upsertClient, getStudioSettings } from "@/server/api";
 import { ChevronRight, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,10 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
   const { data: services = [] } = useQuery({ queryKey: ["services"], queryFn: () => ServicesApi.list() });
   const { data: professionals = [] } = useQuery({ queryKey: ["professionals"], queryFn: () => ProfessionalsApi.list() });
   const { data: promotions = [] } = useQuery({ queryKey: ["promotions"], queryFn: () => PromotionsApi.list() });
+  const { data: professionalServices = [] } = useQuery({
+    queryKey: ["professional-services"],
+    queryFn: () => ProfessionalServicesApi.list({ limit: 1000 }),
+  });
 
   const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
   const { data: slots = [] } = useQuery({
@@ -107,7 +111,15 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
 
   const reset = () => { setStep(1); setSelectedService(null); setSelectedProfessional(null); setSelectedDate(null); setSelectedTime(null); };
   const activeServices = services.filter(s => s.is_active !== false);
-  const activeProfessionals = professionals.filter(p => p.is_active !== false);
+
+  // Só mostra quem sabe fazer o serviço escolhido — mas se esse serviço
+  // ainda não tiver nenhum vínculo cadastrado, mostra todo mundo (evita
+  // esconder todas as profissionais enquanto o staff não configurar isso
+  // em Profissionais).
+  const serviceHasLinks = selectedService && professionalServices.some(ps => ps.service_id === selectedService.id);
+  const activeProfessionals = professionals
+    .filter(p => p.is_active !== false)
+    .filter(p => !serviceHasLinks || professionalServices.some(ps => ps.professional_id === p.id && ps.service_id === selectedService.id));
 
   return (
     <div className="px-5 py-5">
@@ -153,6 +165,11 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
               <h2 className="text-lg font-heading font-semibold">Profissional</h2>
               <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="text-xs">Voltar</Button>
             </div>
+            {activeProfessionals.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Nenhuma profissional disponível para este serviço no momento.
+              </p>
+            )}
             {activeProfessionals.map(prof => (
               <button key={prof.id} onClick={() => { setSelectedProfessional(prof); setStep(3); }}
                 className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-border/50 bg-card hover:border-foreground/30 transition-all">

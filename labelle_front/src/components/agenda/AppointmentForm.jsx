@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ProfessionalServicesApi } from "@/server/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +10,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { X } from "lucide-react";
 
 export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment }) {
+  // Só profissionais vinculadas ao serviço escolhido aparecem na lista —
+  // evita agendar um serviço com quem não sabe fazer.
+  const { data: professionalServices = [] } = useQuery({
+    queryKey: ["professional-services"],
+    queryFn: () => ProfessionalServicesApi.list({ limit: 1000 }),
+  });
   const [form, setForm] = useState({
     client_name: "",
     client_phone: "",
@@ -41,6 +49,25 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
   }, [appointment, open]);
 
   const selectedService = services?.find(s => s.id === form.service_id);
+
+  // Só filtra se esse serviço já tiver pelo menos um vínculo cadastrado —
+  // enquanto o staff não configurar "quem faz o quê" em Profissionais,
+  // continua mostrando todo mundo (em vez de ninguém) para esse serviço.
+  const serviceHasLinks = professionalServices.some(ps => ps.service_id === form.service_id);
+  const qualifiedProfessionals = form.service_id && serviceHasLinks
+    ? professionals?.filter(p =>
+        professionalServices.some(ps => ps.professional_id === p.id && ps.service_id === form.service_id)
+      )
+    : professionals;
+
+  // Se trocar de serviço e a profissional escolhida não fizer o novo
+  // serviço, limpa a seleção em vez de deixar um agendamento inválido.
+  useEffect(() => {
+    if (form.professional_id && !qualifiedProfessionals?.some(p => p.id === form.professional_id)) {
+      setForm(prev => ({ ...prev, professional_id: "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.service_id, professionalServices]);
 
   const handleClientSelect = (clientId) => {
     const client = clients?.find(c => c.id === clientId);
@@ -109,14 +136,25 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
           </div>
           <div>
             <Label className="text-xs">Profissional</Label>
-            <Select value={form.professional_id} onValueChange={v => setForm(prev => ({ ...prev, professional_id: v }))}>
-              <SelectTrigger><SelectValue placeholder="Selecionar profissional..." /></SelectTrigger>
+            <Select
+              value={form.professional_id}
+              onValueChange={v => setForm(prev => ({ ...prev, professional_id: v }))}
+              disabled={!form.service_id}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={form.service_id ? "Selecionar profissional..." : "Escolha um serviço primeiro"} />
+              </SelectTrigger>
               <SelectContent>
-                {professionals?.filter(p => p.is_active !== false).map(p => (
+                {qualifiedProfessionals?.filter(p => p.is_active !== false).map(p => (
                   <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {form.service_id && qualifiedProfessionals?.filter(p => p.is_active !== false).length === 0 && (
+              <p className="text-[11px] text-destructive mt-1">
+                Nenhuma profissional cadastrada para este serviço ainda.
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

@@ -20,7 +20,14 @@ defmodule LabelleBack.Studio.ProfessionalService do
   end
 
   policies do
-    policy always() do
+    # Leitura pública (só liga IDs de profissional/serviço, nada sensível) —
+    # o app da cliente usa isso, sem login, para filtrar quem faz cada
+    # serviço no agendamento. Escrita continua restrita ao staff.
+    policy action_type(:read) do
+      authorize_if always()
+    end
+
+    policy action_type([:create, :destroy]) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
   end

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ProfessionalsApi, AppointmentsApi, listUsers } from "@/server/api";
+import { ProfessionalsApi, ProfessionalServicesApi, ServicesApi, AppointmentsApi, listUsers } from "@/server/api";
 import { Plus, ArrowLeft, Link2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
 
@@ -21,6 +22,7 @@ export default function Professionals() {
   const [form, setForm] = useState({
     name: "", phone: "", email: "", type: "comissao", commission_percent: "40", rent_value: "", work_start: "09:00", work_end: "18:00", user_id: "",
   });
+  const [selectedServiceIds, setSelectedServiceIds] = useState([]);
 
   const { data: users = [] } = useQuery({
     queryKey: ["users"],
@@ -31,6 +33,16 @@ export default function Professionals() {
   const { data: professionals = [] } = useQuery({
     queryKey: ["professionals"],
     queryFn: () => ProfessionalsApi.list(),
+  });
+
+  const { data: services = [] } = useQuery({
+    queryKey: ["services"],
+    queryFn: () => ServicesApi.list(),
+  });
+
+  const { data: professionalServices = [] } = useQuery({
+    queryKey: ["professional-services"],
+    queryFn: () => ProfessionalServicesApi.list({ limit: 1000 }),
   });
 
   const { data: appointments = [] } = useQuery({
@@ -45,7 +57,6 @@ export default function Professionals() {
         rent_value: parseFloat(data.rent_value) || 0,
       },
     }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["professionals"] }); setShowForm(false); },
   });
 
   const updateMutation = useMutation({
@@ -56,8 +67,22 @@ export default function Professionals() {
         rent_value: parseFloat(data.rent_value) || 0,
       },
     }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["professionals"] }); setShowForm(false); setEditing(null); },
   });
+
+  // Reconcilia os vínculos profissional<->serviço com o que foi marcado no
+  // checklist: cria os que faltam, remove os que foram desmarcados.
+  const syncServiceLinks = async (professionalId) => {
+    const current = professionalServices.filter(ps => ps.professional_id === professionalId);
+    const currentServiceIds = current.map(ps => ps.service_id);
+
+    const toAdd = selectedServiceIds.filter(id => !currentServiceIds.includes(id));
+    const toRemove = current.filter(ps => !selectedServiceIds.includes(ps.service_id));
+
+    await Promise.all([
+      ...toAdd.map(service_id => ProfessionalServicesApi.create({ data: { professional_id: professionalId, service_id } })),
+      ...toRemove.map(ps => ProfessionalServicesApi.delete({ id: ps.id })),
+    ]);
+  };
 
   const openEdit = (p) => {
     setEditing(p);
@@ -66,18 +91,41 @@ export default function Professionals() {
       commission_percent: String(p.commission_percent || "40"), rent_value: String(p.rent_value || ""),
       work_start: p.work_start || "09:00", work_end: p.work_end || "18:00", user_id: p.user_id || "",
     });
+    setSelectedServiceIds(professionalServices.filter(ps => ps.professional_id === p.id).map(ps => ps.service_id));
     setShowForm(true);
   };
 
   const openNew = () => {
     setEditing(null);
     setForm({ name: "", phone: "", email: "", type: "comissao", commission_percent: "40", rent_value: "", work_start: "09:00", work_end: "18:00", user_id: "" });
+    setSelectedServiceIds([]);
     setShowForm(true);
   };
 
-  const handleSubmit = () => {
-    if (editing) updateMutation.mutate({ id: editing.id, data: form });
-    else createMutation.mutate(form);
+  const toggleService = (serviceId) => {
+    setSelectedServiceIds(prev =>
+      prev.includes(serviceId) ? prev.filter(id => id !== serviceId) : [...prev, serviceId]
+    );
+  };
+
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      const professional = editing
+        ? await updateMutation.mutateAsync({ id: editing.id, data: form })
+        : await createMutation.mutateAsync(form);
+
+      await syncServiceLinks(editing ? editing.id : professional.id);
+
+      queryClient.invalidateQueries({ queryKey: ["professionals"] });
+      queryClient.invalidateQueries({ queryKey: ["professional-services"] });
+      setShowForm(false);
+      setEditing(null);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const getProfRevenue = (profId) => {
@@ -194,8 +242,25 @@ export default function Professionals() {
               </Select>
               <p className="text-[10px] text-muted-foreground mt-1">Apenas usuários com role "profissional" aparecem aqui</p>
             </div>
-            <Button onClick={handleSubmit} className="w-full rounded-xl h-12 font-semibold">
-              {editing ? "Atualizar" : "Cadastrar"}
+            <div>
+              <Label className="text-xs">Serviços que realiza</Label>
+              <p className="text-[10px] text-muted-foreground mb-2">
+                Só quem estiver marcado aqui aparece para esse serviço na hora de agendar.
+              </p>
+              <div className="space-y-2 max-h-56 overflow-y-auto">
+                {services.filter(s => s.is_active !== false).map(s => (
+                  <label key={s.id} className="flex items-center gap-2 text-sm bg-secondary/40 rounded-lg px-3 py-2">
+                    <Checkbox
+                      checked={selectedServiceIds.includes(s.id)}
+                      onCheckedChange={() => toggleService(s.id)}
+                    />
+                    {s.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <Button onClick={handleSubmit} disabled={saving} className="w-full rounded-xl h-12 font-semibold">
+              {saving ? "Salvando..." : editing ? "Atualizar" : "Cadastrar"}
             </Button>
           </div>
         </SheetContent>

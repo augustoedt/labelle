@@ -194,6 +194,19 @@ export const updateProfessional = createServerFn({ method: 'POST' })
   .validator((data: { id: string; attributes: Record<string, any> }) => data)
   .handler(({ data }) => jsonApiUpdate('professionals', 'professional', data.id, data.attributes))
 
+// Liga profissional <-> serviços que ela realiza. Leitura é pública no
+// backend (sem dado sensível), então também funciona sem login no app da
+// cliente, exatamente como Services/Professionals já funcionam ali.
+export const listProfessionalServices = createServerFn({ method: 'GET' })
+  .validator((data?: ListParams) => data)
+  .handler(({ data }) => jsonApiList('professional_services', data))
+export const createProfessionalService = createServerFn({ method: 'POST' })
+  .validator((data: Record<string, any>) => data)
+  .handler(({ data }) => jsonApiCreate('professional_services', 'professional_service', data))
+export const deleteProfessionalService = createServerFn({ method: 'POST' })
+  .validator((data: { id: string }) => data)
+  .handler(({ data }) => jsonApiDelete('professional_services', data.id))
+
 export const listServices = createServerFn({ method: 'GET' })
   .validator((data?: ListParams) => data)
   .handler(({ data }) => jsonApiList('services', data))
@@ -306,6 +319,7 @@ const wrapInput =
 
 export const ClientsApi = { list: wrapList(listClients), create: createClient, update: wrapInput(updateClient) }
 export const ProfessionalsApi = { list: wrapList(listProfessionals), create: createProfessional, update: wrapInput(updateProfessional) }
+export const ProfessionalServicesApi = { list: wrapList(listProfessionalServices), create: createProfessionalService, delete: wrapInput(deleteProfessionalService) }
 export const ServicesApi = { list: wrapList(listServices), create: createService, update: wrapInput(updateService) }
 export const AppointmentsApi = { list: wrapList(listAppointments), create: createAppointment, update: wrapInput(updateAppointment), finalize: wrapInput(finalizeAppointment) }
 export const AppointmentServicesApi = { list: wrapList(listAppointmentServices), create: createAppointmentService, update: wrapInput(updateAppointmentService), delete: wrapInput(deleteAppointmentService) }

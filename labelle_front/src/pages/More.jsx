@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Scissors, Users2, Package, Tag, BarChart3, Crown, BellRing, Settings2 } from "lucide-react";
+import { Scissors, Users2, Package, Tag, BarChart3, Crown, BellRing, Settings2, LogOut } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 
 const menuItems = [
@@ -34,6 +34,19 @@ export default function More() {
             </div>
           </Link>
         ))}
+
+        <Link
+          to="/logout"
+          className="flex items-center gap-4 p-4 bg-card rounded-2xl border border-border/50 shadow-sm hover:shadow-md transition-all text-destructive"
+        >
+          <div className="p-2.5 rounded-xl bg-destructive/10">
+            <LogOut className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-sm">Sair</p>
+            <p className="text-xs text-muted-foreground">Encerrar sessão</p>
+          </div>
+        </Link>
       </div>
     </div>
   );

@@ -50,11 +50,12 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
 
   const selectedService = services?.find(s => s.id === form.service_id);
 
-  // Só filtra se esse serviço já tiver pelo menos um vínculo cadastrado —
-  // enquanto o staff não configurar "quem faz o quê" em Profissionais,
-  // continua mostrando todo mundo (em vez de ninguém) para esse serviço.
-  const serviceHasLinks = professionalServices.some(ps => ps.service_id === form.service_id);
-  const qualifiedProfessionals = form.service_id && serviceHasLinks
+  // Sem serviço escolhido ainda, mostra todo mundo. Com serviço escolhido,
+  // mostra só quem está vinculada — inclusive se ninguém estiver vinculado
+  // ainda (lista vazia), para não deixar agendar com uma profissional que
+  // não sabe fazer o serviço (ela receberia comissão por um trabalho que
+  // não fez). É preciso configurar o vínculo em Profissionais antes.
+  const qualifiedProfessionals = form.service_id
     ? professionals?.filter(p =>
         professionalServices.some(ps => ps.professional_id === p.id && ps.service_id === form.service_id)
       )
@@ -152,7 +153,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             </Select>
             {form.service_id && qualifiedProfessionals?.filter(p => p.is_active !== false).length === 0 && (
               <p className="text-[11px] text-destructive mt-1">
-                Nenhuma profissional cadastrada para este serviço ainda.
+                Nenhuma profissional configurada para este serviço ainda. Cadastre em Profissionais → editar → "Serviços que realiza".
               </p>
             )}
           </div>

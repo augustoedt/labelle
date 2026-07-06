@@ -112,14 +112,14 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
   const reset = () => { setStep(1); setSelectedService(null); setSelectedProfessional(null); setSelectedDate(null); setSelectedTime(null); };
   const activeServices = services.filter(s => s.is_active !== false);
 
-  // Só mostra quem sabe fazer o serviço escolhido — mas se esse serviço
-  // ainda não tiver nenhum vínculo cadastrado, mostra todo mundo (evita
-  // esconder todas as profissionais enquanto o staff não configurar isso
-  // em Profissionais).
-  const serviceHasLinks = selectedService && professionalServices.some(ps => ps.service_id === selectedService.id);
+  // Só mostra quem sabe fazer o serviço escolhido. Se ninguém estiver
+  // vinculado ainda, a lista fica vazia de propósito — melhor bloquear o
+  // agendamento desse serviço do que deixar marcar com uma profissional
+  // que não sabe fazê-lo (ela acabaria recebendo comissão por um trabalho
+  // que não realizou).
   const activeProfessionals = professionals
     .filter(p => p.is_active !== false)
-    .filter(p => !serviceHasLinks || professionalServices.some(ps => ps.professional_id === p.id && ps.service_id === selectedService.id));
+    .filter(p => !selectedService || professionalServices.some(ps => ps.professional_id === p.id && ps.service_id === selectedService.id));
 
   return (
     <div className="px-5 py-5">

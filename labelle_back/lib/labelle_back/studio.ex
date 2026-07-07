@@ -46,6 +46,8 @@ defmodule LabelleBack.Studio do
         post :create
         patch :update
         patch :finalize, route: "/:id/finalize"
+        patch :confirm, route: "/:id/confirm"
+        patch :send_reminder, route: "/:id/send_reminder"
         delete :destroy
       end
 
@@ -100,6 +102,12 @@ defmodule LabelleBack.Studio do
         get :read, route: "/"
         patch :update, route: "/"
       end
+
+      base_route "/whatsapp_connection", LabelleBack.Studio.WhatsAppConnection do
+        route :get, "/status", :status
+        route :get, "/qr_code", :qr_code
+        route :post, "/logout", :logout
+      end
     end
   end
 
@@ -116,5 +124,6 @@ defmodule LabelleBack.Studio do
     resource LabelleBack.Studio.Transaction
     resource LabelleBack.Studio.Payment
     resource LabelleBack.Studio.Settings
+    resource LabelleBack.Studio.WhatsAppConnection
   end
 end

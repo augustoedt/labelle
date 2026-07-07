@@ -1,13 +1,41 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { SettingsApi } from "@/server/api";
-import { ArrowLeft, Save } from "lucide-react";
+import { SettingsApi, WhatsAppConnectionApi } from "@/server/api";
+import { ArrowLeft, Save, Wifi, WifiOff, RefreshCw, QrCode, LogOut } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import PageHeader from "@/components/ui/PageHeader";
+
+// Status possíveis retornados pela sessão do WAHA (ver
+// LabelleBack.Messaging.WhatsApp.Waha.status/0): STOPPED | STARTING |
+// SCAN_QR_CODE | WORKING | FAILED.
+function connectionStatusLabel(status) {
+  switch (status) {
+    case "WORKING":
+      return { text: "Conectado", tone: "text-emerald-600" };
+    case "SCAN_QR_CODE":
+      return { text: "Aguardando leitura do QR code", tone: "text-amber-600" };
+    case "STARTING":
+      return { text: "Iniciando conexão...", tone: "text-amber-600" };
+    case undefined:
+    case null:
+      return { text: "Verificando...", tone: "text-muted-foreground" };
+    default:
+      return { text: "Desconectado", tone: "text-destructive" };
+  }
+}
+
+// O WAHA retorna o QR code em base64 num de dois formatos (Base64File ou
+// QRCodeValue) dependendo da versão/config — tenta os dois nomes de campo.
+function qrImageSrc(qrResult) {
+  if (!qrResult) return null;
+  const base64 = qrResult.data || qrResult.value;
+  if (!base64) return null;
+  return base64.startsWith("data:") ? base64 : `data:${qrResult.mimetype || "image/png"};base64,${base64}`;
+}
 
 const messageFields = [
   {
@@ -61,6 +89,37 @@ export default function Settings() {
       queryClient.setQueryData(["settings"], updated);
     },
   });
+
+  const {
+    data: connectionStatus,
+    refetch: refetchConnectionStatus,
+    isFetching: isCheckingConnection,
+  } = useQuery({
+    queryKey: ["whatsapp-connection-status"],
+    queryFn: () => WhatsAppConnectionApi.status(),
+  });
+
+  const qrMutation = useMutation({
+    mutationFn: () => WhatsAppConnectionApi.qrCode(),
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: () => WhatsAppConnectionApi.logout(),
+    onSuccess: () => {
+      qrMutation.reset();
+      refetchConnectionStatus();
+    },
+  });
+
+  const handleLogoutWhatsApp = () => {
+    if (
+      window.confirm(
+        "Desparear o WhatsApp da empresa? Será preciso escanear um QR code novo (com o celular da empresa, ou de um número diferente) para reconectar."
+      )
+    ) {
+      logoutMutation.mutate();
+    }
+  };
 
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
@@ -130,6 +189,73 @@ export default function Settings() {
               <Label className="text-xs">Cidade</Label>
               <Input value={form.city || ""} onChange={set("city")} />
             </div>
+          </div>
+        </div>
+
+        {/* Conexão WhatsApp da empresa */}
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold">Conexão WhatsApp da empresa</h2>
+          <div className="bg-card rounded-2xl border border-border/50 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {connectionStatus?.status === "WORKING" ? (
+                  <Wifi className="w-4 h-4 text-emerald-600" />
+                ) : (
+                  <WifiOff className="w-4 h-4 text-muted-foreground" />
+                )}
+                <span className={`text-sm font-medium ${connectionStatusLabel(connectionStatus?.status).tone}`}>
+                  {connectionStatusLabel(connectionStatus?.status).text}
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs rounded-lg gap-1"
+                disabled={isCheckingConnection}
+                onClick={() => refetchConnectionStatus()}
+              >
+                <RefreshCw className={`w-3 h-3 ${isCheckingConnection ? "animate-spin" : ""}`} /> Verificar
+              </Button>
+            </div>
+
+            {connectionStatus?.me && (
+              <p className="text-[11px] text-muted-foreground">
+                Número pareado: {connectionStatus.me.id || connectionStatus.me.pushName}
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs rounded-lg gap-1.5 flex-1"
+                disabled={qrMutation.isPending}
+                onClick={() => qrMutation.mutate()}
+              >
+                <QrCode className="w-3.5 h-3.5" /> {qrMutation.isPending ? "Gerando..." : "Gerar QR code"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs rounded-lg gap-1.5 text-destructive"
+                disabled={logoutMutation.isPending}
+                onClick={handleLogoutWhatsApp}
+              >
+                <LogOut className="w-3.5 h-3.5" /> Desparear
+              </Button>
+            </div>
+
+            {qrMutation.isError && (
+              <p className="text-[11px] text-destructive">Não foi possível gerar o QR code. Tente novamente.</p>
+            )}
+            {qrImageSrc(qrMutation.data) && (
+              <div className="flex flex-col items-center gap-2 pt-1">
+                <img src={qrImageSrc(qrMutation.data)} alt="QR code para parear o WhatsApp" className="w-48 h-48 rounded-xl border border-border/50" />
+                <p className="text-[11px] text-muted-foreground text-center">
+                  Escaneie com o WhatsApp do celular da empresa (Aparelhos conectados → Conectar um aparelho).
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

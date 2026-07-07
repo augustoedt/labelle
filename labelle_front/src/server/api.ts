@@ -235,6 +235,15 @@ export const finalizeAppointment = createServerFn({ method: 'POST' })
       payment_method: data.payment_method,
     }),
   )
+// Confirmar e enviar lembrete a partir da visão da profissional passam pelo
+// backend (que envia via WhatsApp da empresa) em vez de abrir o WhatsApp
+// pessoal de quem está logado no navegador.
+export const confirmAppointment = createServerFn({ method: 'POST' })
+  .validator((data: { id: string }) => data)
+  .handler(({ data }) => jsonApiAction('appointments', 'appointment', data.id, 'confirm'))
+export const sendAppointmentReminder = createServerFn({ method: 'POST' })
+  .validator((data: { id: string }) => data)
+  .handler(({ data }) => jsonApiAction('appointments', 'appointment', data.id, 'send_reminder'))
 
 export const listAppointmentServices = createServerFn({ method: 'GET' })
   .validator((data?: ListParams) => data)
@@ -321,7 +330,7 @@ export const ClientsApi = { list: wrapList(listClients), create: createClient, u
 export const ProfessionalsApi = { list: wrapList(listProfessionals), create: createProfessional, update: wrapInput(updateProfessional) }
 export const ProfessionalServicesApi = { list: wrapList(listProfessionalServices), create: createProfessionalService, delete: wrapInput(deleteProfessionalService) }
 export const ServicesApi = { list: wrapList(listServices), create: createService, update: wrapInput(updateService) }
-export const AppointmentsApi = { list: wrapList(listAppointments), create: createAppointment, update: wrapInput(updateAppointment), finalize: wrapInput(finalizeAppointment) }
+export const AppointmentsApi = { list: wrapList(listAppointments), create: createAppointment, update: wrapInput(updateAppointment), finalize: wrapInput(finalizeAppointment), confirm: wrapInput(confirmAppointment), sendReminder: wrapInput(sendAppointmentReminder) }
 export const AppointmentServicesApi = { list: wrapList(listAppointmentServices), create: createAppointmentService, update: wrapInput(updateAppointmentService), delete: wrapInput(deleteAppointmentService) }
 export const RemindersApi = { list: wrapList(listClientReminders), markSent: wrapInput(markReminderSent), cancel: wrapInput(cancelReminder) }
 export const ProductsApi = { list: wrapList(listProducts), create: createProduct, update: wrapInput(updateProduct) }
@@ -412,3 +421,28 @@ export const updateSettings = createServerFn({ method: 'POST' })
   .handler(({ data }) => jsonApiUpdateSingleton('settings', 'studio_settings', data.id, data.attributes))
 
 export const SettingsApi = { get: getSettings, update: wrapInput(updateSettings) }
+
+// ---------------------------------------------------------------------------
+// Conexão WhatsApp da empresa (WAHA) — status da sessão, QR code para
+// (re)parear e logout. Rotas de generic action (sem :id, sem type), por isso
+// não usam jsonApi{List,Create,Update,Action} — chamam authedRequest direto.
+// ---------------------------------------------------------------------------
+
+export const getWhatsAppConnectionStatus = createServerFn({ method: 'GET' }).handler(() =>
+  authedRequest('/api/json/whatsapp_connection/status'),
+)
+export const getWhatsAppConnectionQrCode = createServerFn({ method: 'GET' }).handler(() =>
+  authedRequest('/api/json/whatsapp_connection/qr_code'),
+)
+export const logoutWhatsAppConnection = createServerFn({ method: 'POST' }).handler(() =>
+  authedRequest('/api/json/whatsapp_connection/logout', {
+    method: 'POST',
+    body: JSON.stringify({}),
+  }),
+)
+
+export const WhatsAppConnectionApi = {
+  status: getWhatsAppConnectionStatus,
+  qrCode: getWhatsAppConnectionQrCode,
+  logout: logoutWhatsAppConnection,
+}

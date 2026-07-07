@@ -73,6 +73,17 @@ if config_env() == :prod do
       System.get_env("TOKEN_SIGNING_SECRET") ||
         raise("Missing environment variable `TOKEN_SIGNING_SECRET`!")
 
+  if waha_base_url = System.get_env("WAHA_BASE_URL") do
+    config :labelle_back, :whatsapp_adapter, LabelleBack.Messaging.WhatsApp.Waha
+
+    config :labelle_back, LabelleBack.Messaging.WhatsApp.Waha,
+      base_url: waha_base_url,
+      api_key:
+        System.get_env("WAHA_API_KEY") ||
+          raise("Missing environment variable `WAHA_API_KEY`!"),
+      session: System.get_env("WAHA_SESSION") || "default"
+  end
+
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key

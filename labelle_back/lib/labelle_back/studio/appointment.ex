@@ -68,6 +68,21 @@ defmodule LabelleBack.Studio.Appointment do
       change set_attribute(:status, :concluido)
       change LabelleBack.Studio.Changes.RegisterChargeOnFinalize
     end
+
+    update :confirm do
+      require_atomic? false
+      accept []
+
+      change set_attribute(:status, :confirmado)
+      change {LabelleBack.Studio.Changes.SendWhatsAppMessage, kind: :confirmation}
+    end
+
+    update :send_reminder do
+      require_atomic? false
+      accept []
+
+      change {LabelleBack.Studio.Changes.SendWhatsAppMessage, kind: :reminder}
+    end
   end
 
   policies do

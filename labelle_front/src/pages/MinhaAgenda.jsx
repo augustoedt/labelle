@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouteContext } from "@tanstack/react-router";
-import { AppointmentsApi, ProfessionalsApi, ServicesApi, ClientsApi, SettingsApi } from "@/server/api";
+import { AppointmentsApi, ProfessionalsApi, ServicesApi, ClientsApi } from "@/server/api";
 import { Plus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
 import AppointmentForm from "@/components/agenda/AppointmentForm";
 import FinalizeSheet from "@/components/agenda/FinalizeSheet";
-import { sendWhatsApp, buildConfirmationMessage, buildReminderMessage } from "@/lib/whatsapp";
+import { toast } from "@/components/ui/use-toast";
 
 const statusColors = {
   agendado: "bg-blue-100 text-blue-700",
@@ -63,11 +63,6 @@ export default function MinhaAgenda() {
     queryFn: () => ClientsApi.list({ limit: 500 }),
   });
 
-  const { data: settings } = useQuery({
-    queryKey: ["settings"],
-    queryFn: () => SettingsApi.get(),
-  });
-
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => AppointmentsApi.update({ id, attributes: data }),
     onSuccess: () => {
@@ -75,21 +70,49 @@ export default function MinhaAgenda() {
     },
   });
 
+  // Confirmar e lembrete são enviados pelo backend a partir do WhatsApp da
+  // empresa (WAHA) — não abrem mais o WhatsApp pessoal de quem está logado.
+  const confirmMutation = useMutation({
+    mutationFn: ({ id }) => AppointmentsApi.confirm({ id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["professional-appointments"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Não foi possível confirmar o agendamento",
+        description: "Tente novamente em instantes.",
+      });
+    },
+  });
+
+  const reminderMutation = useMutation({
+    mutationFn: ({ id }) => AppointmentsApi.sendReminder({ id }),
+    onSuccess: () => {
+      toast({ title: "Lembrete enviado" });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Não foi possível enviar o lembrete",
+        description: "Tente novamente em instantes.",
+      });
+    },
+  });
+
   const createMutation = useMutation({
     // O profissional só agenda para si mesmo
     mutationFn: (data) =>
       AppointmentsApi.create({ data: { ...data, professional_id: myProfessional.id } }),
-    onSuccess: (_, variables) => {
+    onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["professional-appointments"] });
       setShowForm(false);
-      if (variables.client_phone && settings) {
-        sendWhatsApp(variables.client_phone, buildConfirmationMessage(settings, {
-          clientName: variables.client_name,
-          serviceName: variables.service_name,
-          professionalName: myProfessional?.name,
-          date: variables.date,
-          time: variables.time,
-        }));
+      // Um agendamento criado direto pela agenda da profissional já nasce
+      // confirmado (ela está fazendo isso na hora, com a cliente) — usa a
+      // mesma action de confirmar, que também envia a mensagem pelo
+      // WhatsApp da empresa em vez do celular pessoal dela.
+      if (created.client_phone) {
+        confirmMutation.mutate({ id: created.id });
       }
     },
   });
@@ -106,15 +129,10 @@ export default function MinhaAgenda() {
   });
 
   const handleStatusChange = (apt, newStatus) => {
-    updateMutation.mutate({ id: apt.id, data: { status: newStatus } });
-    if (newStatus === "confirmado" && apt.client_phone && settings) {
-      sendWhatsApp(apt.client_phone, buildConfirmationMessage(settings, {
-        clientName: apt.client_name,
-        serviceName: apt.service_name,
-        professionalName: apt.professional_name,
-        date: apt.date,
-        time: apt.time,
-      }));
+    if (newStatus === "confirmado") {
+      confirmMutation.mutate({ id: apt.id });
+    } else {
+      updateMutation.mutate({ id: apt.id, data: { status: newStatus } });
     }
   };
 
@@ -213,12 +231,10 @@ export default function MinhaAgenda() {
                     {apt.status === "em_atendimento" && (
                       <Button size="sm" className="h-7 text-xs rounded-lg" onClick={() => setFinalizingApt(apt)}>Serviços / Finalizar</Button>
                     )}
-                    {apt.client_phone && apt.status !== "cancelado" && apt.status !== "concluido" && settings && (
+                    {apt.client_phone && apt.status !== "cancelado" && apt.status !== "concluido" && (
                       <Button size="sm" variant="ghost" className="h-7 text-xs rounded-lg text-emerald-600 gap-1"
-                        onClick={() => sendWhatsApp(apt.client_phone, buildReminderMessage(settings, {
-                          clientName: apt.client_name, serviceName: apt.service_name,
-                          professionalName: apt.professional_name, date: apt.date, time: apt.time,
-                        }))}>
+                        disabled={reminderMutation.isPending}
+                        onClick={() => reminderMutation.mutate({ id: apt.id })}>
                         <MessageCircle className="w-3 h-3" /> Lembrete
                       </Button>
                     )}

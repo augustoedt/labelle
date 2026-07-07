@@ -34,20 +34,58 @@ defmodule LabelleBack.Messaging.WhatsApp.Waha do
   @doc "Status da sessão (`STOPPED | STARTING | SCAN_QR_CODE | WORKING | FAILED`) e número pareado."
   def status do
     case request(:get, "/api/sessions/#{session()}") do
-      {:ok, %{status: 200, body: body}} -> {:ok, body}
-      {:ok, %{status: status, body: body}} -> {:error, {:waha_http_error, status, body}}
-      {:error, reason} -> {:error, reason}
+      {:ok, %{status: 200, body: body}} ->
+        {:ok, body}
+
+      {:ok, %{status: status, body: body}} ->
+        if session_missing?(body) do
+          {:ok, %{"name" => session(), "status" => "STOPPED"}}
+        else
+          {:error, {:waha_http_error, status, body}}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
-  @doc "QR code atual (base64) para parear a sessão com um novo número."
+  @doc """
+  QR code atual (base64) para parear a sessão com um novo número. Cria e
+  inicia a sessão no WAHA se ela ainda não existir (primeiro uso).
+  """
   def qr_code do
-    case request(:get, "/api/#{session()}/auth/qr", headers: [{"accept", "application/json"}]) do
-      {:ok, %{status: 200, body: body}} -> {:ok, body}
-      {:ok, %{status: status, body: body}} -> {:error, {:waha_http_error, status, body}}
-      {:error, reason} -> {:error, reason}
+    with :ok <- ensure_session() do
+      case request(:get, "/api/#{session()}/auth/qr", headers: [{"accept", "application/json"}]) do
+        {:ok, %{status: 200, body: body}} -> {:ok, body}
+        {:ok, %{status: status, body: body}} -> {:error, {:waha_http_error, status, body}}
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
+
+  defp ensure_session do
+    case request(:post, "/api/sessions", json: %{name: session()}) do
+      {:ok, %{status: status}} when status in 200..299 ->
+        :ok
+
+      # A sessão provavelmente já existe (criada numa tentativa anterior) —
+      # só garante que está rodando.
+      {:ok, %{status: _status}} ->
+        case request(:post, "/api/sessions/#{session()}/start") do
+          {:ok, %{status: status}} when status in 200..299 -> :ok
+          {:ok, %{status: status, body: body}} -> {:error, {:waha_http_error, status, body}}
+          {:error, reason} -> {:error, reason}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp session_missing?(%{"error" => error}) when is_binary(error),
+    do: String.contains?(error, "does not exist")
+
+  defp session_missing?(_), do: false
 
   @doc "Desconecta o número atual (mantém a sessão configurada para um novo pareamento)."
   def logout do

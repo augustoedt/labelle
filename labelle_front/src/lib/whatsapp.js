@@ -65,22 +65,3 @@ export function buildReminderMessage(settings, { clientName, serviceName, profes
     hora: time,
   });
 }
-
-/**
- * Builds the "acabei de agendar" message that the CLIENT sends TO the
- * studio's WhatsApp right after booking via the client app — resolve o
- * problema de o wa.me abrir endereçado para o telefone da própria cliente
- * em vez do estúdio.
- */
-export function buildNewBookingNotification(settings, { clientName, serviceName, professionalName, date, time, clientPhone }) {
-  return renderTemplate(settings.message_new_booking_notification, {
-    cliente: clientName,
-    estudio: settings.name,
-    servico: serviceName,
-    profissional: professionalName,
-    data: formatDate(date),
-    hora: time,
-    telefone_cliente: clientPhone,
-    endereco: settings.address,
-  });
-}

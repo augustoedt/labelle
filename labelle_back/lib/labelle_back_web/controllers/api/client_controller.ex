@@ -81,7 +81,7 @@ defmodule LabelleBackWeb.Api.ClientController do
     json(conn, %{
       name: settings.name,
       whatsapp_phone: settings.whatsapp_phone,
-      address: format_address(settings),
+      address: Studio.Settings.format_address(settings),
       message_new_booking_notification: settings.message_new_booking_notification
     })
   end
@@ -146,17 +146,6 @@ defmodule LabelleBackWeb.Api.ClientController do
       status: appt.status,
       price: decimal_to_number(appt.price)
     }
-  end
-
-  defp format_address(settings) do
-    [
-      settings.street,
-      settings.neighborhood,
-      settings.city && settings.state && "#{settings.city} - #{settings.state}",
-      settings.zip_code && "CEP #{settings.zip_code}"
-    ]
-    |> Enum.reject(&(&1 in [nil, ""]))
-    |> Enum.join(", ")
   end
 
   defp decimal_to_number(nil), do: nil

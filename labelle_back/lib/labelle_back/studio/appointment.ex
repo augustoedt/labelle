@@ -36,6 +36,13 @@ defmodule LabelleBack.Studio.Appointment do
       ]
 
       change LabelleBack.Studio.Changes.SnapshotAppointmentFields
+
+      # Agendamento feito pela cliente no app público: o estúdio manda a
+      # confirmação de recebimento pra ela via WhatsApp da empresa, em vez
+      # do fluxo antigo (cliente mandando mensagem pro estúdio via wa.me).
+      change {LabelleBack.Studio.Changes.SendWhatsAppMessage, kind: :new_booking_notification} do
+        where attribute_equals(:source, :online)
+      end
     end
 
     update :update do

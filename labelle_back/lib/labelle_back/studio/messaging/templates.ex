@@ -25,6 +25,11 @@ defmodule LabelleBack.Studio.Messaging.Templates do
     {:ok, render_template(settings.message_reminder, settings, appointment)}
   end
 
+  def render(:new_booking_notification, appointment) do
+    settings = Settings.current!(authorize?: false)
+    {:ok, render_template(settings.message_new_booking_notification, settings, appointment)}
+  end
+
   defp render_template(template, settings, appointment) do
     template
     |> String.replace("{{cliente}}", appointment.client_name || "")
@@ -33,6 +38,8 @@ defmodule LabelleBack.Studio.Messaging.Templates do
     |> String.replace("{{profissional}}", appointment.professional_name || "")
     |> String.replace("{{data}}", format_date(appointment.date))
     |> String.replace("{{hora}}", format_time(appointment.time))
+    |> String.replace("{{telefone_cliente}}", appointment.client_phone || "")
+    |> String.replace("{{endereco}}", Settings.format_address(settings))
   end
 
   defp format_date(nil), do: ""

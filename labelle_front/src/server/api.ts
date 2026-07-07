@@ -383,13 +383,6 @@ export const upsertClient = createServerFn({ method: 'POST' })
   .validator((data: { name: string; phone: string }) => data)
   .handler(({ data }) => publicRequest('/api/client/upsert', data))
 
-// Configurações do estúdio (telefone/endereço/templates de mensagem) —
-// subset público, sem autenticação, para o app da cliente montar a
-// notificação de novo agendamento endereçada ao estúdio.
-export const getStudioSettings = createServerFn({ method: 'POST' }).handler(() =>
-  publicRequest('/api/client/settings', {}),
-)
-
 // ---------------------------------------------------------------------------
 // Configurações (tela admin) — resource singleton, sem `:id` na URL
 // (GET/PATCH /api/json/settings sempre operam sobre a única linha).

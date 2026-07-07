@@ -128,4 +128,16 @@ defmodule LabelleBack.Studio.Settings do
   identities do
     identity :singleton, [:singleton]
   end
+
+  @doc "Endereço formatado numa linha só, pra usar no `{{endereco}}` dos templates."
+  def format_address(settings) do
+    [
+      settings.street,
+      settings.neighborhood,
+      settings.city && settings.state && "#{settings.city} - #{settings.state}",
+      settings.zip_code && "CEP #{settings.zip_code}"
+    ]
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> Enum.join(", ")
+  end
 end

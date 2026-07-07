@@ -184,4 +184,30 @@ defmodule LabelleBack.Studio.WhatsAppMessagingTest do
       assert_receive {:whatsapp_sent, "11977776666", "lembrete para Cliente Teste"}
     end
   end
+
+  describe "create" do
+    test "an online booking (client app) sends the new-booking notification to the client" do
+      Application.put_env(:labelle_back, :whatsapp_adapter, FakeAdapter)
+      user = create_user!(:profissional)
+      professional = create_professional!(user)
+      service = create_service!(%{})
+      client = create_client!(%{phone: "11966665555"})
+
+      create_appointment!(client, professional, service, %{source: :online})
+
+      assert_receive {:whatsapp_sent, "11966665555", "novo agendamento Cliente Teste"}
+    end
+
+    test "a manual booking (staff/professional) does not send the new-booking notification" do
+      Application.put_env(:labelle_back, :whatsapp_adapter, FakeAdapter)
+      user = create_user!(:profissional)
+      professional = create_professional!(user)
+      service = create_service!(%{})
+      client = create_client!(%{phone: "11955554444"})
+
+      create_appointment!(client, professional, service, %{source: :manual})
+
+      refute_receive {:whatsapp_sent, "11955554444", _}, 200
+    end
+  end
 end

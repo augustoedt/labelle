@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ServicesApi, ProfessionalsApi, ProfessionalServicesApi, PromotionsApi, AppointmentsApi, getAvailableSlots, upsertClient, getStudioSettings } from "@/server/api";
+import { ServicesApi, ProfessionalsApi, ProfessionalServicesApi, PromotionsApi, AppointmentsApi, getAvailableSlots, upsertClient } from "@/server/api";
 import { ChevronRight, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,6 @@ import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { sendWhatsApp, buildNewBookingNotification } from "@/lib/whatsapp";
 import { normalizePhone } from "@/lib/clientUtils";
 
 const categoryEmojis = { cabelo: "💇", unha: "💅", estetica: "✨", sobrancelha: "🪒", maquiagem: "💄", outros: "🌟" };
@@ -24,7 +23,6 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
   const [formPhone, setFormPhone] = useState(clientPhone || "");
   const queryClient = useQueryClient();
 
-  const { data: settings } = useQuery({ queryKey: ["studio-settings"], queryFn: () => getStudioSettings() });
   const { data: services = [] } = useQuery({ queryKey: ["services"], queryFn: () => ServicesApi.list() });
   const { data: professionals = [] } = useQuery({ queryKey: ["professionals"], queryFn: () => ProfessionalsApi.list() });
   const { data: promotions = [] } = useQuery({ queryKey: ["promotions"], queryFn: () => PromotionsApi.list() });
@@ -58,24 +56,14 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
       } catch (_) { /* falha silenciosa — agendamento segue sem client_id */ }
       return AppointmentsApi.create({ data: { ...data, ...(client_id ? { client_id } : {}) } });
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client-appointments"] });
       queryClient.invalidateQueries({ queryKey: ["slots"] });
       onSaveClient(formName, formPhone);
-      // Abre o WhatsApp da PRÓPRIA cliente já endereçado ao número do
-      // estúdio (settings.whatsapp_phone), com uma mensagem de "acabei de
-      // agendar" pronta — ela só confirma o envio. Antes disso abria
-      // endereçado ao telefone dela mesma e o estúdio nunca era notificado.
-      if (settings?.whatsapp_phone) {
-        sendWhatsApp(settings.whatsapp_phone, buildNewBookingNotification(settings, {
-          clientName: formName,
-          serviceName: variables.service_name,
-          professionalName: variables.professional_name,
-          date: variables.date,
-          time: variables.time,
-          clientPhone: formPhone,
-        }));
-      }
+      // A confirmação de recebimento agora é enviada automaticamente pelo
+      // backend (WhatsApp da empresa via WAHA, action :create do
+      // Appointment com source "online") direto pra cliente — não abre
+      // mais o WhatsApp dela pra ela mesma mandar mensagem pro estúdio.
       setStep(5);
     },
   });

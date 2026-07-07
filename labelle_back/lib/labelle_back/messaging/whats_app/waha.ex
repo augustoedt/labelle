@@ -51,30 +51,64 @@ defmodule LabelleBack.Messaging.WhatsApp.Waha do
 
   @doc """
   QR code atual (base64) para parear a sessão com um novo número. Cria e
-  inicia a sessão no WAHA se ela ainda não existir (primeiro uso).
+  inicia a sessão no WAHA se ela ainda não existir (primeiro uso), e espera
+  o status chegar em `SCAN_QR_CODE` — o WEBJS sobe um Chromium headless por
+  trás, então essa transição não é instantânea.
   """
   def qr_code do
-    with :ok <- ensure_session() do
-      case request(:get, "/api/#{session()}/auth/qr", headers: [{"accept", "application/json"}]) do
-        {:ok, %{status: 200, body: body}} -> {:ok, body}
-        {:ok, %{status: status, body: body}} -> {:error, {:waha_http_error, status, body}}
-        {:error, reason} -> {:error, reason}
+    with :ok <- ensure_session(),
+         {:ok, session_status} <- wait_for_status(["SCAN_QR_CODE", "WORKING", "FAILED"]) do
+      case session_status do
+        "WORKING" ->
+          {:error, :already_connected}
+
+        "FAILED" ->
+          {:error, :session_failed}
+
+        "SCAN_QR_CODE" ->
+          case request(:get, "/api/#{session()}/auth/qr", headers: [{"accept", "application/json"}]) do
+            {:ok, %{status: 200, body: body}} -> {:ok, body}
+            {:ok, %{status: status, body: body}} -> {:error, {:waha_http_error, status, body}}
+            {:error, reason} -> {:error, reason}
+          end
       end
     end
   end
 
   defp ensure_session do
-    case request(:post, "/api/sessions", json: %{name: session()}) do
+    case request(:post, "/api/sessions", json: %{name: session(), start: true}) do
       {:ok, %{status: status}} when status in 200..299 ->
         :ok
 
       # A sessão provavelmente já existe (criada numa tentativa anterior) —
-      # só garante que está rodando.
+      # só garante que está rodando (idempotente, per doc do WAHA).
       {:ok, %{status: _status}} ->
         case request(:post, "/api/sessions/#{session()}/start") do
           {:ok, %{status: status}} when status in 200..299 -> :ok
           {:ok, %{status: status, body: body}} -> {:error, {:waha_http_error, status, body}}
           {:error, reason} -> {:error, reason}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @qr_wait_attempts 10
+  @qr_wait_interval_ms 1_000
+
+  defp wait_for_status(targets, attempts_left \\ @qr_wait_attempts)
+
+  defp wait_for_status(_targets, 0), do: {:error, :session_not_ready}
+
+  defp wait_for_status(targets, attempts_left) do
+    case status() do
+      {:ok, %{"status" => status}} ->
+        if status in targets do
+          {:ok, status}
+        else
+          Process.sleep(@qr_wait_interval_ms)
+          wait_for_status(targets, attempts_left - 1)
         end
 
       {:error, reason} ->

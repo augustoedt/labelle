@@ -1,7 +1,7 @@
 # Deploy no Railway
 
 Este monorepo (`labelle_back` + `labelle_front` + `labelle_proxy`) está
-hospedado num único projeto Railway chamado **labelle**, com 4 serviços:
+hospedado num único projeto Railway chamado **labelle**, com 5 serviços:
 
 - **Postgres** — banco gerenciado do Railway (produção; separado do Postgres
   local em Docker usado em dev)
@@ -13,6 +13,12 @@ hospedado num único projeto Railway chamado **labelle**, com 4 serviços:
 - **labelle_proxy** — Caddy, domínio público próprio, só encaminha
   `/admin` (AshAdmin) pra rede interna do `labelle_back`. Existe pra dar
   acesso externo ao painel admin sem expor o resto da API publicamente
+- **labelle_waha** — [WAHA](https://github.com/devlikeapro/waha) (WhatsApp
+  HTTP API, self-hosted), conectado ao número de WhatsApp da empresa via QR
+  code. Sem domínio público — só o `labelle_back` fala com ele, pela rede
+  privada. Diferente dos outros serviços, **não tem código nosso**: roda
+  direto da imagem Docker `devlikeapro/waha:latest`, sem repo/build (igual o
+  Postgres).
 
 Domínio público do app: `https://labellefront-production.up.railway.app`
 Domínio público do admin: `https://labelleproxy-production.up.railway.app/admin`
@@ -88,6 +94,28 @@ expor a API publicamente nem configurar CORS.
     logados direto pra `/admin`; o Caddyfile também precisa liberar a raiz
     exata (`handle /`, sem wildcard) pra esse redirect nem sequer chegar no
     backend.
+14. **`railway volume add --service X --mount-path Y` dá panic** nessa
+    versão do CLI (`Option::unwrap() on a None value`). Criar o volume do
+    `labelle_waha` via GraphQL (`volumeCreate`) em vez da CLI — ver seção
+    "WhatsApp (WAHA)" abaixo.
+15. **Porta real do WAHA é 8080, não a que a doc dele sugere (3000)** —
+    confirmado lendo o log de boot (`WhatsApp HTTP API is running on:
+    http://[::1]:8080`). Mesma regra de sempre: não assumir porta, checar o
+    log.
+16. **Sessão do WAHA não existe/nasce parada.** Buscar o QR code antes de
+    criar a sessão (`POST /api/sessions`) dá 422 `"does not exist"`; criar
+    sem `start: true` deixa em `STOPPED` e o QR endpoint dá outro 422
+    (`"expected": ["SCAN_QR_CODE"]`). É preciso criar com `start: true` e
+    **esperar** (polling) o status virar `SCAN_QR_CODE` antes de buscar o QR
+    — o engine WEBJS sobe um Chromium headless por trás, não é instantâneo.
+    Implementado em `LabelleBack.Messaging.WhatsApp.Waha.qr_code/0`
+    (`lib/labelle_back/messaging/whats_app/waha.ex`).
+17. **Streaming de log da CLI não é confiável**: `railway up` costuma falhar
+    com "Failed to retrieve build log" (poll o status via GraphQL
+    `deployment(id) { status }` em vez de esperar o stream), e `railway
+    logs --service X` abre um stream que não fecha sozinho (rodar em
+    background e ler o log capturado, ou usar `deploymentLogs` via GraphQL
+    direto, que é o que a seção "WhatsApp (WAHA) → Depurar" usa).
 
 ## Arquivos de deploy
 
@@ -102,6 +130,9 @@ expor a API publicamente nem configurar CORS.
 - `labelle_proxy/Caddyfile` + `Dockerfile` (`FROM caddy:2-alpine`) — só
   encaminha `/admin*`, `/live*`, `/sign-in*`, `/auth*`, `/assets*` e a raiz
   exata (`/`) pro `labelle_back` interno; qualquer outro path dá 404
+- `labelle_waha` não tem arquivo de deploy próprio neste repo — é só a
+  imagem `devlikeapro/waha:latest` configurada direto no Railway (variáveis
+  de ambiente + volume), sem Dockerfile nem pasta de código.
 
 ## Variáveis de ambiente
 
@@ -110,6 +141,13 @@ expor a API publicamente nem configurar CORS.
 - `SECRET_KEY_BASE`, `TOKEN_SIGNING_SECRET` — gerados com `mix phx.gen.secret`
 - `PHX_HOST` = `labelleback.railway.internal`
 - `PORT` — injetado automaticamente pelo Railway (8080)
+- `WAHA_BASE_URL` = `http://labellewaha.railway.internal:8080`
+- `WAHA_API_KEY` — a mesma chave (texto plano) usada pra gerar o hash em
+  `labelle_waha` (ver abaixo)
+- `WAHA_SESSION` = `default`
+- Se `WAHA_BASE_URL` não estiver setada, o adapter de WhatsApp cai em
+  `NotConfigured` (`config/config.exs`) — nada quebra, só não envia mensagem
+  de verdade (ver `lib/labelle_back/messaging/whats_app.ex`).
 
 **labelle_front**:
 - `LABELLE_API_URL` = `http://${{labelle_back.RAILWAY_PRIVATE_DOMAIN}}:8080`
@@ -118,7 +156,80 @@ expor a API publicamente nem configurar CORS.
 **labelle_proxy**: nenhuma variável própria — o hostname interno do backend
 está hardcoded no `Caddyfile` (`labelleback.railway.internal:8080`).
 
+**labelle_waha**:
+- `WAHA_API_KEY` = `sha512:<hash>` (nunca a chave em texto plano aqui — só o
+  hash; a chave em texto plano vai pro `labelle_back`)
+- `WHATSAPP_DEFAULT_ENGINE` = `WEBJS`
+- `WHATSAPP_RESTART_ALL_SESSIONS` = `true` (retoma sozinho a sessão pareada
+  se o container reiniciar, contanto que o volume esteja intacto)
+- Volume persistente montado em `/app/.sessions` — sem isso a sessão pareada
+  (QR code escaneado) some a cada redeploy/restart.
+
+## WhatsApp (WAHA)
+
+### Provisionar o serviço (uma vez só)
+
+```bash
+script -q /dev/null railway add --service labelle_waha \
+  --image devlikeapro/waha:latest \
+  --variables "WHATSAPP_DEFAULT_ENGINE=WEBJS" \
+  --variables "WHATSAPP_RESTART_ALL_SESSIONS=true"
+
+KEY=$(openssl rand -hex 32)
+HASH=$(printf '%s' "$KEY" | openssl dgst -sha512 -hex | sed 's/^.* //')
+railway variables --service labelle_waha --set "WAHA_API_KEY=sha512:${HASH}" --skip-deploys
+railway variables --service labelle_back --set "WAHA_BASE_URL=http://labellewaha.railway.internal:8080" --skip-deploys
+railway variables --service labelle_back --set "WAHA_API_KEY=${KEY}" --skip-deploys
+railway variables --service labelle_back --set "WAHA_SESSION=default" --skip-deploys
+```
+
+O volume em `/app/.sessions` precisa ser criado via GraphQL (`railway volume
+add` dá panic nessa versão do CLI — ver pegadinha 14):
+
+```bash
+TOKEN=$(cat ~/.railway/config.json | python3 -c "import json,sys; print(json.load(sys.stdin)['user']['token'])")
+curl -s -X POST https://backboard.railway.com/graphql/v2 \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"query": "mutation($input: VolumeCreateInput!) { volumeCreate(input: $input) { id name } }", "variables": {"input": {"projectId": "<project-id>", "environmentId": "<env-id>", "serviceId": "<labelle_waha-service-id>", "mountPath": "/app/.sessions"}}}'
+```
+
+Redeploy o `labelle_waha` depois de criar o volume/variáveis, e o
+`labelle_back` depois de apontar `WAHA_BASE_URL`/`WAHA_API_KEY`:
+
+```bash
+railway redeploy --service labelle_waha --yes
+railway redeploy --service labelle_back --yes
+```
+
+### Parear/reparear o número
+
+Não é feito por CLI — é pela própria tela **Configurações** do app
+(painel "Conexão WhatsApp da empresa"), logado como admin:
+1. Botão **Gerar QR code** → escaneia com o WhatsApp do celular da empresa
+   (Aparelhos conectados → Conectar um aparelho).
+2. Pra trocar de número: botão **Desparear** primeiro, depois gerar um QR
+   code novo.
+
+O painel consulta o status sob demanda (sem polling automático) — não há
+webhook de "caiu a conexão" no WAHA; se a sessão desconectar sozinha, só se
+percebe voltando nessa tela.
+
+### Depurar
+
+Logs do WAHA via GraphQL (ver pegadinha 17 sobre streaming de log da CLI):
+
+```bash
+TOKEN=$(cat ~/.railway/config.json | python3 -c "import json,sys; print(json.load(sys.stdin)['user']['token'])")
+curl -s -X POST https://backboard.railway.com/graphql/v2 \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"query": "query { deploymentLogs(deploymentId: \"<deployment-id>\", limit: 500) { message timestamp } }"}'
+```
+
 ## Redeployar depois de uma mudança de código
+
+`labelle_waha` não entra nesse fluxo — não tem código nosso pra mudar. Só se
+redeploya ele quando muda variável/volume (`railway redeploy --service
+labelle_waha --yes`, ver seção "WhatsApp (WAHA)" acima).
 
 ```bash
 # backend

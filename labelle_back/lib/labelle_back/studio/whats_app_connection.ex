@@ -38,6 +38,7 @@ defmodule LabelleBack.Studio.WhatsAppConnection do
   # Traduz os erros do adapter Waha (átomos/tuplas internos) numa mensagem
   # legível, senão viram um 500 opaco no JSON:API — o `run` de uma generic
   # action só tem tratamento correto pra `{:ok, _}` / `{:error, _}`.
+  defp wrap(:ok), do: :ok
   defp wrap({:ok, _} = ok), do: ok
   defp wrap({:error, reason}), do: {:error, friendly_error(reason)}
 

@@ -142,8 +142,14 @@ defmodule LabelleBack.Messaging.WhatsApp.Waha do
     end
   end
 
-  defp session_missing?(%{"error" => error}) when is_binary(error),
-    do: String.contains?(error, "does not exist")
+  # A mensagem de "sessão não existe" varia por endpoint/versão do WAHA —
+  # já vimos `{"error": "... does not exist"}` (POST QR) e
+  # `{"error": "Not Found", "message": "Session not found", "statusCode": 404}`
+  # (GET status), então checa os dois campos.
+  defp session_missing?(%{} = body) do
+    text = "#{body["error"]} #{body["message"]}" |> String.downcase()
+    String.contains?(text, "does not exist") or String.contains?(text, "not found")
+  end
 
   defp session_missing?(_), do: false
 

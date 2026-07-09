@@ -53,7 +53,10 @@ defmodule LabelleBack.Messaging.WhatsApp.Waha do
   QR code atual (base64) para parear a sessão com um novo número. Cria e
   inicia a sessão no WAHA se ela ainda não existir (primeiro uso), e espera
   o status chegar em `SCAN_QR_CODE` — o WEBJS sobe um Chromium headless por
-  trás, então essa transição não é instantânea.
+  trás, então essa transição não é instantânea. Se a sessão estiver `FAILED`
+  (o Chromium por trás do WEBJS pode cair, geralmente após um logout), ela é
+  descartada e recriada do zero antes de esperar o QR — só reiniciar
+  (`/start`) uma sessão `FAILED` não a recupera.
   """
   def qr_code do
     with :ok <- ensure_session(),
@@ -76,6 +79,19 @@ defmodule LabelleBack.Messaging.WhatsApp.Waha do
   end
 
   defp ensure_session do
+    case status() do
+      {:ok, %{"status" => "FAILED"}} ->
+        with :ok <- delete_session(), do: create_session()
+
+      {:ok, _status} ->
+        create_session()
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp create_session do
     case request(:post, "/api/sessions", json: %{name: session(), start: true}) do
       {:ok, %{status: status}} when status in 200..299 ->
         :ok
@@ -91,6 +107,16 @@ defmodule LabelleBack.Messaging.WhatsApp.Waha do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp delete_session do
+    case request(:delete, "/api/sessions/#{session()}") do
+      {:ok, %{status: status}} when status in 200..299 -> :ok
+      # Já não existe — segue o baile, `create_session/0` recria.
+      {:ok, %{status: 404}} -> :ok
+      {:ok, %{status: status, body: body}} -> {:error, {:waha_http_error, status, body}}
+      {:error, reason} -> {:error, reason}
     end
   end
 

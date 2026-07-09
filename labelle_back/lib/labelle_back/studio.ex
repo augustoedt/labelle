@@ -64,6 +64,7 @@ defmodule LabelleBack.Studio do
         index :read
         patch :mark_sent, route: "/:id/mark_sent"
         patch :cancel, route: "/:id/cancel"
+        patch :deliver, route: "/:id/deliver"
       end
 
       base_route "/products", LabelleBack.Studio.Product do

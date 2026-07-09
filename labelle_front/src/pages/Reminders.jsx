@@ -29,9 +29,9 @@ const statusColors = {
 };
 
 // Lembretes pós-atendimento gerados automaticamente pelo backend (20 dias
-// após o último atendimento + reativação a cada 45 dias). Enquanto não há
-// provedor de WhatsApp integrado, a equipe envia daqui pelo wa.me e marca
-// como enviado; quando houver, o envio passa a ser automático.
+// após o último atendimento + reativação a cada 45 dias). O botão "Enviar
+// WhatsApp" tenta o envio automático pelo WhatsApp da empresa (WAHA); se não
+// há provedor conectado, ou o envio falha, cai pro link wa.me manual.
 export default function Reminders() {
   const [statusFilter, setStatusFilter] = useState("pendente");
   const queryClient = useQueryClient();
@@ -53,11 +53,17 @@ export default function Reminders() {
     onSuccess: invalidate,
   });
 
+  const deliverMutation = useMutation({
+    mutationFn: (reminder) => RemindersApi.deliver({ id: reminder.id }),
+    onSuccess: invalidate,
+    onError: (_error, reminder) => sendWhatsApp(reminder.client_phone, reminder.message),
+  });
+
   const filtered = reminders.filter((r) => (statusFilter === "todos" ? true : r.status === statusFilter));
   const pendingCount = reminders.filter((r) => r.status === "pendente").length;
 
   const handleSend = (reminder) => {
-    sendWhatsApp(reminder.client_phone, reminder.message);
+    deliverMutation.mutate(reminder);
   };
 
   return (
@@ -120,6 +126,7 @@ export default function Reminders() {
                   <Button
                     size="sm"
                     className="h-8 text-xs rounded-lg gap-1"
+                    disabled={deliverMutation.isPending && deliverMutation.variables?.id === reminder.id}
                     onClick={() => handleSend(reminder)}
                   >
                     <MessageCircle className="w-3 h-3" /> Enviar WhatsApp

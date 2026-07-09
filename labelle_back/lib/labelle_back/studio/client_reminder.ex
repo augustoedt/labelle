@@ -7,9 +7,12 @@ defmodule LabelleBack.Studio.ClientReminder do
   - `:reengajamento` — a cada 45 dias depois do último lembrete enviado,
     enquanto o cliente não fizer um novo serviço.
 
-  Enquanto não houver provedor de WhatsApp integrado (ver
-  `LabelleBack.Messaging.WhatsApp`), os lembretes ficam `:pendente` e a
-  equipe envia manualmente pelo front (wa.me) marcando como enviado.
+  Enquanto não há provedor de WhatsApp conectado (ver
+  `LabelleBack.Messaging.WhatsApp`), ou o botão "Enviar WhatsApp" do front
+  falha, os lembretes ficam `:pendente` e a equipe envia manualmente pelo
+  wa.me marcando como enviado. Com o provedor conectado, `deliver_pending`
+  (job diário) e a action `:deliver` (sob demanda, pelo botão) enviam
+  sozinhos.
   """
 
   use Ash.Resource,
@@ -76,6 +79,12 @@ defmodule LabelleBack.Studio.ClientReminder do
 
     update :cancel do
       change set_attribute(:status, :cancelado)
+    end
+
+    update :deliver do
+      require_atomic? false
+
+      change LabelleBack.Studio.Changes.DeliverReminder
     end
 
     action :generate_due, :integer do

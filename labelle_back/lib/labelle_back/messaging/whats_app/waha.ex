@@ -69,7 +69,9 @@ defmodule LabelleBack.Messaging.WhatsApp.Waha do
           {:error, :session_failed}
 
         "SCAN_QR_CODE" ->
-          case request(:get, "/api/#{session()}/auth/qr", headers: [{"accept", "application/json"}]) do
+          case request(:get, "/api/#{session()}/auth/qr",
+                 headers: [{"accept", "application/json"}]
+               ) do
             {:ok, %{status: 200, body: body}} -> {:ok, body}
             {:ok, %{status: status, body: body}} -> {:error, {:waha_http_error, status, body}}
             {:error, reason} -> {:error, reason}
@@ -92,7 +94,9 @@ defmodule LabelleBack.Messaging.WhatsApp.Waha do
   end
 
   defp create_session do
-    case request(:post, "/api/sessions", json: %{name: session(), start: true}) do
+    body = %{name: session(), start: true} |> maybe_put_webhook_config()
+
+    case request(:post, "/api/sessions", json: body) do
       {:ok, %{status: status}} when status in 200..299 ->
         :ok
 
@@ -109,6 +113,47 @@ defmodule LabelleBack.Messaging.WhatsApp.Waha do
         {:error, reason}
     end
   end
+
+  @doc """
+  Atualiza a configuração de webhooks da sessão atual (já pareada ou não) —
+  `PUT /api/sessions/:id` não exige rescanear o QR code, ao contrário de
+  recriar a sessão. Usado pra ligar (ou religar, se a URL mudar) o
+  `WahaWebhookController` numa sessão que já existe.
+  """
+  def configure_webhook do
+    case webhook_url() do
+      nil ->
+        {:error, :webhook_not_configured}
+
+      _url ->
+        body = %{name: session()} |> maybe_put_webhook_config()
+
+        case request(:put, "/api/sessions/#{session()}", json: body) do
+          {:ok, %{status: status}} when status in 200..299 ->
+            :ok
+
+          {:ok, %{status: status, body: resp_body}} ->
+            {:error, {:waha_http_error, status, resp_body}}
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+    end
+  end
+
+  defp maybe_put_webhook_config(body) do
+    case webhook_url() do
+      nil ->
+        body
+
+      url ->
+        Map.put(body, :config, %{
+          webhooks: [%{url: url, events: ["message", "message.ack", "session.status"]}]
+        })
+    end
+  end
+
+  defp webhook_url, do: config()[:webhook_url]
 
   defp delete_session do
     case request(:delete, "/api/sessions/#{session()}") do

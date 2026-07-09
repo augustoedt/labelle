@@ -73,6 +73,12 @@ defmodule LabelleBackWeb.Router do
     post "/settings", ClientController, :settings
   end
 
+  scope "/api/webhooks", LabelleBackWeb.Api do
+    pipe_through [:api_public]
+
+    post "/waha", WahaWebhookController, :create
+  end
+
   scope "/", LabelleBackWeb do
     pipe_through :browser
 

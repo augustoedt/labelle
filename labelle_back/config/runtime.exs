@@ -81,7 +81,14 @@ if config_env() == :prod do
       api_key:
         System.get_env("WAHA_API_KEY") ||
           raise("Missing environment variable `WAHA_API_KEY`!"),
-      session: System.get_env("WAHA_SESSION") || "default"
+      session: System.get_env("WAHA_SESSION") || "default",
+      # WAHA roda como outro serviço no mesmo projeto Railway — chama esse
+      # endpoint pela rede privada (`RAILWAY_PRIVATE_DOMAIN` é injetado pelo
+      # próprio Railway com o domínio interno deste serviço).
+      webhook_url:
+        if(private_domain = System.get_env("RAILWAY_PRIVATE_DOMAIN"),
+          do: "http://#{private_domain}:#{System.get_env("PORT", "4000")}/api/webhooks/waha"
+        )
   end
 
   # ## SSL Support

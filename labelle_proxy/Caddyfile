@@ -56,11 +56,16 @@
 
 	# WAHA's admin dashboard (session status, QR code, etc.), gated by its
 	# own HTTP Basic Auth (WAHA_DASHBOARD_USERNAME/PASSWORD on labelle_waha).
-	# Deliberately NOT forwarding /api/* here — that's the same API that can
-	# log out the company's number or send messages, and today only
-	# labelle_back can reach it over the private network. Some dashboard
-	# features that call the API from the browser may not work.
 	handle /dashboard* {
+		reverse_proxy labellewaha.railway.internal:8080 {
+			header_up Host labellewaha.railway.internal
+		}
+	}
+
+	# WAHA's own REST API (session management, sendText...), so the
+	# dashboard above can call it from the browser. Gated by WAHA's
+	# x-api-key, not by anything this proxy enforces.
+	handle /api/* {
 		reverse_proxy labellewaha.railway.internal:8080 {
 			header_up Host labellewaha.railway.internal
 		}

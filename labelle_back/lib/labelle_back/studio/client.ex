@@ -58,6 +58,16 @@ defmodule LabelleBack.Studio.Client do
 
       change LabelleBack.Studio.Changes.NormalizePhone
     end
+
+    action :upsert_from_booking, :struct do
+      description "Upsert de cliente a partir de agendamento online (app público)."
+      constraints instance_of: __MODULE__
+
+      argument :name, :string, allow_nil?: false
+      argument :phone, :string, allow_nil?: false
+
+      run LabelleBack.Studio.Actions.UpsertClientFromBooking
+    end
   end
 
   policies do

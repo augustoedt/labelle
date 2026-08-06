@@ -8,15 +8,15 @@ defmodule LabelleBack.Studio.Reminders.Messages do
   gerados.
   """
 
-  alias LabelleBack.Studio.Settings
+  alias LabelleBack.Studio
 
   def build(:agradecimento, client_name) do
-    settings = Settings.current!(authorize?: false)
+    settings = Studio.current_settings!(authorize?: false)
     render(settings.message_thank_you, settings, client_name)
   end
 
   def build(:reengajamento, client_name) do
-    settings = Settings.current!(authorize?: false)
+    settings = Studio.current_settings!(authorize?: false)
     render(settings.message_reengagement, settings, client_name)
   end
 

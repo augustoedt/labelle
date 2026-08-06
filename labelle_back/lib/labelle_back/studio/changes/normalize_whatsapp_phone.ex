@@ -8,7 +8,7 @@ defmodule LabelleBack.Studio.Changes.NormalizeWhatsappPhone do
         changeset
 
       phone ->
-        normalized = String.replace(phone, ~r/\D/, "")
+        normalized = LabelleBack.Studio.Changes.NormalizePhone.normalize(phone)
         Ash.Changeset.force_change_attribute(changeset, :whatsapp_phone, normalized)
     end
   end

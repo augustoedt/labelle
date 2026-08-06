@@ -26,10 +26,6 @@ defmodule LabelleBack.Studio.Settings do
     type "studio_settings"
   end
 
-  code_interface do
-    define :current, action: :read
-  end
-
   actions do
     read :read do
       primary? true

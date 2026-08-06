@@ -139,6 +139,27 @@ defmodule LabelleBack.Studio.Appointment do
 
       change {LabelleBack.Studio.Changes.SendWhatsAppMessage, kind: :reminder}
     end
+
+    read :by_client_phone do
+      description "Agendamentos da cliente pelo telefone, mais recentes primeiro (máx. 200)."
+
+      argument :phone, :string, allow_nil?: false
+
+      prepare LabelleBack.Studio.Preparations.FilterAppointmentsByClientPhone
+      prepare build(sort: [date: :desc], limit: 200)
+    end
+
+    action :available_slots, {:array, :string} do
+      description "Horários livres da profissional na data (grade de 30 min)."
+
+      argument :professional_id, :uuid, allow_nil?: false
+      argument :date, :date, allow_nil?: false
+      argument :duration_minutes, :integer
+      argument :work_start, :string
+      argument :work_end, :string
+
+      run LabelleBack.Studio.Actions.ComputeAvailableSlots
+    end
   end
 
   policies do

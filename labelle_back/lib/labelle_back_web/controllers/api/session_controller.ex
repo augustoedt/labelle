@@ -4,10 +4,9 @@ defmodule LabelleBackWeb.Api.SessionController do
   alias LabelleBack.Accounts
 
   def create(conn, %{"email" => email, "password" => password}) do
-    Accounts.User
-    |> Ash.Query.for_read(:sign_in_with_password, %{email: email, password: password})
-    |> Ash.read_one(authorize?: false)
-    |> case do
+    # Endpoint público de login: ainda não existe actor, por isso o
+    # authorize?: false — a strategy de password valida as credenciais.
+    case Accounts.sign_in_with_password(email, password, authorize?: false) do
       {:ok, user} when not is_nil(user) ->
         json(conn, %{
           token: user.__metadata__.token,

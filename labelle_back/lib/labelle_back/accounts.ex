@@ -18,6 +18,11 @@ defmodule LabelleBack.Accounts do
 
   resources do
     resource LabelleBack.Accounts.Token
-    resource LabelleBack.Accounts.User
+
+    resource LabelleBack.Accounts.User do
+      define :sign_in_with_password,
+        action: :sign_in_with_password,
+        args: [:email, :password]
+    end
   end
 end

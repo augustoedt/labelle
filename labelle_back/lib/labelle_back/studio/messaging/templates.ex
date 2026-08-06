@@ -10,23 +10,24 @@ defmodule LabelleBack.Studio.Messaging.Templates do
   não misturar as duas responsabilidades.
   """
 
+  alias LabelleBack.Studio
   alias LabelleBack.Studio.Settings
 
   @weekdays ~w(segunda-feira terça-feira quarta-feira quinta-feira sexta-feira sábado domingo)
   @months ~w(janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro)
 
   def render(:confirmation, appointment) do
-    settings = Settings.current!(authorize?: false)
+    settings = Studio.current_settings!(authorize?: false)
     {:ok, render_template(settings.message_confirmation, settings, appointment)}
   end
 
   def render(:reminder, appointment) do
-    settings = Settings.current!(authorize?: false)
+    settings = Studio.current_settings!(authorize?: false)
     {:ok, render_template(settings.message_reminder, settings, appointment)}
   end
 
   def render(:new_booking_notification, appointment) do
-    settings = Settings.current!(authorize?: false)
+    settings = Studio.current_settings!(authorize?: false)
     {:ok, render_template(settings.message_new_booking_notification, settings, appointment)}
   end
 

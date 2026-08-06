@@ -54,16 +54,16 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
         const res = await upsertClient({ data: { name: data.client_name, phone: data.client_phone } });
         client_id = res?.client_id || null;
       } catch (_) { /* falha silenciosa — agendamento segue sem client_id */ }
-      return AppointmentsApi.create({ data: { ...data, ...(client_id ? { client_id } : {}) } });
+      return AppointmentsApi.bookOnline({ data: { ...data, ...(client_id ? { client_id } : {}) } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client-appointments"] });
       queryClient.invalidateQueries({ queryKey: ["slots"] });
       onSaveClient(formName, formPhone);
       // A confirmação de recebimento agora é enviada automaticamente pelo
-      // backend (WhatsApp da empresa via WAHA, action :create do
-      // Appointment com source "online") direto pra cliente — não abre
-      // mais o WhatsApp dela pra ela mesma mandar mensagem pro estúdio.
+      // backend (WhatsApp da empresa via WAHA, action :book_online do
+      // Appointment) direto pra cliente — não abre mais o WhatsApp dela
+      // pra ela mesma mandar mensagem pro estúdio.
       setStep(5);
     },
   });
@@ -73,15 +73,14 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
   const availableDates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
 
   const handleBook = () => {
-    const promo = getPromotion(selectedService.id);
-    let price = selectedService.price;
-    if (promo) price = promo.discount_type === "percent" ? price * (1 - promo.discount_value / 100) : price - promo.discount_value;
+    // Preço, duração, status e origem são calculados no backend (action
+    // :book_online, que aplica a promoção ativa do serviço) — o app só
+    // envia a identificação da cliente e o que ela escolheu.
     createMutation.mutate({
       client_name: formName, client_phone: formPhone,
-      professional_id: selectedProfessional.id, professional_name: selectedProfessional.name,
-      service_id: selectedService.id, service_name: selectedService.name,
+      professional_id: selectedProfessional.id,
+      service_id: selectedService.id,
       date: format(selectedDate, "yyyy-MM-dd"), time: selectedTime,
-      duration_minutes: selectedService.duration_minutes, price, status: "agendado", source: "online",
     });
   };
 

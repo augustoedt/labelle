@@ -44,6 +44,7 @@ defmodule LabelleBack.Studio do
         get :read
         index :read
         post :create
+        post :book_online, route: "/book_online"
         patch :update
         patch :finalize, route: "/:id/finalize"
         patch :confirm, route: "/:id/confirm"

@@ -41,8 +41,11 @@ defmodule LabelleBack.Studio.AppointmentService do
   end
 
   policies do
+    # Fechado: o preço do item entra no total cobrado no finalize, então
+    # criar item é restrito a admin ou à profissional dona do atendimento.
     policy action_type(:create) do
-      authorize_if always()
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if LabelleBack.Studio.Checks.ActorIsServiceItemProfessional
     end
 
     policy action_type([:read, :update, :destroy]) do

@@ -45,6 +45,29 @@ defmodule LabelleBack.Studio.Appointment do
       end
     end
 
+    # Agendamento feito pela cliente no app público (sem login). Accept
+    # mínimo de propósito: status, preço, duração e origem NUNCA vêm do
+    # cliente — o servidor trava o status em :agendado, força source
+    # :online e calcula preço/duração a partir do serviço (+ promoção
+    # ativa), então um anônimo não consegue criar agendamento "concluído"
+    # nem com preço arbitrário.
+    create :book_online do
+      accept [
+        :client_id,
+        :client_name,
+        :client_phone,
+        :professional_id,
+        :service_id,
+        :date,
+        :time
+      ]
+
+      change set_attribute(:source, :online)
+      change LabelleBack.Studio.Changes.SnapshotAppointmentFields
+      change LabelleBack.Studio.Changes.ApplyActivePromotion
+      change {LabelleBack.Studio.Changes.SendWhatsAppMessage, kind: :new_booking_notification}
+    end
+
     update :update do
       require_atomic? false
 
@@ -93,8 +116,15 @@ defmodule LabelleBack.Studio.Appointment do
   end
 
   policies do
-    policy action_type(:create) do
+    # Única porta de entrada anônima: a action pública de accept mínimo.
+    policy action(:book_online) do
       authorize_if always()
+    end
+
+    # Criação manual: recepção (admin) ou a própria profissional.
+    policy action(:create) do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if LabelleBack.Studio.Checks.ActorIsAppointmentProfessional
     end
 
     policy action_type([:read, :update]) do

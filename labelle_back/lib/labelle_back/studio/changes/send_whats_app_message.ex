@@ -1,9 +1,13 @@
 defmodule LabelleBack.Studio.Changes.SendWhatsAppMessage do
   @moduledoc """
-  Envia, após o update ter sucesso, a mensagem de confirmação ou lembrete de
-  horário para o cliente a partir do WhatsApp da empresa. Uma falha de envio
-  não derruba o update do agendamento — só fica registrada em log, do mesmo
-  jeito que `Reminders.DeliverPending` trata falhas do job de 20/45 dias.
+  Envia a mensagem de confirmação ou lembrete de horário para o cliente a
+  partir do WhatsApp da empresa. Uma falha de envio não derruba o update do
+  agendamento — só fica registrada em log, do mesmo jeito que
+  `Reminders.DeliverPending` trata falhas do job de 20/45 dias.
+
+  Roda em `after_transaction` (não `after_action`): a chamada HTTP ao WAHA
+  acontece DEPOIS do commit, então uma lentidão do provedor nunca segura a
+  transação do banco aberta. Se a transação falhar, nenhuma mensagem sai.
   """
 
   use Ash.Resource.Change
@@ -15,9 +19,12 @@ defmodule LabelleBack.Studio.Changes.SendWhatsAppMessage do
 
   @impl true
   def change(changeset, opts, _context) do
-    Ash.Changeset.after_action(changeset, fn _changeset, appointment ->
-      send_message(appointment, Keyword.fetch!(opts, :kind))
-      {:ok, appointment}
+    Ash.Changeset.after_transaction(changeset, fn _changeset, result ->
+      with {:ok, appointment} <- result do
+        send_message(appointment, Keyword.fetch!(opts, :kind))
+      end
+
+      result
     end)
   end
 

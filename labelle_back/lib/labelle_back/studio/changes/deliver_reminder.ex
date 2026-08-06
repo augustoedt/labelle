@@ -4,6 +4,10 @@ defmodule LabelleBack.Studio.Changes.DeliverReminder do
   sob demanda — acionado pelo botão "Enviar WhatsApp" em Lembretes, fora do
   job diário `Reminders.DeliverPending`. Sem provedor configurado, ou se o
   envio falhar, retorna erro e o front cai de volta pro link wa.me manual.
+
+  Roda em `before_transaction` (não `before_action`): a chamada HTTP ao
+  WAHA acontece ANTES da transação abrir — o resultado do envio decide se a
+  ação prossegue, sem segurar a transação do banco aberta durante a rede.
   """
 
   use Ash.Resource.Change
@@ -12,7 +16,7 @@ defmodule LabelleBack.Studio.Changes.DeliverReminder do
 
   @impl true
   def change(changeset, _opts, _context) do
-    Ash.Changeset.before_action(changeset, &deliver/1)
+    Ash.Changeset.before_transaction(changeset, &deliver/1)
   end
 
   defp deliver(changeset) do

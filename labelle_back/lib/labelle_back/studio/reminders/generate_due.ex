@@ -9,6 +9,10 @@ defmodule LabelleBack.Studio.Reminders.GenerateDue do
   - nenhum lembrete no ciclo e 20+ dias desde o atendimento → `:agradecimento`;
   - último lembrete do ciclo enviado há 45+ dias sem novo serviço → `:reengajamento`;
   - lembrete pendente no ciclo → aguarda (não acumula).
+
+  Implementação em lote: 3 queries no total (clientes, agendamentos
+  relevantes e lembretes em aberto/ciclo, agrupados por cliente em
+  memória) em vez de 3-4 queries POR cliente.
   """
 
   use Ash.Resource.Actions.Implementation
@@ -20,37 +24,62 @@ defmodule LabelleBack.Studio.Reminders.GenerateDue do
 
   @days_until_thanks 20
   @days_between_reengagements 45
+  @open_statuses [:agendado, :confirmado, :em_atendimento]
 
   @impl true
   def run(_input, _opts, _context) do
     today = Date.utc_today()
 
-    created =
+    clients =
       Client
       |> Ash.Query.filter(is_active == true and not is_nil(phone))
       |> Ash.read!(authorize?: false)
-      |> Enum.count(&process_client(&1, today))
+
+    client_ids = Enum.map(clients, & &1.id)
+
+    appointments_by_client =
+      Appointment
+      |> Ash.Query.filter(client_id in ^client_ids)
+      |> Ash.Query.filter(status == :concluido or (status in ^@open_statuses and date >= ^today))
+      |> Ash.read!(authorize?: false)
+      |> Enum.group_by(& &1.client_id)
+
+    reminders_by_client =
+      ClientReminder
+      |> Ash.Query.filter(client_id in ^client_ids and status in [:pendente, :enviado, :falhou])
+      |> Ash.read!(authorize?: false)
+      |> Enum.group_by(& &1.client_id)
+
+    created =
+      Enum.count(clients, fn client ->
+        process_client(
+          client,
+          Map.get(appointments_by_client, client.id, []),
+          Map.get(reminders_by_client, client.id, []),
+          today
+        )
+      end)
 
     {:ok, created}
   end
 
-  defp process_client(client, today) do
-    case last_concluded_date(client) do
+  defp process_client(client, appointments, reminders, today) do
+    case last_concluded_date(appointments) do
       nil ->
         false
 
       last_done ->
-        if rebooked?(client, today) do
-          cancel_pending(client)
+        if rebooked?(appointments, today) do
+          cancel_pending(reminders)
           false
         else
-          maybe_create(client, last_done, today)
+          maybe_create(client, reminders, last_done, today)
         end
     end
   end
 
-  defp maybe_create(client, last_done, today) do
-    case latest_reminder_in_cycle(client, last_done) do
+  defp maybe_create(client, reminders, last_done, today) do
+    case latest_reminder_in_cycle(reminders, last_done) do
       nil ->
         if Date.diff(today, last_done) >= @days_until_thanks do
           create_reminder(client, :agradecimento, today)
@@ -93,46 +122,38 @@ defmodule LabelleBack.Studio.Reminders.GenerateDue do
     true
   end
 
-  defp last_concluded_date(client) do
-    Appointment
-    |> Ash.Query.filter(client_id == ^client.id and status == :concluido)
-    |> Ash.Query.sort(date: :desc)
-    |> Ash.Query.limit(1)
-    |> Ash.read!(authorize?: false)
+  defp last_concluded_date(appointments) do
+    appointments
+    |> Enum.filter(&(&1.status == :concluido))
+    |> Enum.max_by(& &1.date, Date, fn -> nil end)
     |> case do
-      [%{date: date} | _] -> date
-      [] -> nil
+      nil -> nil
+      appointment -> appointment.date
     end
   end
 
-  defp rebooked?(client, today) do
-    Appointment
-    |> Ash.Query.filter(
-      client_id == ^client.id and
-        status in [:agendado, :confirmado, :em_atendimento] and
-        date >= ^today
-    )
-    |> Ash.Query.limit(1)
-    |> Ash.read!(authorize?: false) != []
+  defp rebooked?(appointments, today) do
+    Enum.any?(appointments, fn appointment ->
+      appointment.status in @open_statuses and Date.compare(appointment.date, today) != :lt
+    end)
   end
 
-  defp latest_reminder_in_cycle(client, last_done) do
-    ClientReminder
-    |> Ash.Query.filter(
-      client_id == ^client.id and
-        due_date >= ^last_done and
-        status in [:pendente, :enviado, :falhou]
-    )
-    |> Ash.Query.sort(due_date: :desc, inserted_at: :desc)
-    |> Ash.Query.limit(1)
-    |> Ash.read!(authorize?: false)
+  defp latest_reminder_in_cycle(reminders, last_done) do
+    reminders
+    |> Enum.filter(&(Date.compare(&1.due_date, last_done) != :lt))
+    |> Enum.sort(fn a, b ->
+      case Date.compare(a.due_date, b.due_date) do
+        :eq -> DateTime.compare(a.inserted_at, b.inserted_at) == :gt
+        :gt -> true
+        :lt -> false
+      end
+    end)
     |> List.first()
   end
 
-  defp cancel_pending(client) do
-    ClientReminder
-    |> Ash.Query.filter(client_id == ^client.id and status == :pendente)
-    |> Ash.read!(authorize?: false)
+  defp cancel_pending(reminders) do
+    reminders
+    |> Enum.filter(&(&1.status == :pendente))
     |> Enum.each(fn reminder ->
       reminder
       |> Ash.Changeset.for_update(:cancel, %{}, authorize?: false)

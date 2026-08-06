@@ -196,7 +196,10 @@ export default function Agenda() {
           {weekDays.map((d) => {
             const isToday = format(d, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
             const isSelected = format(d, "yyyy-MM-dd") === dateStr;
-            const hasAppts = appointments.some(a => a.date === format(d, "yyyy-MM-dd") && a.status !== "cancelado");
+            const dayAppts = appointments.filter(a => a.date === format(d, "yyyy-MM-dd"));
+            const hasAppts = dayAppts.some(a => a.status !== "cancelado");
+            // Dia só com cancelados ganha um pontinho cinza, para não parecer vazio.
+            const hasOnlyCancelled = !hasAppts && dayAppts.length > 0;
             return (
               <button
                 key={d.toISOString()}
@@ -212,6 +215,7 @@ export default function Agenda() {
                 </span>
                 <span className="text-lg font-bold">{format(d, "d")}</span>
                 {hasAppts && !isSelected && <div className="w-1 h-1 rounded-full bg-primary mt-0.5" />}
+                {hasOnlyCancelled && !isSelected && <div className="w-1 h-1 rounded-full bg-muted-foreground/40 mt-0.5" />}
               </button>
             );
           })}

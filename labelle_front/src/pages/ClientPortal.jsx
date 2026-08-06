@@ -41,7 +41,7 @@ export default function ClientPortal() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => AppointmentsApi.create({ data }),
+    mutationFn: (data) => AppointmentsApi.bookOnline({ data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       setStep(5);
@@ -97,27 +97,16 @@ export default function ClientPortal() {
   };
 
   const handleBook = () => {
-    const promo = getPromotionForService(selectedService.id);
-    let price = selectedService.price;
-    if (promo) {
-      price = promo.discount_type === "percent"
-        ? price * (1 - promo.discount_value / 100)
-        : price - promo.discount_value;
-    }
-
+    // Preço, duração, status e origem são calculados no backend (action
+    // :book_online, que aplica a promoção ativa do serviço) — o app só
+    // envia a identificação da cliente e o que ela escolheu.
     createMutation.mutate({
       client_name: clientInfo.name,
       client_phone: clientInfo.phone,
       professional_id: selectedProfessional.id,
-      professional_name: selectedProfessional.name,
       service_id: selectedService.id,
-      service_name: selectedService.name,
       date: format(selectedDate, "yyyy-MM-dd"),
       time: selectedTime,
-      duration_minutes: selectedService.duration_minutes,
-      price: price,
-      status: "agendado",
-      source: "online",
     });
   };
 

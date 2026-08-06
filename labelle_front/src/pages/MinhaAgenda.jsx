@@ -63,12 +63,8 @@ export default function MinhaAgenda() {
     queryFn: () => ClientsApi.list({ limit: 500 }),
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => AppointmentsApi.update({ id, attributes: data }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["professional-appointments"] });
-    },
-  });
+  // Confirmar, iniciar, cancelar e lembrete são transições/actions no
+  // backend — não há mais update de status solto por aqui.
 
   // Confirmar e lembrete são enviados pelo backend a partir do WhatsApp da
   // empresa (WAHA) — não abrem mais o WhatsApp pessoal de quem está logado.
@@ -81,6 +77,35 @@ export default function MinhaAgenda() {
       toast({
         variant: "destructive",
         title: "Não foi possível confirmar o agendamento",
+        description: "Tente novamente em instantes.",
+      });
+    },
+  });
+
+  // Iniciar e cancelar também são transições do state machine no backend.
+  const startMutation = useMutation({
+    mutationFn: ({ id }) => AppointmentsApi.start({ id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["professional-appointments"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Não foi possível iniciar o atendimento",
+        description: "Tente novamente em instantes.",
+      });
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: ({ id }) => AppointmentsApi.cancel({ id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["professional-appointments"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Não foi possível cancelar o agendamento",
         description: "Tente novamente em instantes.",
       });
     },
@@ -128,11 +153,15 @@ export default function MinhaAgenda() {
     return d;
   });
 
+  // O status anda só pelas transições do state machine no backend —
+  // nunca por um update com status solto.
   const handleStatusChange = (apt, newStatus) => {
     if (newStatus === "confirmado") {
       confirmMutation.mutate({ id: apt.id });
-    } else {
-      updateMutation.mutate({ id: apt.id, data: { status: newStatus } });
+    } else if (newStatus === "em_atendimento") {
+      startMutation.mutate({ id: apt.id });
+    } else if (newStatus === "cancelado") {
+      cancelMutation.mutate({ id: apt.id });
     }
   };
 

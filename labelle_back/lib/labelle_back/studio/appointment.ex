@@ -4,7 +4,7 @@ defmodule LabelleBack.Studio.Appointment do
     domain: LabelleBack.Studio,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource, AshStateMachine]
 
   postgres do
     table "appointments"
@@ -15,9 +15,25 @@ defmodule LabelleBack.Studio.Appointment do
     type "appointment"
   end
 
+  state_machine do
+    state_attribute :status
+    initial_states [:agendado]
+    default_initial_state :agendado
+
+    transitions do
+      transition :confirm, from: [:agendado], to: :confirmado
+      transition :start, from: [:agendado, :confirmado], to: :em_atendimento
+      transition :finalize, from: [:em_atendimento], to: :concluido
+      transition :cancel, from: [:agendado, :confirmado, :em_atendimento], to: :cancelado
+    end
+  end
+
   actions do
     defaults [:read, :destroy]
 
+    # Status NUNCA é aceito como input: o ciclo de vida do agendamento
+    # anda só pelas actions de transição declaradas no state_machine
+    # (confirm/start/finalize/cancel), que validam a origem.
     create :create do
       accept [
         :client_id,
@@ -29,7 +45,6 @@ defmodule LabelleBack.Studio.Appointment do
         :time,
         :duration_minutes,
         :price,
-        :status,
         :payment_method,
         :notes,
         :source
@@ -78,7 +93,6 @@ defmodule LabelleBack.Studio.Appointment do
         :time,
         :duration_minutes,
         :price,
-        :status,
         :payment_method,
         :notes
       ]
@@ -95,7 +109,7 @@ defmodule LabelleBack.Studio.Appointment do
         message "informe a forma de pagamento para finalizar o atendimento"
       end
 
-      change set_attribute(:status, :concluido)
+      change transition_state(:concluido)
       change LabelleBack.Studio.Changes.RegisterChargeOnFinalize
     end
 
@@ -103,8 +117,20 @@ defmodule LabelleBack.Studio.Appointment do
       require_atomic? false
       accept []
 
-      change set_attribute(:status, :confirmado)
+      change transition_state(:confirmado)
       change {LabelleBack.Studio.Changes.SendWhatsAppMessage, kind: :confirmation}
+    end
+
+    update :start do
+      accept []
+
+      change transition_state(:em_atendimento)
+    end
+
+    update :cancel do
+      accept []
+
+      change transition_state(:cancelado)
     end
 
     update :send_reminder do
@@ -154,6 +180,7 @@ defmodule LabelleBack.Studio.Appointment do
     attribute :price, :decimal, public?: true
 
     attribute :status, :atom do
+      allow_nil? false
       constraints one_of: [:agendado, :confirmado, :em_atendimento, :concluido, :cancelado]
       default :agendado
       public? true

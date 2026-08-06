@@ -83,19 +83,38 @@ defmodule LabelleBack.Studio.AttendanceFlowTest do
   end
 
   defp create_appointment!(client, professional, service, attrs \\ %{}) do
+    {status, attrs} = Map.pop(attrs, :status, :em_atendimento)
+
     defaults = %{
       client_id: client.id,
       client_name: client.name,
       professional_id: professional.id,
       service_id: service.id,
       date: Date.utc_today(),
-      time: ~T[10:00:00],
-      status: :em_atendimento
+      time: ~T[10:00:00]
     }
 
     Appointment
     |> Ash.Changeset.for_create(:create, Map.merge(defaults, attrs), authorize?: false)
     |> Ash.create!()
+    |> transition_to!(status)
+  end
+
+  # O status não é mais input direto: o agendamento anda pelas actions de
+  # transição do state machine, como no fluxo real.
+  defp transition_to!(appointment, :agendado), do: appointment
+
+  defp transition_to!(appointment, :em_atendimento) do
+    appointment
+    |> Ash.Changeset.for_update(:start, %{}, authorize?: false)
+    |> Ash.update!()
+  end
+
+  defp transition_to!(appointment, :concluido) do
+    appointment
+    |> transition_to!(:em_atendimento)
+    |> Ash.Changeset.for_update(:finalize, %{payment_method: :pix}, authorize?: false)
+    |> Ash.update!()
   end
 
   describe "finalize" do

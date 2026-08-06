@@ -250,6 +250,14 @@ export const confirmAppointment = createServerFn({ method: 'POST' })
 export const sendAppointmentReminder = createServerFn({ method: 'POST' })
   .validator((data: { id: string }) => data)
   .handler(({ data }) => jsonApiAction('appointments', 'appointment', data.id, 'send_reminder'))
+// Iniciar atendimento e cancelar são transições do state machine do
+// Appointment — o status nunca é enviado como atributo de update.
+export const startAppointment = createServerFn({ method: 'POST' })
+  .validator((data: { id: string }) => data)
+  .handler(({ data }) => jsonApiAction('appointments', 'appointment', data.id, 'start'))
+export const cancelAppointment = createServerFn({ method: 'POST' })
+  .validator((data: { id: string }) => data)
+  .handler(({ data }) => jsonApiAction('appointments', 'appointment', data.id, 'cancel'))
 
 export const listAppointmentServices = createServerFn({ method: 'GET' })
   .validator((data?: ListParams) => data)
@@ -339,7 +347,7 @@ export const ClientsApi = { list: wrapList(listClients), create: createClient, u
 export const ProfessionalsApi = { list: wrapList(listProfessionals), create: createProfessional, update: wrapInput(updateProfessional) }
 export const ProfessionalServicesApi = { list: wrapList(listProfessionalServices), create: createProfessionalService, delete: wrapInput(deleteProfessionalService) }
 export const ServicesApi = { list: wrapList(listServices), create: createService, update: wrapInput(updateService) }
-export const AppointmentsApi = { list: wrapList(listAppointments), create: createAppointment, bookOnline: bookAppointmentOnline, update: wrapInput(updateAppointment), finalize: wrapInput(finalizeAppointment), confirm: wrapInput(confirmAppointment), sendReminder: wrapInput(sendAppointmentReminder) }
+export const AppointmentsApi = { list: wrapList(listAppointments), create: createAppointment, bookOnline: bookAppointmentOnline, update: wrapInput(updateAppointment), finalize: wrapInput(finalizeAppointment), confirm: wrapInput(confirmAppointment), start: wrapInput(startAppointment), cancel: wrapInput(cancelAppointment), sendReminder: wrapInput(sendAppointmentReminder) }
 export const AppointmentServicesApi = { list: wrapList(listAppointmentServices), create: createAppointmentService, update: wrapInput(updateAppointmentService), delete: wrapInput(deleteAppointmentService) }
 export const RemindersApi = { list: wrapList(listClientReminders), markSent: wrapInput(markReminderSent), cancel: wrapInput(cancelReminder), deliver: wrapInput(deliverReminder) }
 export const ProductsApi = { list: wrapList(listProducts), create: createProduct, update: wrapInput(updateProduct) }

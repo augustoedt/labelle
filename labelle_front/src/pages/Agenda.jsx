@@ -89,6 +89,35 @@ export default function Agenda() {
     },
   });
 
+  // Iniciar e cancelar também são transições do state machine no backend.
+  const startMutation = useMutation({
+    mutationFn: ({ id }) => AppointmentsApi.start({ id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Não foi possível iniciar o atendimento",
+        description: "Tente novamente em instantes.",
+      });
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: ({ id }) => AppointmentsApi.cancel({ id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Não foi possível cancelar o agendamento",
+        description: "Tente novamente em instantes.",
+      });
+    },
+  });
+
   const reminderMutation = useMutation({
     mutationFn: ({ id }) => AppointmentsApi.sendReminder({ id }),
     onSuccess: () => {
@@ -115,11 +144,15 @@ export default function Agenda() {
     }
   };
 
+  // O status anda só pelas transições do state machine no backend —
+  // nunca por um update com status solto.
   const handleStatusChange = (apt, newStatus) => {
     if (newStatus === "confirmado") {
       confirmMutation.mutate({ id: apt.id });
-    } else {
-      updateMutation.mutate({ id: apt.id, data: { status: newStatus } });
+    } else if (newStatus === "em_atendimento") {
+      startMutation.mutate({ id: apt.id });
+    } else if (newStatus === "cancelado") {
+      cancelMutation.mutate({ id: apt.id });
     }
   };
 

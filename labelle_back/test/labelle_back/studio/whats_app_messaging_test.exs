@@ -105,8 +105,7 @@ defmodule LabelleBack.Studio.WhatsAppMessagingTest do
       professional_id: professional.id,
       service_id: service.id,
       date: Date.utc_today(),
-      time: ~T[10:00:00],
-      status: :agendado
+      time: ~T[10:00:00]
     }
 
     Appointment
@@ -173,7 +172,11 @@ defmodule LabelleBack.Studio.WhatsAppMessagingTest do
       professional = create_professional!(user)
       service = create_service!(%{})
       client = create_client!(%{phone: "11977776666"})
-      appointment = create_appointment!(client, professional, service, %{status: :confirmado})
+      appointment =
+        client
+        |> create_appointment!(professional, service)
+        |> Ash.Changeset.for_update(:confirm, %{}, authorize?: false)
+        |> Ash.update!()
 
       result =
         appointment

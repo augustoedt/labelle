@@ -85,7 +85,6 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
       professional_name: professional?.name || "",
       duration_minutes: selectedService?.duration_minutes || 60,
       price: selectedService?.price || 0,
-      status: appointment?.status || "agendado",
     };
     onSubmit(payload);
   };

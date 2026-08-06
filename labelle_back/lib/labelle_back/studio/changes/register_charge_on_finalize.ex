@@ -6,6 +6,9 @@ defmodule LabelleBack.Studio.Changes.RegisterChargeOnFinalize do
 
   Roda com `authorize?: false` para que o profissional consiga finalizar o
   próprio atendimento sem precisar de permissão direta sobre Transaction.
+
+  A guarda de status (só finaliza a partir de :em_atendimento) fica no
+  state machine do Appointment — esta change só cuida da cobrança.
   """
 
   use Ash.Resource.Change
@@ -14,22 +17,7 @@ defmodule LabelleBack.Studio.Changes.RegisterChargeOnFinalize do
 
   @impl true
   def change(changeset, _opts, _context) do
-    changeset
-    |> Ash.Changeset.before_action(&validate_open/1)
-    |> Ash.Changeset.after_action(&register_charge/2)
-  end
-
-  defp validate_open(changeset) do
-    case changeset.data.status do
-      status when status in [:concluido, :cancelado] ->
-        Ash.Changeset.add_error(changeset,
-          field: :status,
-          message: "atendimento #{status} não pode ser finalizado"
-        )
-
-      _ ->
-        changeset
-    end
+    Ash.Changeset.after_action(changeset, &register_charge/2)
   end
 
   defp register_charge(_changeset, appointment) do

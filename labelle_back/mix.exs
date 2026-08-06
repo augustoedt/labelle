@@ -64,6 +64,8 @@ defmodule LabelleBack.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ash_ai, "~> 0.8"},
+      {:ash_events, "~> 0.7"},
       {:phia_ui, "~> 0.1.17"},
       {:bcrypt_elixir, "~> 3.0"},
       {:picosat_elixir, "~> 0.2"},

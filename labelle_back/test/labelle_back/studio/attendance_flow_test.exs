@@ -3,6 +3,8 @@ defmodule LabelleBack.Studio.AttendanceFlowTest do
 
   require Ash.Query
 
+  alias LabelleBack.Studio
+
   alias LabelleBack.Studio.{
     Appointment,
     AppointmentService,
@@ -12,8 +14,6 @@ defmodule LabelleBack.Studio.AttendanceFlowTest do
     Service,
     Transaction
   }
-
-  alias LabelleBack.Studio.Reminders.GenerateDue
 
   setup do
     LabelleBack.Studio.Settings
@@ -215,8 +215,7 @@ defmodule LabelleBack.Studio.AttendanceFlowTest do
 
   describe "reminder generation" do
     defp run_generate_due! do
-      {:ok, count} = GenerateDue.run(nil, nil, nil)
-      count
+      Studio.generate_due_reminders!(authorize?: false)
     end
 
     test "creates thank-you reminder 20+ days after last concluded appointment" do
@@ -303,13 +302,13 @@ defmodule LabelleBack.Studio.AttendanceFlowTest do
         |> Ash.create!()
 
       # simula um lembrete enviado há 50 dias
-      import Ecto.Query
-      {:ok, uuid} = Ecto.UUID.dump(reminder.id)
-
-      from(r in "client_reminders", where: r.id == ^uuid)
-      |> LabelleBack.Repo.update_all(
-        set: [status: "enviado", sent_at: DateTime.add(DateTime.utc_now(), -50, :day)]
+      reminder
+      |> Ash.Changeset.for_update(
+        :mark_sent,
+        %{sent_at: DateTime.add(DateTime.utc_now(), -50, :day)},
+        authorize?: false
       )
+      |> Ash.update!()
 
       assert run_generate_due!() == 1
 

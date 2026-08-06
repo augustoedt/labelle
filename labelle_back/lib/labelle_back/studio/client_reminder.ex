@@ -63,8 +63,12 @@ defmodule LabelleBack.Studio.ClientReminder do
         default :manual
       end
 
+      argument :sent_at, :utc_datetime_usec do
+        default &DateTime.utc_now/0
+      end
+
       change set_attribute(:status, :enviado)
-      change set_attribute(:sent_at, &DateTime.utc_now/0)
+      change atomic_update(:sent_at, expr(^arg(:sent_at)))
       change atomic_update(:sent_via, expr(^arg(:sent_via)))
     end
 

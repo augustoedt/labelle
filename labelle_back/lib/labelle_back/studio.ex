@@ -136,7 +136,10 @@ defmodule LabelleBack.Studio do
     end
 
     resource LabelleBack.Studio.AppointmentService
-    resource LabelleBack.Studio.ClientReminder
+
+    resource LabelleBack.Studio.ClientReminder do
+      define :generate_due_reminders, action: :generate_due
+    end
     resource LabelleBack.Studio.Product
     resource LabelleBack.Studio.Promotion
     resource LabelleBack.Studio.Transaction

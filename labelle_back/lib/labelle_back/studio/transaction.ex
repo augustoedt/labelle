@@ -9,6 +9,16 @@ defmodule LabelleBack.Studio.Transaction do
   postgres do
     table "transactions"
     repo LabelleBack.Repo
+
+    check_constraints do
+      check_constraint :status, "transactions_status_valid",
+        check: "status IN ('pendente_confirmacao', 'pagamento_parcial', 'pago', 'cancelado', 'estornado')",
+        message: "status inválido"
+
+      check_constraint :amount, "transactions_amount_non_negative",
+        check: "amount >= 0",
+        message: "o valor não pode ser negativo"
+    end
   end
 
   json_api do

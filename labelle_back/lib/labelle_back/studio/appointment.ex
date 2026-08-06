@@ -9,6 +9,21 @@ defmodule LabelleBack.Studio.Appointment do
   postgres do
     table "appointments"
     repo LabelleBack.Repo
+
+    check_constraints do
+      check_constraint :status, "appointments_status_valid",
+        check:
+          "status IN ('agendado', 'confirmado', 'em_atendimento', 'concluido', 'cancelado')",
+        message: "status inválido"
+
+      check_constraint :price, "appointments_price_non_negative",
+        check: "price >= 0",
+        message: "o preço não pode ser negativo"
+
+      check_constraint :duration_minutes, "appointments_duration_positive",
+        check: "duration_minutes > 0",
+        message: "a duração deve ser positiva"
+    end
   end
 
   json_api do

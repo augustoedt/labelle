@@ -165,6 +165,22 @@ atalho de WhatsApp (wa.me) some — o link também entregava o número. Admin v�
 número completo + WhatsApp. O telefone permanece visível nos fluxos funcionais:
 formulário de agendamento (preciso para o cadastro) e envio automático de WhatsApp.
 
+## Decisões taste + fixes mobile (sessão 2026-08-08, tarde)
+
+- **Dark mode morto removido** `4a3867a` (bloco `.dark` do CSS; next-themes já
+  tinha saído na poda). Decisão do usuário: remover.
+- **Taste v1 (vinho #6F2A38) REJEITADO pelo usuário** — os acentos quase pretos
+  `bg-foreground` do app da cliente e do Financeiro continuam como estavam
+  (item 2 do checkpoint segue pendente como decisão de produto).
+- `989810a` catálogo: cards alinhados (nome longo com line-clamp-2 + preço na base)
+  e painel de detalhe z-[60] (estava z-50, atrás da bottom nav).
+- `55e36b5` agendar (app cliente): botão flutuante "Continuar" no canto direito,
+  acima da barra inferior, visível quando há seleção (substitui os inline).
+  **Atenção**: o wrapper `fixed left-1/2 -translate-x-1/2` não pode ser o mesmo
+  elemento do motion.div (framer-motion sobrescreve o transform) — usar wrapper
+  estático + motion interno.
+- `fe949ef` guia de instalação do PWA: overlay z-[60].
+
 ## Convenções do projeto
 
 - Commit por correção, mensagens em pt-BR começando com `front:`/`back:`. **Nunca** `git push` sem pedir.

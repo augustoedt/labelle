@@ -89,6 +89,11 @@
   }
 }
 
+/* iOS safe area (bottom nav clear of the home indicator) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* Brand utility classes */
 .app-header {
   background: linear-gradient(135deg, #F28FA3 0%, #F7A6B8 100%);

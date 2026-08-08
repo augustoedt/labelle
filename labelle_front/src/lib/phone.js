@@ -19,3 +19,14 @@ export function isValidPhone(value) {
   const d = normalizePhone(value);
   return d.length === 10 || d.length === 11;
 }
+
+/**
+ * Máscara de exibição (privacidade): mantém DDD e os 4 últimos dígitos,
+ * ocultando o meio — ex.: (11) ****-0001. Usado para o profissional em
+ * telas de leitura, para não levar o número completo do cliente.
+ */
+export function maskPhoneDisplay(value) {
+  const d = normalizePhone(value);
+  if (d.length < 10) return value || "";
+  return `(${d.slice(0, 2)}) ****-${d.slice(-4)}`;
+}

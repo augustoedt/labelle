@@ -13,6 +13,7 @@ import ClientForm from "@/components/clients/ClientForm";
 import { tierColors } from "@/lib/loyaltyTiers";
 import { formatBRL } from "@/lib/format";
 import { useUser } from "@/lib/auth";
+import { maskPhoneDisplay } from "@/lib/phone";
 
 const sourceLabel = {
   app_cliente: { label: "App", icon: Smartphone, className: "text-primary" },
@@ -121,18 +122,20 @@ export default function Clients() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{client.phone}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{canEdit ? client.phone : maskPhoneDisplay(client.phone)}</p>
                 </div>
               </div>
-              <a
-                href={`https://wa.me/55${client.phone?.replace(/\D/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="p-2 rounded-lg hover:bg-secondary transition-colors"
-              >
-                <MessageCircle className="w-4 h-4 text-emerald-600" />
-              </a>
+              {canEdit && (
+                <a
+                  href={`https://wa.me/55${client.phone?.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                </a>
+              )}
             </div>
             <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground flex-wrap">
               <span>{client.visit_count || 0} visitas</span>

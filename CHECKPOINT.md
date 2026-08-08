@@ -157,6 +157,14 @@ muda só o que a permissão libera.
 - App da cliente (`/app`) e portal (`/agendar`) continuam separados (outro modelo de
   auth: token por telefone / link público).
 
+## Privacidade do telefone — `605922d`
+
+Profissional acessa `/clientes` em leitura, mas o telefone aparece mascarado
+`(11) ****-0001` (`maskPhoneDisplay` em `src/lib/phone.js`: DDD + 4 últimos) e o
+atalho de WhatsApp (wa.me) some — o link também entregava o número. Admin vê o
+número completo + WhatsApp. O telefone permanece visível nos fluxos funcionais:
+formulário de agendamento (preciso para o cadastro) e envio automático de WhatsApp.
+
 ## Convenções do projeto
 
 - Commit por correção, mensagens em pt-BR começando com `front:`/`back:`. **Nunca** `git push` sem pedir.

@@ -124,7 +124,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
       <AnimatePresence mode="wait">
         {step === 1 && (
           <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
-            <h2 className="text-lg font-heading font-semibold">Escolha o serviço</h2>
+            <h2 className="text-lg font-heading font-semibold tracking-tight">Escolha o serviço</h2>
             {isLoadingServices ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-[72px] rounded-2xl" />
@@ -144,7 +144,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
                     </div>
                     <div className="text-right">
                       {promo && <p className="text-xs line-through text-muted-foreground tabular-nums">{formatBRL(svc.price)}</p>}
-                      <p className="font-heading font-bold tabular-nums">{formatBRL(finalPrice)}</p>
+                      <p className="font-heading font-bold tracking-tight tabular-nums">{formatBRL(finalPrice)}</p>
                     </div>
                   </div>
                 </button>
@@ -157,7 +157,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
         {step === 2 && (
           <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
             <div className="flex items-center justify-between mb-1">
-              <h2 className="text-lg font-heading font-semibold">Profissional</h2>
+              <h2 className="text-lg font-heading font-semibold tracking-tight">Profissional</h2>
               <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="text-xs">Voltar</Button>
             </div>
             {isLoadingProfessionals ? (
@@ -175,7 +175,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
               <button key={prof.id} onClick={() => { setSelectedProfessional(prof); setStep(3); }}
                 className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-border/50 bg-card hover:border-foreground/30 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <div className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center">
-                  <span className="font-heading font-bold">{prof.name?.charAt(0)}</span>
+                  <span className="font-heading font-bold tracking-tight">{prof.name?.charAt(0)}</span>
                 </div>
                 <div className="text-left flex-1">
                   <p className="font-semibold text-sm">{prof.name}</p>
@@ -192,7 +192,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
         {step === 3 && (
           <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-heading font-semibold">Data e Horário</h2>
+              <h2 className="text-lg font-heading font-semibold tracking-tight">Data e Horário</h2>
               <Button variant="ghost" size="sm" onClick={() => setStep(2)} className="text-xs">Voltar</Button>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5">
@@ -237,7 +237,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
         {step === 4 && (
           <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-heading font-semibold">Confirmar agendamento</h2>
+              <h2 className="text-lg font-heading font-semibold tracking-tight">Confirmar agendamento</h2>
               <Button variant="ghost" size="sm" onClick={() => setStep(3)} className="text-xs">Voltar</Button>
             </div>
 
@@ -248,7 +248,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
               ))}
               <div className="border-t pt-2 flex justify-between">
                 <span className="font-medium">Valor</span>
-                <span className="font-heading font-bold text-lg tabular-nums">{formatBRL(selectedService?.price)}</span>
+                <span className="font-heading font-bold tracking-tight text-lg tabular-nums">{formatBRL(selectedService?.price)}</span>
               </div>
             </div>
 
@@ -270,7 +270,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
               <p className="text-xs text-destructive text-center">Informe um telefone válido com DDD</p>
             )}
             <Button
-              className="w-full rounded-xl h-12 font-semibold"
+              className="w-full rounded-full h-12 font-semibold"
               onClick={handleBook}
               disabled={!formName || !formPhone || normalizePhone(formPhone).length < 10 || createMutation.isPending}
             >
@@ -284,7 +284,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
             <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10 text-foreground" />
             </div>
-            <h2 className="text-2xl font-heading font-bold">Agendado! 🎉</h2>
+            <h2 className="text-2xl font-heading font-bold tracking-tight">Agendado! 🎉</h2>
             <p className="text-sm text-muted-foreground">Seu horário foi reservado. Aguarde a confirmação.</p>
             <Button variant="outline" className="rounded-xl" onClick={reset}>Fazer novo agendamento</Button>
           </motion.div>
@@ -304,10 +304,13 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
               className="flex justify-end"
             >
               <Button
-                className="pointer-events-auto rounded-full h-12 px-6 font-semibold shadow-lg shadow-primary/30 gap-1"
+                className="pointer-events-auto rounded-full h-12 px-6 font-semibold shadow-lg shadow-primary/30 gap-2"
                 onClick={() => (step === 1 ? setStep(2) : goToConfirm())}
               >
-                Continuar <ChevronRight className="w-4 h-4" />
+                Continuar
+                <span className="w-7 h-7 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                  <ChevronRight className="w-4 h-4" />
+                </span>
               </Button>
             </motion.div>
           ) : null}

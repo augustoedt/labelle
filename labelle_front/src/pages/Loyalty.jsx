@@ -51,7 +51,7 @@ export default function Loyalty() {
           <div key={key} className="bg-card rounded-xl border border-border/50 p-3 text-center">
             <Crown className="w-5 h-5 mx-auto text-accent mb-1" />
             <p className="text-xs font-medium">{config.label}</p>
-            <p className="text-lg font-heading font-bold">{clientsByTier[key]?.length || 0}</p>
+            <p className="text-lg font-heading font-bold tracking-tight">{clientsByTier[key]?.length || 0}</p>
           </div>
         ))
         )}
@@ -75,7 +75,7 @@ export default function Loyalty() {
             {cs.slice(0, 10).map((client) => (
               <div key={client.id} className="bg-card rounded-xl border border-border/50 p-3 flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-sm font-heading font-bold text-primary">{client.name?.charAt(0)}</span>
+                  <span className="text-sm font-heading font-bold tracking-tight text-primary">{client.name?.charAt(0)}</span>
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">{client.name}</p>

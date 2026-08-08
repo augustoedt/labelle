@@ -51,7 +51,7 @@ export default function ClientLoyalty({ clientPhone, onSetPhone }) {
           <Gift className="w-7 h-7 text-muted-foreground" />
         </div>
         <div>
-          <h2 className="font-heading font-semibold text-lg">Programa de Fidelidade</h2>
+          <h2 className="font-heading font-semibold tracking-tight text-lg">Programa de Fidelidade</h2>
           <p className="text-sm text-muted-foreground mt-1">Informe seu WhatsApp para ver seus pontos</p>
         </div>
         <div className="text-left space-y-2">
@@ -110,12 +110,12 @@ export default function ClientLoyalty({ clientPhone, onSetPhone }) {
           <span className="text-3xl">{tier.emoji}</span>
           <div>
             <p className="text-xs opacity-60">Seu nível</p>
-            <p className="text-xl font-heading font-bold">{tier.label}</p>
+            <p className="text-xl font-heading font-bold tracking-tight">{tier.label}</p>
           </div>
         </div>
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-3xl font-heading font-bold">{points}</p>
+            <p className="text-3xl font-heading font-bold tracking-tight">{points}</p>
             <p className="text-xs opacity-60">pontos acumulados</p>
           </div>
           <p className="text-sm opacity-70">{client.name?.split(" ")[0]}</p>
@@ -139,7 +139,7 @@ export default function ClientLoyalty({ clientPhone, onSetPhone }) {
         {[["Visitas", visits, "🗓️"], ["Total gasto", formatBRL(spent), "💰"], ["Pontos", points, "⭐"]].map(([label, val, icon]) => (
           <div key={label} className="bg-card border border-border/50 rounded-2xl p-3 text-center">
             <p className="text-lg mb-1">{icon}</p>
-            <p className="font-heading font-bold text-sm">{val}</p>
+            <p className="font-heading font-bold tracking-tight text-sm">{val}</p>
             <p className="text-xs text-muted-foreground">{label}</p>
           </div>
         ))}

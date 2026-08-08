@@ -149,7 +149,7 @@ export default function Settings() {
       <div className="px-5 space-y-6">
         {/* Dados do estúdio */}
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold">Dados do estúdio</h2>
+          <h2 className="font-heading text-base font-semibold tracking-tight">Dados do estúdio</h2>
 
           <div>
             <Label className="text-xs">Nome do estúdio</Label>
@@ -194,7 +194,7 @@ export default function Settings() {
 
         {/* Conexão WhatsApp da empresa */}
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold">Conexão WhatsApp da empresa</h2>
+          <h2 className="font-heading text-base font-semibold tracking-tight">Conexão WhatsApp da empresa</h2>
           <div className="bg-card rounded-2xl border border-border/50 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export default function Settings() {
 
         {/* Mensagens */}
         <div className="space-y-4">
-          <h2 className="text-sm font-semibold">Mensagens de WhatsApp</h2>
+          <h2 className="font-heading text-base font-semibold tracking-tight">Mensagens de WhatsApp</h2>
           {messageFields.map(({ key, label, desc, placeholders }) => (
             <div key={key} className="bg-card rounded-2xl border border-border/50 p-4 space-y-2">
               <div>
@@ -282,7 +282,7 @@ export default function Settings() {
         <Button
           onClick={handleSave}
           disabled={saveMutation.isPending}
-          className="w-full rounded-xl h-12 font-semibold gap-2"
+          className="w-full rounded-full h-12 font-semibold gap-2"
         >
           <Save className="w-4 h-4" /> {saveMutation.isPending ? "Salvando..." : "Salvar configurações"}
         </Button>

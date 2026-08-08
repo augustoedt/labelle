@@ -116,15 +116,15 @@ export default function MinhasComissoes() {
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-card rounded-2xl border border-border/50 p-4 text-center">
             <p className="text-xs text-muted-foreground">Atendimentos</p>
-            <p className="text-2xl font-heading font-bold mt-1">{myDone.length}</p>
+            <p className="text-2xl font-heading font-bold tracking-tight mt-1">{myDone.length}</p>
           </div>
           <div className="bg-card rounded-2xl border border-border/50 p-4 text-center">
             <p className="text-xs text-muted-foreground">Faturamento</p>
-            <p className="text-lg font-heading font-bold mt-1 tabular-nums">{formatBRL(totalRevenue)}</p>
+            <p className="text-lg font-heading font-bold tracking-tight mt-1 tabular-nums">{formatBRL(totalRevenue)}</p>
           </div>
           <div className="bg-primary/10 rounded-2xl border border-primary/20 p-4 text-center">
             <p className="text-xs text-muted-foreground">Comissão</p>
-            <p className="text-lg font-heading font-bold text-primary mt-1 tabular-nums">{formatBRL(myCommission)}</p>
+            <p className="text-lg font-heading font-bold tracking-tight text-primary mt-1 tabular-nums">{formatBRL(myCommission)}</p>
           </div>
         </div>
 

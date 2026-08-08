@@ -88,3 +88,8 @@
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--border)) transparent;
 }
+
+/* Ícones Lucide com traço fino (high-end): 1.5 de espessura em vez do 2 padrão */
+svg.lucide {
+  stroke-width: 1.5;
+}

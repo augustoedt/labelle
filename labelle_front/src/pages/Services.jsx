@@ -126,7 +126,7 @@ export default function Services() {
                         {svc.commission_percent > 0 && <span>{svc.commission_percent}% comissão</span>}
                       </div>
                     </div>
-                    <p className="font-heading font-bold text-lg tabular-nums">{formatBRL(svc.price)}</p>
+                    <p className="font-heading font-bold tracking-tight text-lg tabular-nums">{formatBRL(svc.price)}</p>
                   </div>
                 </div>
               ))}
@@ -176,7 +176,7 @@ export default function Services() {
                 <Input type="number" value={form.recurrence_days} onChange={e => setForm(p => ({ ...p, recurrence_days: e.target.value }))} placeholder="30" />
               </div>
             </div>
-            <Button onClick={handleSubmit} className="w-full rounded-xl h-12 font-semibold">
+            <Button onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
               {editing ? "Atualizar" : "Cadastrar"}
             </Button>
           </div>

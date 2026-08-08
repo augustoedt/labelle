@@ -94,7 +94,7 @@ export default function Dashboard() {
       {/* Today's Agenda */}
       <div>
         <div className="px-5 flex items-center justify-between mb-3">
-          <h2 className="text-base font-heading font-semibold">Agenda de Hoje</h2>
+          <h2 className="text-base font-heading font-semibold tracking-tight">Agenda de Hoje</h2>
           <span className="text-xs text-primary font-medium">{todayAppts.length} agendamento(s)</span>
         </div>
         <TodayAgenda appointments={todayAppts.sort((a, b) => a.time?.localeCompare(b.time))} isLoading={isLoadingAppointments} />

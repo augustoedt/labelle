@@ -183,7 +183,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             <Label className="text-xs">Observações</Label>
             <Textarea value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Observações..." rows={2} />
           </div>
-          <Button onClick={handleSubmit} className="w-full rounded-xl h-12 font-semibold">
+          <Button onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
             {appointment ? "Atualizar" : "Agendar"}
           </Button>
         </div>

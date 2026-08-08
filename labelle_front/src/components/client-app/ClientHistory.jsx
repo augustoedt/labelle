@@ -42,7 +42,7 @@ export default function ClientHistory({ clientPhone, onSetPhone }) {
           <Phone className="w-7 h-7 text-muted-foreground" />
         </div>
         <div>
-          <h2 className="font-heading font-semibold text-lg">Seus agendamentos</h2>
+          <h2 className="font-heading font-semibold tracking-tight text-lg">Seus agendamentos</h2>
           <p className="text-sm text-muted-foreground mt-1">Informe seu WhatsApp para ver seu histórico</p>
         </div>
         <div className="text-left space-y-2">
@@ -73,7 +73,7 @@ export default function ClientHistory({ clientPhone, onSetPhone }) {
     <div className="px-5 py-5 space-y-6">
       {upcoming.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold mb-3">Próximos</h2>
+          <h2 className="font-heading text-base font-semibold tracking-tight mb-3">Próximos</h2>
           <div className="space-y-3">
             {upcoming.map(a => (
               <AppointmentCard key={a.id} appt={a} />
@@ -84,7 +84,7 @@ export default function ClientHistory({ clientPhone, onSetPhone }) {
 
       {past.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold mb-3">Histórico</h2>
+          <h2 className="font-heading text-base font-semibold tracking-tight mb-3">Histórico</h2>
           <div className="space-y-3">
             {past.map(a => (
               <AppointmentCard key={a.id} appt={a} />
@@ -115,7 +115,7 @@ function AppointmentCard({ appt }) {
         <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {format(parseISO(appt.date), "dd/MM/yyyy")}</span>
         <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {appt.time}</span>
       </div>
-      {appt.price && <p className="mt-2 text-sm font-heading font-bold tabular-nums">{formatBRL(appt.price)}</p>}
+      {appt.price && <p className="mt-2 text-sm font-heading font-bold tracking-tight tabular-nums">{formatBRL(appt.price)}</p>}
     </div>
   );
 }

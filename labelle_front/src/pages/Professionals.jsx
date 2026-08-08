@@ -165,7 +165,7 @@ export default function Professionals() {
           <div key={prof.id} role="button" tabIndex={0} className="bg-card rounded-2xl border border-border/50 p-4 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => openEdit(prof)}>
             <div className="flex items-start gap-3">
               <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-base font-heading font-bold text-primary">{prof.name?.charAt(0)}</span>
+                <span className="text-base font-heading font-bold tracking-tight text-primary">{prof.name?.charAt(0)}</span>
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
@@ -267,7 +267,7 @@ export default function Professionals() {
                 ))}
               </div>
             </div>
-            <Button onClick={handleSubmit} disabled={saving} className="w-full rounded-xl h-12 font-semibold">
+            <Button onClick={handleSubmit} disabled={saving} className="w-full rounded-full h-12 font-semibold">
               {saving ? "Salvando..." : editing ? "Atualizar" : "Cadastrar"}
             </Button>
           </div>

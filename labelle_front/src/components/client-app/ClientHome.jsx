@@ -46,7 +46,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
       next ?
       <div className="bg-foreground text-background rounded-2xl p-5">
           <p className="text-xs font-medium opacity-60 mb-1">Próximo agendamento</p>
-          <p className="text-xl font-heading font-bold">{next.service_name}</p>
+          <p className="text-xl font-heading font-bold tracking-tight">{next.service_name}</p>
           <p className="text-sm opacity-80 mt-1">com {next.professional_name}</p>
           <div className="flex items-center gap-4 mt-3">
             <div className="flex items-center gap-1.5 text-sm">
@@ -95,7 +95,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
       {/* Active promotions */}
       {activePromotions.length > 0 &&
       <div>
-          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+          <h2 className="font-heading text-base font-semibold tracking-tight mb-3 flex items-center gap-2">
             <Tag className="w-4 h-4" /> Promoções ativas
           </h2>
           <div className="space-y-2">
@@ -118,7 +118,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
 
       {/* Popular services */}
       <div>
-        <h2 className="text-sm font-semibold mb-3">Serviços populares</h2>
+        <h2 className="font-heading text-base font-semibold tracking-tight mb-3">Serviços populares</h2>
         <div className="space-y-2">
           {isLoadingServices ?
           Array.from({ length: 4 }).map((_, i) =>
@@ -136,7 +136,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
                 <p className="text-sm font-medium">{svc.name}</p>
                 <p className="text-xs text-muted-foreground">{svc.duration_minutes}min</p>
               </div>
-              <p className="font-heading font-bold text-sm tabular-nums">{formatBRL(svc.price)}</p>
+              <p className="font-heading font-bold tracking-tight text-sm tabular-nums">{formatBRL(svc.price)}</p>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
           )}

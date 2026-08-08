@@ -155,7 +155,7 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
           {/* Total */}
           <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl p-3">
             <span className="text-sm font-medium">Total a cobrar</span>
-            <span className="text-lg font-heading font-bold text-primary tabular-nums">{formatBRL(total, { decimals: 2 })}</span>
+            <span className="text-lg font-heading font-bold tracking-tight text-primary tabular-nums">{formatBRL(total, { decimals: 2 })}</span>
           </div>
 
           {/* Cobrança */}

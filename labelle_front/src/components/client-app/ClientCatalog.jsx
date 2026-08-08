@@ -128,7 +128,7 @@ export default function ClientCatalog({ onNavigate }) {
                 </div>
                 <div className="mt-auto pt-2 flex items-baseline gap-1.5">
                   {promo && <p className="text-xs line-through text-muted-foreground tabular-nums">{formatBRL(svc.price)}</p>}
-                  <p className="font-heading font-bold text-sm tabular-nums">{formatBRL(finalPrice)}</p>
+                  <p className="font-heading font-bold tracking-tight text-sm tabular-nums">{formatBRL(finalPrice)}</p>
                 </div>
               </div>
             </button>
@@ -182,7 +182,7 @@ function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
               {categoryEmojis[service.category]} {categoryLabels[service.category] || service.category}
             </p>
-            <h2 className="text-2xl font-heading font-bold mt-1">{service.name}</h2>
+            <h2 className="text-2xl font-heading font-bold tracking-tight mt-1">{service.name}</h2>
           </div>
 
           <div className="flex items-center gap-4">
@@ -192,7 +192,7 @@ function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
             </div>
             <div>
               {promo && <p className="text-xs line-through text-muted-foreground tabular-nums">{formatBRL(service.price)}</p>}
-              <p className="text-2xl font-heading font-bold tabular-nums">{formatBRL(finalPrice)}</p>
+              <p className="text-2xl font-heading font-bold tracking-tight tabular-nums">{formatBRL(finalPrice)}</p>
             </div>
           </div>
 
@@ -214,8 +214,8 @@ function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
 
         {/* CTA */}
         <div className="p-5 pb-8 border-t border-border/50 shrink-0">
-          <Button className="w-full h-12 rounded-2xl font-semibold text-base" onClick={onBook}>
-            <CalendarPlus className="w-4 h-4 mr-2" /> Agendar este serviço
+          <Button className="w-full h-12 rounded-full font-semibold text-base gap-2" onClick={onBook}>
+            <CalendarPlus className="w-4 h-4" /> Agendar este serviço
           </Button>
         </div>
       </div>

@@ -87,7 +87,7 @@ export default function InstallPwaButton() {
       {showIosGuide && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-end justify-center" onClick={() => setShowIosGuide(false)}>
           <div className="w-full max-w-lg bg-card rounded-t-3xl p-6 pb-10" onClick={e => e.stopPropagation()}>
-            <h3 className="font-heading font-semibold text-base mb-4 text-center">Adicionar à tela inicial</h3>
+            <h3 className="font-heading font-semibold tracking-tight text-base mb-4 text-center">Adicionar à tela inicial</h3>
             <ol className="space-y-3 text-sm text-foreground">
               <li className="flex items-start gap-3">
                 <span className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>

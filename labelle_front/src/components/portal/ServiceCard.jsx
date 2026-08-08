@@ -19,7 +19,7 @@ export default function ServiceCard({ service, selected, onSelect, promotion }) 
       onClick={() => onSelect(service)}
       className={cn(
         "w-full text-left p-4 rounded-2xl border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        selected ? "border-primary bg-primary/5 shadow-md" : "border-border/50 bg-card hover:border-primary/30"
+        selected ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" : "border-border/50 bg-card hover:border-primary/30"
       )}
     >
       <div className="flex items-start gap-3">
@@ -37,7 +37,7 @@ export default function ServiceCard({ service, selected, onSelect, promotion }) 
           {hasPromo && (
             <p className="text-xs line-through text-muted-foreground tabular-nums">{formatBRL(service.price)}</p>
           )}
-          <p className="font-heading font-bold text-lg tabular-nums">{formatBRL(finalPrice)}</p>
+          <p className="font-heading font-bold tracking-tight text-lg tabular-nums">{formatBRL(finalPrice)}</p>
           {hasPromo && (
             <span className="inline-flex items-center gap-0.5 text-xs font-medium text-primary">
               <Sparkles className="w-3 h-3" /> Promo

@@ -132,7 +132,7 @@ export default function PendingTransactions({ transactions, isLoading }) {
               <Label className="text-xs">Valor Total (R$)</Label>
               <Input type="number" value={editForm.amount || ""} onChange={e => setEditForm(p => ({ ...p, amount: e.target.value }))} className="mt-1 rounded-xl" />
             </div>
-            <Button className="w-full rounded-xl h-12 font-semibold" onClick={handleEditSubmit} disabled={updateMutation.isPending}>
+            <Button className="w-full rounded-full h-12 font-semibold" onClick={handleEditSubmit} disabled={updateMutation.isPending}>
               Salvar Alterações
             </Button>
           </div>

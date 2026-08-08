@@ -101,7 +101,7 @@ export default function Products() {
                 <p className="text-xs text-muted-foreground">{p.category}</p>
               </div>
               <div className="text-right">
-                <p className="font-heading font-bold tabular-nums">{formatBRL(p.price)}</p>
+                <p className="font-heading font-bold tracking-tight tabular-nums">{formatBRL(p.price)}</p>
                 <p className={cn("text-xs", isLow ? "text-red-500 font-medium" : "text-muted-foreground")}>{p.quantity} un.</p>
               </div>
             </div>
@@ -148,7 +148,7 @@ export default function Products() {
                 <Input type="number" value={form.min_quantity} onChange={e => setForm(p => ({ ...p, min_quantity: e.target.value }))} />
               </div>
             </div>
-            <Button onClick={handleSubmit} className="w-full rounded-xl h-12 font-semibold">
+            <Button onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
               {editing ? "Atualizar" : "Cadastrar"}
             </Button>
           </div>

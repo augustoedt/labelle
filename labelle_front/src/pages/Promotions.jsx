@@ -135,7 +135,7 @@ export default function Promotions() {
                 <Input type="date" value={form.end_date} onChange={e => setForm(p => ({ ...p, end_date: e.target.value }))} />
               </div>
             </div>
-            <Button onClick={() => createMutation.mutate(form)} className="w-full rounded-xl h-12 font-semibold">
+            <Button onClick={() => createMutation.mutate(form)} className="w-full rounded-full h-12 font-semibold">
               Criar Promoção
             </Button>
           </div>

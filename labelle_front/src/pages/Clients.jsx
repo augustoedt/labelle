@@ -108,7 +108,7 @@ export default function Clients() {
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-sm font-heading font-bold text-primary">
+                  <span className="text-sm font-heading font-bold tracking-tight text-primary">
                     {client.name?.charAt(0).toUpperCase()}
                   </span>
                 </div>

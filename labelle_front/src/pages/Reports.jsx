@@ -198,7 +198,7 @@ export default function Reports() {
                 <p className="text-sm font-medium">{p.name}</p>
                 <p className="text-xs text-muted-foreground">{p.count} atendimentos</p>
               </div>
-              <p className="font-heading font-bold text-sm tabular-nums">{formatBRL(p.revenue)}</p>
+              <p className="font-heading font-bold tracking-tight text-sm tabular-nums">{formatBRL(p.revenue)}</p>
             </div>
           ))}
           {profPerformance.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sem dados</p>}

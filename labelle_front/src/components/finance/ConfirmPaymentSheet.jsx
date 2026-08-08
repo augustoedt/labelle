@@ -262,7 +262,7 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
             )}
 
             <Button
-              className="w-full rounded-xl h-12 font-semibold bg-emerald-600 hover:bg-emerald-700 gap-2"
+              className="w-full rounded-full h-12 font-semibold bg-emerald-600 hover:bg-emerald-700 gap-2"
               onClick={handleConfirm}
               disabled={isBusy || isOver || lines.some(l => !l.amount || parseFloat(l.amount) <= 0)}
             >

@@ -104,7 +104,7 @@ export default function ClientPortal() {
     <div className="min-h-dvh bg-background max-w-lg mx-auto">
       {/* Hero header */}
       <div className="bg-gradient-to-br from-primary/10 via-background to-accent/10 px-5 pt-10 pb-8 text-center">
-        <h1 className="text-3xl font-heading font-bold">La Belle Studio</h1>
+        <h1 className="text-3xl font-heading font-semibold tracking-tight">La Belle Studio</h1>
         <p className="text-sm text-muted-foreground mt-1">Agende seu horário</p>
       </div>
 
@@ -123,7 +123,7 @@ export default function ClientPortal() {
         {/* Step 1: Services */}
         {step === 1 && (
           <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="px-5 space-y-3">
-            <h2 className="text-lg font-heading font-semibold">Escolha o serviço</h2>
+            <h2 className="text-lg font-heading font-semibold tracking-tight">Escolha o serviço</h2>
             {activeServices.map(svc => (
               <ServiceCard
                 key={svc.id}
@@ -134,8 +134,11 @@ export default function ClientPortal() {
               />
             ))}
             {selectedService && (
-              <Button className="w-full rounded-xl h-12 font-semibold mt-4" onClick={() => setStep(2)}>
-                Continuar <ChevronRight className="w-4 h-4 ml-1" />
+              <Button className="w-full rounded-full h-12 font-semibold mt-4 gap-2" onClick={() => setStep(2)}>
+                Continuar
+                <span className="w-7 h-7 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                  <ChevronRight className="w-4 h-4" />
+                </span>
               </Button>
             )}
           </motion.div>
@@ -145,7 +148,7 @@ export default function ClientPortal() {
         {step === 2 && (
           <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="px-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-heading font-semibold">Escolha o profissional</h2>
+              <h2 className="text-lg font-heading font-semibold tracking-tight">Escolha o profissional</h2>
               <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="text-xs">Voltar</Button>
             </div>
             {activeProfessionals.map(prof => (
@@ -158,7 +161,7 @@ export default function ClientPortal() {
                 )}
               >
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-lg font-heading font-bold text-primary">{prof.name?.charAt(0)}</span>
+                  <span className="text-lg font-heading font-bold tracking-tight text-primary">{prof.name?.charAt(0)}</span>
                 </div>
                 <div className="text-left flex-1">
                   <p className="font-semibold">{prof.name}</p>
@@ -174,7 +177,7 @@ export default function ClientPortal() {
         {step === 3 && (
           <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="px-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-heading font-semibold">Data e Horário</h2>
+              <h2 className="text-lg font-heading font-semibold tracking-tight">Data e Horário</h2>
               <Button variant="ghost" size="sm" onClick={() => setStep(2)} className="text-xs">Voltar</Button>
             </div>
 
@@ -231,8 +234,11 @@ export default function ClientPortal() {
             )}
 
             {selectedTime && (
-              <Button className="w-full rounded-xl h-12 font-semibold" onClick={() => setStep(4)}>
-                Continuar <ChevronRight className="w-4 h-4 ml-1" />
+              <Button className="w-full rounded-full h-12 font-semibold gap-2" onClick={() => setStep(4)}>
+                Continuar
+                <span className="w-7 h-7 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                  <ChevronRight className="w-4 h-4" />
+                </span>
               </Button>
             )}
           </motion.div>
@@ -242,7 +248,7 @@ export default function ClientPortal() {
         {step === 4 && (
           <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="px-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-heading font-semibold">Seus dados</h2>
+              <h2 className="text-lg font-heading font-semibold tracking-tight">Seus dados</h2>
               <Button variant="ghost" size="sm" onClick={() => setStep(3)} className="text-xs">Voltar</Button>
             </div>
 
@@ -266,7 +272,7 @@ export default function ClientPortal() {
               </div>
               <div className="border-t pt-2 flex justify-between">
                 <span className="font-medium">Valor</span>
-                <span className="font-heading font-bold text-lg tabular-nums">{formatBRL(selectedService?.price)}</span>
+                <span className="font-heading font-bold tracking-tight text-lg tabular-nums">{formatBRL(selectedService?.price)}</span>
               </div>
             </div>
 
@@ -280,11 +286,14 @@ export default function ClientPortal() {
             </div>
 
             <Button
-              className="w-full rounded-xl h-12 font-semibold"
+              className="w-full rounded-full h-12 font-semibold gap-2"
               onClick={handleBook}
               disabled={!clientInfo.name || !isValidPhone(clientInfo.phone) || createMutation.isPending}
             >
               {createMutation.isPending ? "Agendando..." : "Confirmar Agendamento"}
+              <span className="w-7 h-7 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4" />
+              </span>
             </Button>
           </motion.div>
         )}
@@ -295,7 +304,7 @@ export default function ClientPortal() {
             <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10 text-emerald-600" />
             </div>
-            <h2 className="text-2xl font-heading font-bold">Agendado!</h2>
+            <h2 className="text-2xl font-heading font-bold tracking-tight">Agendado!</h2>
             <p className="text-sm text-muted-foreground">Seu horário foi reservado com sucesso. Aguarde a confirmação do salão.</p>
             <Button variant="outline" className="rounded-xl" onClick={resetBooking}>
               Fazer Outro Agendamento

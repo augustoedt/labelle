@@ -250,7 +250,7 @@ export default function Finance() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={() => createMutation.mutate(form)} className="w-full rounded-xl h-12 font-semibold">
+            <Button onClick={() => createMutation.mutate(form)} className="w-full rounded-full h-12 font-semibold">
               Salvar Lançamento
             </Button>
           </div>

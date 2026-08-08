@@ -39,7 +39,7 @@ export default function ClientApp() {
       <InstallPwaButton />
       {/* Header */}
       <div className="px-5 pt-10 pb-4 flex items-center justify-between bg-background">
-        <LaBelleLogo size="lg" dark />
+        <LaBelleLogo size="lg" />
         <div className="flex flex-col items-end gap-1">
           {client?.name && (
             <>

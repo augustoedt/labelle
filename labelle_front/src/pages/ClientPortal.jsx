@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ServiceCard from "@/components/portal/ServiceCard";
 import { formatBRL } from "@/lib/format";
 import { maskPhone, isValidPhone } from "@/lib/phone";
+import { normalizePhone } from "@/lib/clientUtils";
 
 export default function ClientPortal() {
   const [step, setStep] = useState(1); // 1=services, 2=professional, 3=datetime, 4=info, 5=success
@@ -80,7 +81,9 @@ export default function ClientPortal() {
     // envia a identificação da cliente e o que ela escolheu.
     createMutation.mutate({
       client_name: clientInfo.name,
-      client_phone: clientInfo.phone,
+      // telefone normalizado (so digitos) — a máscara é só visual; o backend
+      // e o WhatsApp (confirmacao/lembrete) esperam o número sem formatação
+      client_phone: normalizePhone(clientInfo.phone),
       professional_id: selectedProfessional.id,
       service_id: selectedService.id,
       date: format(selectedDate, "yyyy-MM-dd"),

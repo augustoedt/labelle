@@ -80,7 +80,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
     // :book_online, que aplica a promoção ativa do serviço) — o app só
     // envia a identificação da cliente e o que ela escolheu.
     createMutation.mutate({
-      client_name: formName, client_phone: formPhone,
+      client_name: formName, client_phone: normalizePhone(formPhone),
       professional_id: selectedProfessional.id,
       service_id: selectedService.id,
       date: format(selectedDate, "yyyy-MM-dd"), time: selectedTime,

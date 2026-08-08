@@ -94,9 +94,28 @@ Backlog técnico:
 - `b18fcf0` front: `tsc --noEmit` limpo (strictNullChecks + input/label/button em tsx)
 - `a76b904` front: portal público usa action `available_slots` (não lista mais appointments)
 - `cbb279f` front: máscara/validação de telefone BR (`src/lib/phone.js`) em 5 formulários
+- `2a3a47f` front: telefone normalizado (só dígitos) no agendamento — máscara é só visual
 
 Skills migradas nesta sessão: `redesign-existing-projects`, `design-taste-frontend` e
 `kimi-webbridge` copiadas de `~/.kimi-code/skills/` para `~/.pi/agent/skills/` (sem symlink).
+
+## Testes (sessão 2026-08-08, WebBridge + API)
+
+- Backend: `mix test` → 43 testes, 0 falhas (warnings de WhatsApp = adapter não configurado, ok).
+- API `available_slots`: retorna slots; 400 sem parâmetros obrigatórios.
+- App da cliente `/app`: menu (bottom nav) presente; aba Agendar mantém o menu; Fidelidade
+  com máscara de telefone funciona (inválido desabilita botão; busca real mostra Bronze).
+- Portal `/agendar`: E2E completo — serviço → profissional → 14 dias → slots via backend →
+  dados (máscara) → confirmar → agendamento criado no banco. **Sem menu por design**
+  (página standalone p/ link de WhatsApp; `/app` tem o menu).
+- Login admin → `/` + 9 telas admin OK (sem regressão da poda). Login profissional → `/minha-agenda`.
+- **Bug corrigido no teste**: telefone era gravado com máscara `(11) 99777-0001` em
+  `appointments.client_phone` (quebraria WhatsApp futuro) → agora normalizado (`2a3a47f`).
+- **Dev server**: após renomear ui/*.jsx→tsx, o vite em execução mantinha cache com módulos
+  deletados (erro "Failed to load button.jsx" no portal). Solução: reiniciar o dev server
+  (pkill vite + npm run dev).
+- **Obs.**: hydration mismatch em `/agendar` (dates via `Date.now()` no SSR) — não bloqueia;
+  candidato a fix na fase taste.
 
 ## Convenções do projeto
 

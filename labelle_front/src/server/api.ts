@@ -5,13 +5,17 @@ const API_BASE = process.env.LABELLE_API_URL || 'http://localhost:4000'
 
 // Node's fetch (undici) hangs/fails against Railway's *.railway.internal
 // private-network hostnames because of how it handles the IPv6+IPv4
-// happy-eyeballs DNS results there. Forcing the dispatcher to IPv4 avoids it.
+// happy-eyeballs DNS results there. Forcing the dispatcher to IPv6 avoids
+// it — but ONLY makes sense against Railway's IPv6-only private network:
+// applied globally it also breaks local dev, where Phoenix listens on
+// 127.0.0.1 (IPv4) and ::1 refuses the connection ("fetch failed").
 // Dynamic import (not a static one) so this Node-only module never gets
 // pulled into the client bundle.
 let internalNetworkingConfigured = false
 export async function ensureInternalNetworking() {
   if (internalNetworkingConfigured) return
   internalNetworkingConfigured = true
+  if (!API_BASE.includes('.railway.internal')) return
   const { setGlobalDispatcher, Agent } = await import('undici')
   setGlobalDispatcher(new Agent({ connect: { family: 6 } }))
 }

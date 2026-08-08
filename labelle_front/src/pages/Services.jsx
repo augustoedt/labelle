@@ -101,7 +101,7 @@ export default function Services() {
             </h3>
             <div className="space-y-2">
               {svcs.map((svc) => (
-                <div key={svc.id} className="bg-card rounded-xl border border-border/50 shadow-sm p-3.5" onClick={() => openEdit(svc)}>
+                <div key={svc.id} role="button" tabIndex={0} className="bg-card rounded-xl border border-border/50 shadow-sm p-3.5 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => openEdit(svc)}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-sm">{svc.name}</p>

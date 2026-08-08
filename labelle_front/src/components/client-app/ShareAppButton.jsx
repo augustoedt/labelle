@@ -44,14 +44,14 @@ export default function ShareAppButton({ className }) {
           <div className="absolute right-0 top-10 z-50 bg-card border border-border rounded-xl shadow-lg p-2 min-w-[180px] space-y-1">
             <button
               onClick={handleWhatsApp}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-secondary transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-secondary transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <MessageCircle className="w-4 h-4 text-green-500" />
               Enviar via WhatsApp
             </button>
             <button
               onClick={handleCopy}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-secondary transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-secondary transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
               {copied ? "Copiado!" : "Copiar link"}

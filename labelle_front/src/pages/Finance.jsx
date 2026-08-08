@@ -123,7 +123,7 @@ export default function Finance() {
               key={v}
               onClick={() => setStatusFilter(v)}
               className={cn(
-                "whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                "whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 statusFilter === v
                   ? "bg-foreground text-background border-foreground"
                   : "bg-card border-border/50 text-muted-foreground"

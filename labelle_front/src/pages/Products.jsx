@@ -84,7 +84,7 @@ export default function Products() {
         {products.map((p) => {
           const isLow = p.quantity <= (p.min_quantity || 5);
           return (
-            <div key={p.id} className="bg-card rounded-xl border border-border/50 shadow-sm p-3.5 flex items-center gap-3" onClick={() => openEdit(p)}>
+            <div key={p.id} role="button" tabIndex={0} className="bg-card rounded-xl border border-border/50 shadow-sm p-3.5 flex items-center gap-3 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => openEdit(p)}>
               <div className={cn("p-2 rounded-lg", isLow ? "bg-red-50" : "bg-secondary/50")}>
                 {isLow ? <AlertTriangle className="w-4 h-4 text-red-500" /> : <Package className="w-4 h-4 text-muted-foreground" />}
               </div>

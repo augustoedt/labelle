@@ -104,7 +104,7 @@ export default function ClientApp() {
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
               className={cn(
-                "flex-1 flex flex-col items-center gap-1 py-3 transition-colors relative",
+                "flex-1 flex flex-col items-center gap-1 py-3 transition-all duration-150 relative active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 isActive ? "text-foreground" : "text-muted-foreground"
               )}
             >

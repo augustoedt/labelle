@@ -155,7 +155,7 @@ export default function Professionals() {
 
       <div className="px-5 space-y-3">
         {professionals.map((prof) => (
-          <div key={prof.id} className="bg-card rounded-2xl border border-border/50 shadow-sm p-4" onClick={() => openEdit(prof)}>
+          <div key={prof.id} role="button" tabIndex={0} className="bg-card rounded-2xl border border-border/50 shadow-sm p-4 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => openEdit(prof)}>
             <div className="flex items-start gap-3">
               <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
                 <span className="text-base font-heading font-bold text-primary">{prof.name?.charAt(0)}</span>

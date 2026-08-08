@@ -164,7 +164,7 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-medium">Forma {idx + 1}</p>
                     {lines.length > 1 && (
-                      <button onClick={() => removeLine(idx)} className="text-destructive/70 hover:text-destructive">
+                      <button onClick={() => removeLine(idx)} className="text-destructive/70 hover:text-destructive transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}

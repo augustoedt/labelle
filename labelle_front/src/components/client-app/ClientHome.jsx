@@ -71,7 +71,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => onNavigate("agendar")}
-          className="bg-card border border-border/50 rounded-2xl p-4 text-left hover:border-foreground/20 transition-all">
+          className="bg-card border border-border/50 rounded-2xl p-4 text-left hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
 
           <CalendarPlus className="w-6 h-6 mb-2" />
           <p className="font-semibold text-sm">Agendar</p>
@@ -79,7 +79,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
         </button>
         <button
           onClick={() => onNavigate("fidelidade")}
-          className="bg-card border border-border/50 rounded-2xl p-4 text-left hover:border-foreground/20 transition-all">
+          className="bg-card border border-border/50 rounded-2xl p-4 text-left hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
 
           <Sparkles className="w-6 h-6 mb-2" />
           <p className="font-semibold text-sm">Fidelidade</p>
@@ -119,7 +119,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
           <button
             key={svc.id}
             onClick={() => onNavigate("agendar")}
-            className="w-full flex items-center gap-3 bg-card border border-border/50 rounded-2xl p-3 hover:border-foreground/20 transition-all">
+            className="w-full flex items-center gap-3 bg-card border border-border/50 rounded-2xl p-3 hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
 
               <span className="text-xl">{categoryEmojis[svc.category] || "🌟"}</span>
               <div className="flex-1 text-left">

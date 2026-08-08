@@ -83,7 +83,7 @@ export default function Reminders() {
             key={v}
             onClick={() => setStatusFilter(v)}
             className={cn(
-              "px-3 py-1.5 rounded-xl text-xs font-medium transition-all",
+              "px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               statusFilter === v ? "bg-primary text-primary-foreground" : "bg-card border border-border/50"
             )}
           >

@@ -73,7 +73,7 @@ export default function ClientCatalog({ onNavigate }) {
             key={cat}
             onClick={() => setSelectedCategory(cat)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-all shrink-0",
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-all duration-150 shrink-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               selectedCategory === cat
                 ? "bg-foreground text-background border-foreground"
                 : "bg-card border-border/50 text-muted-foreground"
@@ -93,7 +93,7 @@ export default function ClientCatalog({ onNavigate }) {
             <button
               key={svc.id}
               onClick={() => setSelectedService(svc)}
-              className="bg-card border border-border/50 rounded-2xl overflow-hidden text-left hover:border-foreground/20 transition-all"
+              className="bg-card border border-border/50 rounded-2xl overflow-hidden text-left hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <div className="relative">
                 <img
@@ -151,7 +151,7 @@ function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
           />
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <X className="w-4 h-4 text-white" />
           </button>

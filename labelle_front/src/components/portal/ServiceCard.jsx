@@ -17,7 +17,7 @@ export default function ServiceCard({ service, selected, onSelect, promotion }) 
     <button
       onClick={() => onSelect(service)}
       className={cn(
-        "w-full text-left p-4 rounded-2xl border-2 transition-all",
+        "w-full text-left p-4 rounded-2xl border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         selected ? "border-primary bg-primary/5 shadow-md" : "border-border/50 bg-card hover:border-primary/30"
       )}
     >

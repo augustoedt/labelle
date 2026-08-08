@@ -78,7 +78,7 @@ export default function InstallPwaButton() {
           <Download className="w-3 h-3 mr-1" />
           Instalar
         </Button>
-        <button onClick={handleDismiss} className="text-white/70 flex-shrink-0">
+        <button onClick={handleDismiss} className="text-white/70 flex-shrink-0 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg p-1">
           <X className="w-4 h-4" />
         </button>
       </div>

@@ -174,7 +174,7 @@ export default function ClientPortal() {
                 key={prof.id}
                 onClick={() => { setSelectedProfessional(prof); setStep(3); }}
                 className={cn(
-                  "w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all",
+                  "w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   selectedProfessional?.id === prof.id ? "border-primary bg-primary/5" : "border-border/50 bg-card hover:border-primary/30"
                 )}
               >
@@ -208,7 +208,7 @@ export default function ClientPortal() {
                     key={d.toISOString()}
                     onClick={() => { setSelectedDate(d); setSelectedTime(null); }}
                     className={cn(
-                      "flex flex-col items-center py-3 px-4 rounded-2xl min-w-[70px] transition-all border-2",
+                      "flex flex-col items-center py-3 px-4 rounded-2xl min-w-[70px] transition-all duration-150 border-2 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border/50 bg-card"
                     )}
                   >
@@ -233,7 +233,7 @@ export default function ClientPortal() {
                         key={t}
                         onClick={() => setSelectedTime(t)}
                         className={cn(
-                          "py-2.5 rounded-xl text-sm font-medium transition-all border-2",
+                          "py-2.5 rounded-xl text-sm font-medium transition-all duration-150 border-2 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           selectedTime === t ? "border-primary bg-primary text-primary-foreground" : "border-border/50 bg-card hover:border-primary/30"
                         )}
                       >

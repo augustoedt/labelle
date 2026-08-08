@@ -127,7 +127,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
               const finalPrice = promo ? (promo.discount_type === "percent" ? svc.price * (1 - promo.discount_value / 100) : svc.price - promo.discount_value) : svc.price;
               return (
                 <button key={svc.id} onClick={() => setSelectedService(svc)}
-                  className={cn("w-full text-left p-4 rounded-2xl border-2 transition-all", selectedService?.id === svc.id ? "border-foreground bg-foreground/5" : "border-border/50 bg-card")}>
+                  className={cn("w-full text-left p-4 rounded-2xl border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", selectedService?.id === svc.id ? "border-foreground bg-foreground/5" : "border-border/50 bg-card")}>
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{categoryEmojis[svc.category] || "🌟"}</span>
                     <div className="flex-1">
@@ -159,7 +159,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
             )}
             {activeProfessionals.map(prof => (
               <button key={prof.id} onClick={() => { setSelectedProfessional(prof); setStep(3); }}
-                className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-border/50 bg-card hover:border-foreground/30 transition-all">
+                className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-border/50 bg-card hover:border-foreground/30 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <div className="w-11 h-11 rounded-full bg-secondary flex items-center justify-center">
                   <span className="font-heading font-bold">{prof.name?.charAt(0)}</span>
                 </div>
@@ -184,7 +184,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
                 const sel = selectedDate && format(d, "yyyy-MM-dd") === format(selectedDate, "yyyy-MM-dd");
                 return (
                   <button key={d.toISOString()} onClick={() => { setSelectedDate(d); setSelectedTime(null); }}
-                    className={cn("flex flex-col items-center py-3 px-4 rounded-2xl min-w-[64px] border-2 transition-all",
+                    className={cn("flex flex-col items-center py-3 px-4 rounded-2xl min-w-[64px] border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       sel ? "border-foreground bg-foreground text-background" : "border-border/50 bg-card")}>
                     <span className="text-xs font-medium uppercase">{format(d, "EEE", { locale: ptBR })}</span>
                     <span className="text-xl font-bold">{format(d, "d")}</span>
@@ -201,7 +201,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
                   : <div className="grid grid-cols-4 gap-2">
                     {slots.map(t => (
                       <button key={t} onClick={() => setSelectedTime(t)}
-                        className={cn("py-2.5 rounded-xl text-sm font-medium border-2 transition-all",
+                        className={cn("py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           selectedTime === t ? "border-foreground bg-foreground text-background" : "border-border/50 bg-card")}>
                         {t}
                       </button>

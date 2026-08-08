@@ -1,25 +1,37 @@
 import { Link } from "@tanstack/react-router";
 import { Scissors, Users2, Package, Tag, BarChart3, Crown, BellRing, Settings2, LogOut } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
+import { useUser } from "@/lib/auth";
 
-const menuItems = [
-  { path: "/servicos", icon: Scissors, label: "Serviços", desc: "Gerenciar serviços e preços" },
-  { path: "/profissionais", icon: Users2, label: "Profissionais", desc: "Equipe e comissões" },
-  { path: "/produtos", icon: Package, label: "Estoque", desc: "Controle de produtos" },
-  { path: "/promocoes", icon: Tag, label: "Promoções", desc: "Ofertas e descontos" },
-  { path: "/fidelidade", icon: Crown, label: "Fidelidade", desc: "Programa de pontos" },
-  { path: "/lembretes", icon: BellRing, label: "Lembretes", desc: "Retorno de clientes (20/45 dias)" },
-  { path: "/relatorios", icon: BarChart3, label: "Relatórios", desc: "Análises e métricas" },
-  { path: "/configuracoes", icon: Settings2, label: "Configurações", desc: "Telefone, endereço e mensagens" },
-];
+// Itens visíveis por papel: admin gerencia tudo; profissional vê apenas o
+// que o backend libera em leitura (serviços e promoções) + sair.
+const menuItems = {
+  admin: [
+    { path: "/servicos", icon: Scissors, label: "Serviços", desc: "Gerenciar serviços e preços" },
+    { path: "/profissionais", icon: Users2, label: "Profissionais", desc: "Equipe e comissões" },
+    { path: "/produtos", icon: Package, label: "Estoque", desc: "Controle de produtos" },
+    { path: "/promocoes", icon: Tag, label: "Promoções", desc: "Ofertas e descontos" },
+    { path: "/fidelidade", icon: Crown, label: "Fidelidade", desc: "Programa de pontos" },
+    { path: "/lembretes", icon: BellRing, label: "Lembretes", desc: "Retorno de clientes (20/45 dias)" },
+    { path: "/relatorios", icon: BarChart3, label: "Relatórios", desc: "Análises e métricas" },
+    { path: "/configuracoes", icon: Settings2, label: "Configurações", desc: "Telefone, endereço e mensagens" },
+  ],
+  profissional: [
+    { path: "/servicos", icon: Scissors, label: "Serviços", desc: "Catálogo e preços" },
+    { path: "/promocoes", icon: Tag, label: "Promoções", desc: "Ofertas e descontos ativos" },
+  ],
+};
 
 export default function More() {
+  const user = useUser();
+  const items = menuItems[user?.role] || menuItems.admin;
+
   return (
     <div className="space-y-4">
       <PageHeader title="Mais" subtitle="Configurações e gestão" />
 
       <div className="px-5 space-y-2">
-        {menuItems.map(({ path, icon: Icon, label, desc }) => (
+        {items.map(({ path, icon: Icon, label, desc }) => (
           <Link
             key={path}
             to={path}

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageHeader from "@/components/ui/PageHeader";
+import { useUser } from "@/lib/auth";
 import { formatBRL } from "@/lib/format";
 
 const categoryLabels = {
@@ -17,6 +18,9 @@ const categoryLabels = {
 };
 
 export default function Services() {
+  const user = useUser();
+  // Profissional vê o catálogo em leitura; só o admin edita.
+  const canEdit = user?.role === "admin";
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
@@ -88,9 +92,11 @@ export default function Services() {
             <Link to="/mais">
               <Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button>
             </Link>
-            <Button size="sm" className="rounded-xl gap-1.5" onClick={openNew}>
-              <Plus className="w-4 h-4" /> Novo
-            </Button>
+            {canEdit && (
+              <Button size="sm" className="rounded-xl gap-1.5" onClick={openNew}>
+                <Plus className="w-4 h-4" /> Novo
+              </Button>
+            )}
           </div>
         }
       />
@@ -111,7 +117,7 @@ export default function Services() {
             </h3>
             <div className="space-y-2">
               {svcs.map((svc) => (
-                <div key={svc.id} role="button" tabIndex={0} className="bg-card rounded-xl border border-border/50 p-3.5 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => openEdit(svc)}>
+                <div key={svc.id} className="bg-card rounded-xl border border-border/50 p-3.5 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { if (canEdit) openEdit(svc); }}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-sm">{svc.name}</p>
@@ -130,7 +136,8 @@ export default function Services() {
         )}
       </div>
 
-      <Sheet open={showForm} onOpenChange={() => { setShowForm(false); setEditing(null); }}>
+      {canEdit && (
+        <Sheet open={showForm} onOpenChange={() => { setShowForm(false); setEditing(null); }}>
         <SheetContent side="bottom" className="max-h-[85vh] rounded-t-3xl overflow-y-auto">
           <SheetHeader className="pb-4">
             <SheetTitle className="font-heading">{editing ? "Editar Serviço" : "Novo Serviço"}</SheetTitle>
@@ -175,6 +182,7 @@ export default function Services() {
           </div>
         </SheetContent>
       </Sheet>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
-import BottomNav from "./BottomNav";
+import RoleNav from "./RoleNav";
 
 export default function AppLayout({ children }) {
   return (
@@ -7,7 +7,7 @@ export default function AppLayout({ children }) {
       <main className="pb-20 max-w-lg mx-auto">
         {children ?? <Outlet />}
       </main>
-      <BottomNav />
+      <RoleNav />
     </div>
   );
 }

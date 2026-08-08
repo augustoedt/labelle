@@ -12,6 +12,7 @@ import ClientForm from "@/components/clients/ClientForm";
 
 import { tierColors } from "@/lib/loyaltyTiers";
 import { formatBRL } from "@/lib/format";
+import { useUser } from "@/lib/auth";
 
 const sourceLabel = {
   app_cliente: { label: "App", icon: Smartphone, className: "text-primary" },
@@ -25,6 +26,9 @@ export default function Clients() {
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
+  const user = useUser();
+  // Profissional consulta a base (para agendar), mas só o admin edita.
+  const canEdit = user?.role === "admin";
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients"],
@@ -63,9 +67,11 @@ export default function Clients() {
         title="Clientes"
         subtitle={`${clients.length} cadastradas`}
         action={
-          <Button size="sm" className="rounded-xl gap-1.5" onClick={() => { setEditing(null); setShowForm(true); }}>
-            <Plus className="w-4 h-4" /> Nova
-          </Button>
+          canEdit && (
+            <Button size="sm" className="rounded-xl gap-1.5" onClick={() => { setEditing(null); setShowForm(true); }}>
+              <Plus className="w-4 h-4" /> Nova
+            </Button>
+          )
         }
       />
 
@@ -95,8 +101,8 @@ export default function Clients() {
             key={client.id}
             role="button"
             tabIndex={0}
-            className="bg-card rounded-2xl border border-border/50 p-4 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            onClick={() => { setEditing(client); setShowForm(true); }}
+            className="bg-card rounded-2xl border border-border/50 p-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => { if (canEdit) { setEditing(client); setShowForm(true); } }}
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -153,12 +159,14 @@ export default function Clients() {
         )}
       </div>
 
-      <ClientForm
-        open={showForm}
-        onClose={() => { setShowForm(false); setEditing(null); }}
-        onSubmit={handleSubmit}
-        client={editing}
-      />
+      {canEdit && (
+        <ClientForm
+          open={showForm}
+          onClose={() => { setShowForm(false); setEditing(null); }}
+          onSubmit={handleSubmit}
+          client={editing}
+        />
+      )}
     </div>
   );
 }

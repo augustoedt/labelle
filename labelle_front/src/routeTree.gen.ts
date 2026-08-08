@@ -13,23 +13,22 @@ import { Route as LogoutRouteImport } from './routes/logout'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AgendarRouteImport } from './routes/agendar'
-import { Route as ProfessionalRouteImport } from './routes/_professional'
-import { Route as AdminRouteImport } from './routes/_admin'
+import { Route as StaffRouteImport } from './routes/_staff'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProfessionalMinhasComissoesRouteImport } from './routes/_professional.minhas-comissoes'
-import { Route as ProfessionalMinhaAgendaRouteImport } from './routes/_professional.minha-agenda'
-import { Route as AdminServicosRouteImport } from './routes/_admin.servicos'
-import { Route as AdminRelatoriosRouteImport } from './routes/_admin.relatorios'
-import { Route as AdminPromocoesRouteImport } from './routes/_admin.promocoes'
-import { Route as AdminProfissionaisRouteImport } from './routes/_admin.profissionais'
-import { Route as AdminProdutosRouteImport } from './routes/_admin.produtos'
-import { Route as AdminMaisRouteImport } from './routes/_admin.mais'
-import { Route as AdminLembretesRouteImport } from './routes/_admin.lembretes'
-import { Route as AdminFinanceiroRouteImport } from './routes/_admin.financeiro'
-import { Route as AdminFidelidadeRouteImport } from './routes/_admin.fidelidade'
-import { Route as AdminConfiguracoesRouteImport } from './routes/_admin.configuracoes'
-import { Route as AdminClientesRouteImport } from './routes/_admin.clientes'
-import { Route as AdminAgendaRouteImport } from './routes/_admin.agenda'
+import { Route as StaffServicosRouteImport } from './routes/_staff.servicos'
+import { Route as StaffRelatoriosRouteImport } from './routes/_staff.relatorios'
+import { Route as StaffPromocoesRouteImport } from './routes/_staff.promocoes'
+import { Route as StaffProfissionaisRouteImport } from './routes/_staff.profissionais'
+import { Route as StaffProdutosRouteImport } from './routes/_staff.produtos'
+import { Route as StaffMinhasComissoesRouteImport } from './routes/_staff.minhas-comissoes'
+import { Route as StaffMinhaAgendaRouteImport } from './routes/_staff.minha-agenda'
+import { Route as StaffMaisRouteImport } from './routes/_staff.mais'
+import { Route as StaffLembretesRouteImport } from './routes/_staff.lembretes'
+import { Route as StaffFinanceiroRouteImport } from './routes/_staff.financeiro'
+import { Route as StaffFidelidadeRouteImport } from './routes/_staff.fidelidade'
+import { Route as StaffConfiguracoesRouteImport } from './routes/_staff.configuracoes'
+import { Route as StaffClientesRouteImport } from './routes/_staff.clientes'
+import { Route as StaffAgendaRouteImport } from './routes/_staff.agenda'
 
 const LogoutRoute = LogoutRouteImport.update({
   id: '/logout',
@@ -51,12 +50,8 @@ const AgendarRoute = AgendarRouteImport.update({
   path: '/agendar',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfessionalRoute = ProfessionalRouteImport.update({
-  id: '/_professional',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/_admin',
+const StaffRoute = StaffRouteImport.update({
+  id: '/_staff',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -64,76 +59,75 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfessionalMinhasComissoesRoute =
-  ProfessionalMinhasComissoesRouteImport.update({
-    id: '/minhas-comissoes',
-    path: '/minhas-comissoes',
-    getParentRoute: () => ProfessionalRoute,
-  } as any)
-const ProfessionalMinhaAgendaRoute = ProfessionalMinhaAgendaRouteImport.update({
-  id: '/minha-agenda',
-  path: '/minha-agenda',
-  getParentRoute: () => ProfessionalRoute,
-} as any)
-const AdminServicosRoute = AdminServicosRouteImport.update({
+const StaffServicosRoute = StaffServicosRouteImport.update({
   id: '/servicos',
   path: '/servicos',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
-const AdminRelatoriosRoute = AdminRelatoriosRouteImport.update({
+const StaffRelatoriosRoute = StaffRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
-const AdminPromocoesRoute = AdminPromocoesRouteImport.update({
+const StaffPromocoesRoute = StaffPromocoesRouteImport.update({
   id: '/promocoes',
   path: '/promocoes',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
-const AdminProfissionaisRoute = AdminProfissionaisRouteImport.update({
+const StaffProfissionaisRoute = StaffProfissionaisRouteImport.update({
   id: '/profissionais',
   path: '/profissionais',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
-const AdminProdutosRoute = AdminProdutosRouteImport.update({
+const StaffProdutosRoute = StaffProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
-const AdminMaisRoute = AdminMaisRouteImport.update({
+const StaffMinhasComissoesRoute = StaffMinhasComissoesRouteImport.update({
+  id: '/minhas-comissoes',
+  path: '/minhas-comissoes',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffMinhaAgendaRoute = StaffMinhaAgendaRouteImport.update({
+  id: '/minha-agenda',
+  path: '/minha-agenda',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffMaisRoute = StaffMaisRouteImport.update({
   id: '/mais',
   path: '/mais',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
-const AdminLembretesRoute = AdminLembretesRouteImport.update({
+const StaffLembretesRoute = StaffLembretesRouteImport.update({
   id: '/lembretes',
   path: '/lembretes',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
-const AdminFinanceiroRoute = AdminFinanceiroRouteImport.update({
+const StaffFinanceiroRoute = StaffFinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
-const AdminFidelidadeRoute = AdminFidelidadeRouteImport.update({
+const StaffFidelidadeRoute = StaffFidelidadeRouteImport.update({
   id: '/fidelidade',
   path: '/fidelidade',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
-const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
+const StaffConfiguracoesRoute = StaffConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
-const AdminClientesRoute = AdminClientesRouteImport.update({
+const StaffClientesRoute = StaffClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
-const AdminAgendaRoute = AdminAgendaRouteImport.update({
+const StaffAgendaRoute = StaffAgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => StaffRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -142,20 +136,20 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
-  '/agenda': typeof AdminAgendaRoute
-  '/clientes': typeof AdminClientesRoute
-  '/configuracoes': typeof AdminConfiguracoesRoute
-  '/fidelidade': typeof AdminFidelidadeRoute
-  '/financeiro': typeof AdminFinanceiroRoute
-  '/lembretes': typeof AdminLembretesRoute
-  '/mais': typeof AdminMaisRoute
-  '/produtos': typeof AdminProdutosRoute
-  '/profissionais': typeof AdminProfissionaisRoute
-  '/promocoes': typeof AdminPromocoesRoute
-  '/relatorios': typeof AdminRelatoriosRoute
-  '/servicos': typeof AdminServicosRoute
-  '/minha-agenda': typeof ProfessionalMinhaAgendaRoute
-  '/minhas-comissoes': typeof ProfessionalMinhasComissoesRoute
+  '/agenda': typeof StaffAgendaRoute
+  '/clientes': typeof StaffClientesRoute
+  '/configuracoes': typeof StaffConfiguracoesRoute
+  '/fidelidade': typeof StaffFidelidadeRoute
+  '/financeiro': typeof StaffFinanceiroRoute
+  '/lembretes': typeof StaffLembretesRoute
+  '/mais': typeof StaffMaisRoute
+  '/minha-agenda': typeof StaffMinhaAgendaRoute
+  '/minhas-comissoes': typeof StaffMinhasComissoesRoute
+  '/produtos': typeof StaffProdutosRoute
+  '/profissionais': typeof StaffProfissionaisRoute
+  '/promocoes': typeof StaffPromocoesRoute
+  '/relatorios': typeof StaffRelatoriosRoute
+  '/servicos': typeof StaffServicosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -163,44 +157,43 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
-  '/agenda': typeof AdminAgendaRoute
-  '/clientes': typeof AdminClientesRoute
-  '/configuracoes': typeof AdminConfiguracoesRoute
-  '/fidelidade': typeof AdminFidelidadeRoute
-  '/financeiro': typeof AdminFinanceiroRoute
-  '/lembretes': typeof AdminLembretesRoute
-  '/mais': typeof AdminMaisRoute
-  '/produtos': typeof AdminProdutosRoute
-  '/profissionais': typeof AdminProfissionaisRoute
-  '/promocoes': typeof AdminPromocoesRoute
-  '/relatorios': typeof AdminRelatoriosRoute
-  '/servicos': typeof AdminServicosRoute
-  '/minha-agenda': typeof ProfessionalMinhaAgendaRoute
-  '/minhas-comissoes': typeof ProfessionalMinhasComissoesRoute
+  '/agenda': typeof StaffAgendaRoute
+  '/clientes': typeof StaffClientesRoute
+  '/configuracoes': typeof StaffConfiguracoesRoute
+  '/fidelidade': typeof StaffFidelidadeRoute
+  '/financeiro': typeof StaffFinanceiroRoute
+  '/lembretes': typeof StaffLembretesRoute
+  '/mais': typeof StaffMaisRoute
+  '/minha-agenda': typeof StaffMinhaAgendaRoute
+  '/minhas-comissoes': typeof StaffMinhasComissoesRoute
+  '/produtos': typeof StaffProdutosRoute
+  '/profissionais': typeof StaffProfissionaisRoute
+  '/promocoes': typeof StaffPromocoesRoute
+  '/relatorios': typeof StaffRelatoriosRoute
+  '/servicos': typeof StaffServicosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_admin': typeof AdminRouteWithChildren
-  '/_professional': typeof ProfessionalRouteWithChildren
+  '/_staff': typeof StaffRouteWithChildren
   '/agendar': typeof AgendarRoute
   '/app': typeof AppRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
-  '/_admin/agenda': typeof AdminAgendaRoute
-  '/_admin/clientes': typeof AdminClientesRoute
-  '/_admin/configuracoes': typeof AdminConfiguracoesRoute
-  '/_admin/fidelidade': typeof AdminFidelidadeRoute
-  '/_admin/financeiro': typeof AdminFinanceiroRoute
-  '/_admin/lembretes': typeof AdminLembretesRoute
-  '/_admin/mais': typeof AdminMaisRoute
-  '/_admin/produtos': typeof AdminProdutosRoute
-  '/_admin/profissionais': typeof AdminProfissionaisRoute
-  '/_admin/promocoes': typeof AdminPromocoesRoute
-  '/_admin/relatorios': typeof AdminRelatoriosRoute
-  '/_admin/servicos': typeof AdminServicosRoute
-  '/_professional/minha-agenda': typeof ProfessionalMinhaAgendaRoute
-  '/_professional/minhas-comissoes': typeof ProfessionalMinhasComissoesRoute
+  '/_staff/agenda': typeof StaffAgendaRoute
+  '/_staff/clientes': typeof StaffClientesRoute
+  '/_staff/configuracoes': typeof StaffConfiguracoesRoute
+  '/_staff/fidelidade': typeof StaffFidelidadeRoute
+  '/_staff/financeiro': typeof StaffFinanceiroRoute
+  '/_staff/lembretes': typeof StaffLembretesRoute
+  '/_staff/mais': typeof StaffMaisRoute
+  '/_staff/minha-agenda': typeof StaffMinhaAgendaRoute
+  '/_staff/minhas-comissoes': typeof StaffMinhasComissoesRoute
+  '/_staff/produtos': typeof StaffProdutosRoute
+  '/_staff/profissionais': typeof StaffProfissionaisRoute
+  '/_staff/promocoes': typeof StaffPromocoesRoute
+  '/_staff/relatorios': typeof StaffRelatoriosRoute
+  '/_staff/servicos': typeof StaffServicosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -217,13 +210,13 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/lembretes'
     | '/mais'
+    | '/minha-agenda'
+    | '/minhas-comissoes'
     | '/produtos'
     | '/profissionais'
     | '/promocoes'
     | '/relatorios'
     | '/servicos'
-    | '/minha-agenda'
-    | '/minhas-comissoes'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -238,42 +231,40 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/lembretes'
     | '/mais'
+    | '/minha-agenda'
+    | '/minhas-comissoes'
     | '/produtos'
     | '/profissionais'
     | '/promocoes'
     | '/relatorios'
     | '/servicos'
-    | '/minha-agenda'
-    | '/minhas-comissoes'
   id:
     | '__root__'
     | '/'
-    | '/_admin'
-    | '/_professional'
+    | '/_staff'
     | '/agendar'
     | '/app'
     | '/login'
     | '/logout'
-    | '/_admin/agenda'
-    | '/_admin/clientes'
-    | '/_admin/configuracoes'
-    | '/_admin/fidelidade'
-    | '/_admin/financeiro'
-    | '/_admin/lembretes'
-    | '/_admin/mais'
-    | '/_admin/produtos'
-    | '/_admin/profissionais'
-    | '/_admin/promocoes'
-    | '/_admin/relatorios'
-    | '/_admin/servicos'
-    | '/_professional/minha-agenda'
-    | '/_professional/minhas-comissoes'
+    | '/_staff/agenda'
+    | '/_staff/clientes'
+    | '/_staff/configuracoes'
+    | '/_staff/fidelidade'
+    | '/_staff/financeiro'
+    | '/_staff/lembretes'
+    | '/_staff/mais'
+    | '/_staff/minha-agenda'
+    | '/_staff/minhas-comissoes'
+    | '/_staff/produtos'
+    | '/_staff/profissionais'
+    | '/_staff/promocoes'
+    | '/_staff/relatorios'
+    | '/_staff/servicos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRouteWithChildren
-  ProfessionalRoute: typeof ProfessionalRouteWithChildren
+  StaffRoute: typeof StaffRouteWithChildren
   AgendarRoute: typeof AgendarRoute
   AppRoute: typeof AppRoute
   LoginRoute: typeof LoginRoute
@@ -310,18 +301,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgendarRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_professional': {
-      id: '/_professional'
+    '/_staff': {
+      id: '/_staff'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof ProfessionalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_admin': {
-      id: '/_admin'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AdminRouteImport
+      preLoaderRoute: typeof StaffRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -331,157 +315,146 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_professional/minhas-comissoes': {
-      id: '/_professional/minhas-comissoes'
-      path: '/minhas-comissoes'
-      fullPath: '/minhas-comissoes'
-      preLoaderRoute: typeof ProfessionalMinhasComissoesRouteImport
-      parentRoute: typeof ProfessionalRoute
-    }
-    '/_professional/minha-agenda': {
-      id: '/_professional/minha-agenda'
-      path: '/minha-agenda'
-      fullPath: '/minha-agenda'
-      preLoaderRoute: typeof ProfessionalMinhaAgendaRouteImport
-      parentRoute: typeof ProfessionalRoute
-    }
-    '/_admin/servicos': {
-      id: '/_admin/servicos'
+    '/_staff/servicos': {
+      id: '/_staff/servicos'
       path: '/servicos'
       fullPath: '/servicos'
-      preLoaderRoute: typeof AdminServicosRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffServicosRouteImport
+      parentRoute: typeof StaffRoute
     }
-    '/_admin/relatorios': {
-      id: '/_admin/relatorios'
+    '/_staff/relatorios': {
+      id: '/_staff/relatorios'
       path: '/relatorios'
       fullPath: '/relatorios'
-      preLoaderRoute: typeof AdminRelatoriosRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffRelatoriosRouteImport
+      parentRoute: typeof StaffRoute
     }
-    '/_admin/promocoes': {
-      id: '/_admin/promocoes'
+    '/_staff/promocoes': {
+      id: '/_staff/promocoes'
       path: '/promocoes'
       fullPath: '/promocoes'
-      preLoaderRoute: typeof AdminPromocoesRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffPromocoesRouteImport
+      parentRoute: typeof StaffRoute
     }
-    '/_admin/profissionais': {
-      id: '/_admin/profissionais'
+    '/_staff/profissionais': {
+      id: '/_staff/profissionais'
       path: '/profissionais'
       fullPath: '/profissionais'
-      preLoaderRoute: typeof AdminProfissionaisRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffProfissionaisRouteImport
+      parentRoute: typeof StaffRoute
     }
-    '/_admin/produtos': {
-      id: '/_admin/produtos'
+    '/_staff/produtos': {
+      id: '/_staff/produtos'
       path: '/produtos'
       fullPath: '/produtos'
-      preLoaderRoute: typeof AdminProdutosRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffProdutosRouteImport
+      parentRoute: typeof StaffRoute
     }
-    '/_admin/mais': {
-      id: '/_admin/mais'
+    '/_staff/minhas-comissoes': {
+      id: '/_staff/minhas-comissoes'
+      path: '/minhas-comissoes'
+      fullPath: '/minhas-comissoes'
+      preLoaderRoute: typeof StaffMinhasComissoesRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/minha-agenda': {
+      id: '/_staff/minha-agenda'
+      path: '/minha-agenda'
+      fullPath: '/minha-agenda'
+      preLoaderRoute: typeof StaffMinhaAgendaRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/mais': {
+      id: '/_staff/mais'
       path: '/mais'
       fullPath: '/mais'
-      preLoaderRoute: typeof AdminMaisRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffMaisRouteImport
+      parentRoute: typeof StaffRoute
     }
-    '/_admin/lembretes': {
-      id: '/_admin/lembretes'
+    '/_staff/lembretes': {
+      id: '/_staff/lembretes'
       path: '/lembretes'
       fullPath: '/lembretes'
-      preLoaderRoute: typeof AdminLembretesRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffLembretesRouteImport
+      parentRoute: typeof StaffRoute
     }
-    '/_admin/financeiro': {
-      id: '/_admin/financeiro'
+    '/_staff/financeiro': {
+      id: '/_staff/financeiro'
       path: '/financeiro'
       fullPath: '/financeiro'
-      preLoaderRoute: typeof AdminFinanceiroRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffFinanceiroRouteImport
+      parentRoute: typeof StaffRoute
     }
-    '/_admin/fidelidade': {
-      id: '/_admin/fidelidade'
+    '/_staff/fidelidade': {
+      id: '/_staff/fidelidade'
       path: '/fidelidade'
       fullPath: '/fidelidade'
-      preLoaderRoute: typeof AdminFidelidadeRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffFidelidadeRouteImport
+      parentRoute: typeof StaffRoute
     }
-    '/_admin/configuracoes': {
-      id: '/_admin/configuracoes'
+    '/_staff/configuracoes': {
+      id: '/_staff/configuracoes'
       path: '/configuracoes'
       fullPath: '/configuracoes'
-      preLoaderRoute: typeof AdminConfiguracoesRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffConfiguracoesRouteImport
+      parentRoute: typeof StaffRoute
     }
-    '/_admin/clientes': {
-      id: '/_admin/clientes'
+    '/_staff/clientes': {
+      id: '/_staff/clientes'
       path: '/clientes'
       fullPath: '/clientes'
-      preLoaderRoute: typeof AdminClientesRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffClientesRouteImport
+      parentRoute: typeof StaffRoute
     }
-    '/_admin/agenda': {
-      id: '/_admin/agenda'
+    '/_staff/agenda': {
+      id: '/_staff/agenda'
       path: '/agenda'
       fullPath: '/agenda'
-      preLoaderRoute: typeof AdminAgendaRouteImport
-      parentRoute: typeof AdminRoute
+      preLoaderRoute: typeof StaffAgendaRouteImport
+      parentRoute: typeof StaffRoute
     }
   }
 }
 
-interface AdminRouteChildren {
-  AdminAgendaRoute: typeof AdminAgendaRoute
-  AdminClientesRoute: typeof AdminClientesRoute
-  AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
-  AdminFidelidadeRoute: typeof AdminFidelidadeRoute
-  AdminFinanceiroRoute: typeof AdminFinanceiroRoute
-  AdminLembretesRoute: typeof AdminLembretesRoute
-  AdminMaisRoute: typeof AdminMaisRoute
-  AdminProdutosRoute: typeof AdminProdutosRoute
-  AdminProfissionaisRoute: typeof AdminProfissionaisRoute
-  AdminPromocoesRoute: typeof AdminPromocoesRoute
-  AdminRelatoriosRoute: typeof AdminRelatoriosRoute
-  AdminServicosRoute: typeof AdminServicosRoute
+interface StaffRouteChildren {
+  StaffAgendaRoute: typeof StaffAgendaRoute
+  StaffClientesRoute: typeof StaffClientesRoute
+  StaffConfiguracoesRoute: typeof StaffConfiguracoesRoute
+  StaffFidelidadeRoute: typeof StaffFidelidadeRoute
+  StaffFinanceiroRoute: typeof StaffFinanceiroRoute
+  StaffLembretesRoute: typeof StaffLembretesRoute
+  StaffMaisRoute: typeof StaffMaisRoute
+  StaffMinhaAgendaRoute: typeof StaffMinhaAgendaRoute
+  StaffMinhasComissoesRoute: typeof StaffMinhasComissoesRoute
+  StaffProdutosRoute: typeof StaffProdutosRoute
+  StaffProfissionaisRoute: typeof StaffProfissionaisRoute
+  StaffPromocoesRoute: typeof StaffPromocoesRoute
+  StaffRelatoriosRoute: typeof StaffRelatoriosRoute
+  StaffServicosRoute: typeof StaffServicosRoute
 }
 
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminAgendaRoute: AdminAgendaRoute,
-  AdminClientesRoute: AdminClientesRoute,
-  AdminConfiguracoesRoute: AdminConfiguracoesRoute,
-  AdminFidelidadeRoute: AdminFidelidadeRoute,
-  AdminFinanceiroRoute: AdminFinanceiroRoute,
-  AdminLembretesRoute: AdminLembretesRoute,
-  AdminMaisRoute: AdminMaisRoute,
-  AdminProdutosRoute: AdminProdutosRoute,
-  AdminProfissionaisRoute: AdminProfissionaisRoute,
-  AdminPromocoesRoute: AdminPromocoesRoute,
-  AdminRelatoriosRoute: AdminRelatoriosRoute,
-  AdminServicosRoute: AdminServicosRoute,
+const StaffRouteChildren: StaffRouteChildren = {
+  StaffAgendaRoute: StaffAgendaRoute,
+  StaffClientesRoute: StaffClientesRoute,
+  StaffConfiguracoesRoute: StaffConfiguracoesRoute,
+  StaffFidelidadeRoute: StaffFidelidadeRoute,
+  StaffFinanceiroRoute: StaffFinanceiroRoute,
+  StaffLembretesRoute: StaffLembretesRoute,
+  StaffMaisRoute: StaffMaisRoute,
+  StaffMinhaAgendaRoute: StaffMinhaAgendaRoute,
+  StaffMinhasComissoesRoute: StaffMinhasComissoesRoute,
+  StaffProdutosRoute: StaffProdutosRoute,
+  StaffProfissionaisRoute: StaffProfissionaisRoute,
+  StaffPromocoesRoute: StaffPromocoesRoute,
+  StaffRelatoriosRoute: StaffRelatoriosRoute,
+  StaffServicosRoute: StaffServicosRoute,
 }
 
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
-interface ProfessionalRouteChildren {
-  ProfessionalMinhaAgendaRoute: typeof ProfessionalMinhaAgendaRoute
-  ProfessionalMinhasComissoesRoute: typeof ProfessionalMinhasComissoesRoute
-}
-
-const ProfessionalRouteChildren: ProfessionalRouteChildren = {
-  ProfessionalMinhaAgendaRoute: ProfessionalMinhaAgendaRoute,
-  ProfessionalMinhasComissoesRoute: ProfessionalMinhasComissoesRoute,
-}
-
-const ProfessionalRouteWithChildren = ProfessionalRoute._addFileChildren(
-  ProfessionalRouteChildren,
-)
+const StaffRouteWithChildren = StaffRoute._addFileChildren(StaffRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRouteWithChildren,
-  ProfessionalRoute: ProfessionalRouteWithChildren,
+  StaffRoute: StaffRouteWithChildren,
   AgendarRoute: AgendarRoute,
   AppRoute: AppRoute,
   LoginRoute: LoginRoute,

@@ -14,8 +14,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import PageHeader from "@/components/ui/PageHeader";
 import { formatBRL } from "@/lib/format";
+import { useUser } from "@/lib/auth";
 
 export default function Promotions() {
+  const user = useUser();
+  // Profissional vê as ofertas ativas em leitura; só o admin gerencia.
+  const canEdit = user?.role === "admin";
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     name: "", description: "", discount_type: "percent", discount_value: "",
@@ -47,7 +51,9 @@ export default function Promotions() {
         action={
           <div className="flex gap-2">
             <Link to="/mais"><Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button></Link>
-            <Button size="sm" className="rounded-xl gap-1.5" onClick={() => setShowForm(true)}><Plus className="w-4 h-4" /> Nova</Button>
+            {canEdit && (
+              <Button size="sm" className="rounded-xl gap-1.5" onClick={() => setShowForm(true)}><Plus className="w-4 h-4" /> Nova</Button>
+            )}
           </div>
         }
       />
@@ -73,7 +79,7 @@ export default function Promotions() {
                   </p>
                 </div>
               </div>
-              <Switch checked={promo.is_active} onCheckedChange={(v) => toggleMutation.mutate({ id: promo.id, is_active: v })} />
+              <Switch checked={promo.is_active} disabled={!canEdit} onCheckedChange={(v) => toggleMutation.mutate({ id: promo.id, is_active: v })} />
             </div>
             {promo.description && <p className="text-xs text-muted-foreground mt-2">{promo.description}</p>}
             {promo.end_date && (
@@ -88,7 +94,8 @@ export default function Promotions() {
         )}
       </div>
 
-      <Sheet open={showForm} onOpenChange={() => setShowForm(false)}>
+      {canEdit && (
+        <Sheet open={showForm} onOpenChange={() => setShowForm(false)}>
         <SheetContent side="bottom" className="max-h-[85vh] rounded-t-3xl overflow-y-auto">
           <SheetHeader className="pb-4">
             <SheetTitle className="font-heading">Nova Promoção</SheetTitle>
@@ -134,6 +141,7 @@ export default function Promotions() {
           </div>
         </SheetContent>
       </Sheet>
+      )}
     </div>
   );
 }

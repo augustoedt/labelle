@@ -6,7 +6,7 @@ export default function StatCard({ title, value, icon: Icon, trend, className })
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
-          <p className="text-xl font-heading font-bold">{value}</p>
+          <p className="text-xl font-heading font-bold tabular-nums">{value}</p>
         </div>
         {Icon && (
           <div className="p-2 rounded-xl bg-primary/10">

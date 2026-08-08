@@ -151,7 +151,6 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
               );
             })
             )}
-            {selectedService && <Button className="w-full rounded-xl h-12 font-semibold" onClick={() => setStep(2)}>Continuar <ChevronRight className="w-4 h-4" /></Button>}
           </motion.div>
         )}
 
@@ -232,7 +231,6 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
                   </div>}
               </div>
             )}
-            {selectedTime && <Button className="w-full rounded-xl h-12 font-semibold" onClick={goToConfirm}>Continuar <ChevronRight className="w-4 h-4" /></Button>}
           </motion.div>
         )}
 
@@ -292,6 +290,29 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Botão flutuante "Continuar" (acima da barra inferior), aparece ao selecionar */}
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-lg px-5 pointer-events-none z-40">
+        <AnimatePresence>
+          {(step === 1 && selectedService) || (step === 3 && selectedTime) ? (
+            <motion.div
+              key="floating-continue"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={{ duration: 0.18 }}
+              className="flex justify-end"
+            >
+              <Button
+                className="pointer-events-auto rounded-full h-12 px-6 font-semibold shadow-lg shadow-primary/30 gap-1"
+                onClick={() => (step === 1 ? setStep(2) : goToConfirm())}
+              >
+                Continuar <ChevronRight className="w-4 h-4" />
+              </Button>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

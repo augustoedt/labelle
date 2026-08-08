@@ -47,7 +47,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="px-5 pt-10 pb-5 flex items-center justify-between" style={{background: "linear-gradient(135deg, #F28FA3 0%, #F7A6B8 100%)"}}>
+      <div className="app-header px-5 pt-10 pb-5 flex items-center justify-between">
         <span className="font-heading text-2xl text-white font-semibold">La Belle Studio</span>
         <p className="text-xs text-white/90">
           {format(new Date(), "EEEE, d/MM", { locale: ptBR })}

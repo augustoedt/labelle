@@ -13,22 +13,8 @@ import PageHeader from "@/components/ui/PageHeader";
 import AppointmentForm from "@/components/agenda/AppointmentForm";
 import FinalizeSheet from "@/components/agenda/FinalizeSheet";
 import { toast } from "@/components/ui/use-toast";
+import { statusColors, statusLabels } from "@/lib/appointmentStatus";
 
-const statusColors = {
-  agendado: "bg-blue-100 text-blue-700",
-  confirmado: "bg-emerald-100 text-emerald-700",
-  em_atendimento: "bg-amber-100 text-amber-700",
-  concluido: "bg-muted text-muted-foreground",
-  cancelado: "bg-red-100 text-red-700",
-};
-
-const statusLabels = {
-  agendado: "Agendado",
-  confirmado: "Confirmado",
-  em_atendimento: "Atendendo",
-  concluido: "Concluído",
-  cancelado: "Cancelado",
-};
 
 export default function MinhaAgenda() {
   const { user } = useRouteContext({ from: "__root__" });

@@ -7,12 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
+import { tierColors, tierLabels } from "@/lib/loyaltyTiers";
 
+// Limites de pontos por tier (atenção: divergem do app da cliente — ver src/lib/loyaltyTiers.js)
 const tierConfig = {
-  bronze: { label: "Bronze", color: "bg-amber-100 text-amber-800", min: 0 },
-  prata: { label: "Prata", color: "bg-slate-100 text-slate-700", min: 100 },
-  ouro: { label: "Ouro", color: "bg-yellow-100 text-yellow-800", min: 300 },
-  vip: { label: "VIP", color: "bg-primary/10 text-primary", min: 600 },
+  bronze: { label: tierLabels.bronze, color: tierColors.bronze, min: 0 },
+  prata: { label: tierLabels.prata, color: tierColors.prata, min: 100 },
+  ouro: { label: tierLabels.ouro, color: tierColors.ouro, min: 300 },
+  vip: { label: tierLabels.vip, color: tierColors.vip, min: 600 },
 };
 
 export default function Loyalty() {

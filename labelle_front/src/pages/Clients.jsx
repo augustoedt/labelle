@@ -10,12 +10,7 @@ import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
 import ClientForm from "@/components/clients/ClientForm";
 
-const tierColors = {
-  bronze: "bg-amber-100 text-amber-800",
-  prata: "bg-slate-100 text-slate-700",
-  ouro: "bg-yellow-100 text-yellow-800",
-  vip: "bg-primary/10 text-primary",
-};
+import { tierColors } from "@/lib/loyaltyTiers";
 
 const sourceLabel = {
   app_cliente: { label: "App", icon: Smartphone, className: "text-primary" },
@@ -113,7 +108,7 @@ export default function Clients() {
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-sm">{client.name}</p>
                     {client.loyalty_tier && client.loyalty_tier !== "bronze" && (
-                      <Badge className={cn("text-[9px] border-0 py-0", tierColors[client.loyalty_tier])}>
+                      <Badge className={cn("text-xs border-0 py-0", tierColors[client.loyalty_tier])}>
                         <Crown className="w-2.5 h-2.5 mr-0.5" />
                         {client.loyalty_tier.toUpperCase()}
                       </Badge>

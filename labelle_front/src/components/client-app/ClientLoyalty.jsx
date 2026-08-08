@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { tierEmojis, tierLabels, tierSolidColors } from "@/lib/loyaltyTiers";
 
+// Limites de pontos por tier (atenção: divergem do admin — ver src/lib/loyaltyTiers.js)
 const tiers = {
-  bronze: { label: "Bronze", emoji: "🥉", min: 0, max: 500, color: "bg-amber-700" },
-  prata: { label: "Prata", emoji: "🥈", min: 500, max: 1000, color: "bg-gray-400" },
-  ouro: { label: "Ouro", emoji: "🥇", min: 1000, max: 2000, color: "bg-yellow-500" },
-  vip: { label: "VIP", emoji: "💎", min: 2000, max: 2000, color: "bg-foreground" },
+  bronze: { label: tierLabels.bronze, emoji: tierEmojis.bronze, min: 0, max: 500, color: tierSolidColors.bronze },
+  prata: { label: tierLabels.prata, emoji: tierEmojis.prata, min: 500, max: 1000, color: tierSolidColors.prata },
+  ouro: { label: tierLabels.ouro, emoji: tierEmojis.ouro, min: 1000, max: 2000, color: tierSolidColors.ouro },
+  vip: { label: tierLabels.vip, emoji: tierEmojis.vip, min: 2000, max: 2000, color: tierSolidColors.vip },
 };
 
 const benefits = {

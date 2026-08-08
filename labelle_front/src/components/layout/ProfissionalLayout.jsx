@@ -11,7 +11,7 @@ export default function ProfissionalLayout() {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <main className="pb-20 max-w-lg mx-auto">
         <Outlet />
       </main>

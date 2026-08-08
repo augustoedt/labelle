@@ -3,7 +3,7 @@ import BottomNav from "./BottomNav";
 
 export default function AppLayout({ children }) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <main className="pb-20 max-w-lg mx-auto">
         {children ?? <Outlet />}
       </main>

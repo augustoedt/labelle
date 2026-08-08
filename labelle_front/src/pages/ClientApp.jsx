@@ -35,7 +35,7 @@ export default function ClientApp() {
   }, [client]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto relative">
+    <div className="min-h-dvh bg-background flex flex-col max-w-md mx-auto relative">
       <InstallPwaButton />
       {/* Header */}
       <div className="px-5 pt-10 pb-4 flex items-center justify-between bg-background">

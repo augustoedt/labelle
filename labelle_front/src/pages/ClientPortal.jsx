@@ -122,7 +122,7 @@ export default function ClientPortal() {
   const availableSlots = getAvailableSlots();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       {/* Hero header */}
       <div className="bg-gradient-to-br from-primary/10 via-background to-accent/10 px-5 pt-10 pb-8 text-center">
         <h1 className="text-3xl font-heading font-bold">La Belle Studio</h1>

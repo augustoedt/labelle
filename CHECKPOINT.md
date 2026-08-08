@@ -181,6 +181,22 @@ formulário de agendamento (preciso para o cadastro) e envio automático de What
   estático + motion interno.
 - `fe949ef` guia de instalação do PWA: overlay z-[60].
 
+## Taste v2 — tipografia + high-end mobile (`179c0a0`)
+
+Skill usada: `design-taste-frontend` (v2, validada idêntica ao repo
+leonxlnx/taste-skill) + **`high-end-visual-design`** (repo, `skills/soft-skill/`,
+instalada em `~/.pi/agent/skills/high-end-visual-design/`).
+
+- Tipografia: `tracking-tight` em todos os títulos `font-heading`; pesos
+  unificados (seção semibold, bold só display); títulos de seção pequenos →
+  `font-heading text-base`; hero do portal semibold; PageHeader `pt-8`.
+- High-end (adaptado mobile, leve — usuário: "para mobile não exagerar"):
+  stroke 1.5 nos ícones lucide (CSS global `svg.lucide`); CTAs primários em
+  pill + button-in-button (ícone em círculo aninhado) no Continuar/Confirmar;
+  sombras difusas tintadas (ServiceCard selecionado, hover Mais).
+- Nada de cores de acento mudou (item 2 pendente). Desktop não recebe atenção
+  especial (app mobile-first, `max-w-lg` centralizado — decisão do usuário).
+
 ## Convenções do projeto
 
 - Commit por correção, mensagens em pt-BR começando com `front:`/`back:`. **Nunca** `git push` sem pedir.

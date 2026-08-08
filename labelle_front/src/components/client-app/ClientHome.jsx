@@ -118,7 +118,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
         </div>
       }
 
-      {/* Popular services (crescem deslizando da direita, um a um) */}
+      {/* Popular services (comeca pequeno e cresce da direita p/ esquerda, um a um) */}
       <div>
         <h2 className="font-heading text-base font-semibold tracking-tight mb-3">Serviços populares</h2>
         <div className="space-y-2">
@@ -130,8 +130,9 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
           services.filter((s) => s.is_active).slice(0, 4).map((svc, i) =>
           <motion.button
             key={svc.id}
-            initial={{ opacity: 0, x: 48 }}
-            animate={{ opacity: 1, x: 0 }}
+            style={{ originX: 1 }}
+            initial={{ opacity: 0, scaleX: 0.25 }}
+            animate={{ opacity: 1, scaleX: 1 }}
             transition={{ duration: 0.4, delay: prefersReduced ? 0 : i * 0.12, ease: [0.16, 1, 0.3, 1] }}
             onClick={() => onNavigate("agendar")}
             className="w-full flex items-center gap-3 bg-card border border-border/50 rounded-2xl p-3 hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">

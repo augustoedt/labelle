@@ -1,7 +1,6 @@
-// SVG logo component that replicates the La Belle Studio logo mark (pearl circle) + wordmark
-// Uses the uploaded image directly for fidelity
+// Logo La Belle Studio (asset local em public/logo.png)
 export default function LaBelleLogo({ size = "md", dark = false, imageOnly = false }) {
-  const imgUrl = "https://media.base44.com/images/public/69ed4f6aab9a16f877207f63/c0405e1ad_ChatGPTImage25deabrde202620_57_27.png";
+  const imgUrl = "/logo.png";
 
   const sizes = {
     sm: "h-8",

@@ -11,9 +11,9 @@ App de gestão de salão de beleza (agenda, clientes, financeiro, fidelidade, po
 de agendamento `/agendar`, app da cliente `/app`).
 
 Trabalho atual: redesign do front guiado pelas skills `redesign-existing-projects` e
-`design-taste-frontend` (instaladas em `~/.kimi-code/skills/`, vindas de
-github.com/leonxlnx/taste-skill). Auditoria completa aplicada; fase "taste" (nova direção
-visual) ainda não começou.
+`design-taste-frontend` (copiadas para `~/.pi/agent/skills/`, vindas de
+`~/.kimi-code/skills/`, origem github.com/leonxlnx/taste-skill; `kimi-webbridge` também
+copiada). Auditoria completa aplicada; fase "taste" (nova direção visual) ainda não começou.
 
 ## Feito nesta sessão (commits em ordem)
 
@@ -51,6 +51,7 @@ Backend/dev:
 - Acessos dev — admin `admin@labelle.studio` / `changeme123456`; profissionais
   `joana@labelle.studio`, `camila@labelle.studio` (`changeme123456`), `beatriz@labelle.studio` (`labelle123456`);
   usuário comum `maria@exemplo.com` (`labelle123456`). App da cliente usa sessão por telefone (localStorage), não senha.
+- Build check do front: `cd labelle_front && npm run build` **e** `npx tsc --noEmit` (limpo desde `b18fcf0`).
 
 ## WebBridge (browser automation)
 
@@ -79,15 +80,23 @@ Decisões de produto pendentes com o usuário:
 
 Backlog técnico:
 5. Fase **taste-skill** (`design-taste-frontend` v2): nova direção visual. Dials sugeridos p/ app de
-   operação mobile: VARIANCE baixo, MOTION baixo, DENSITY médio-alto.
-6. Poda de bundle: ~10 deps não usadas (`cmdk`, `embla-carousel-react`, `sonner`, `react-hot-toast`,
-   `next-themes`, `@hello-pangea/dnd`, `canvas-confetti`, `input-otp`, `react-resizable-panels`,
-   `react-day-picker`) e ~30 componentes `ui/` órfãos.
-7. `ClientPortal.jsx` lista appointments completa p/ calcular horários — deveria usar a action
-   `available_slots` do backend (expõe dados desnecessariamente e escala mal).
-8. Validação/máscara de telefone nos formulários; validação client-side em geral.
-9. Erros pré-existentes de `tsc` em `router.tsx`/`login.tsx` (não bloqueiam build vite).
+   operação mobile: VARIANCE baixo, MOTION baixo, DENSITY médio-alto. Próxima tarefa da sessão.
+6. ~~Poda de bundle~~ **feito** `770f7bb` (29 deps + 36 componentes ui/ orfaos removidos).
+7. ~~`ClientPortal.jsx` lista appointments~~ **feito** `a76b904` (usa action `available_slots`).
+8. ~~Validação/máscara de telefone~~ **feito** `cbb279f` (`src/lib/phone.js`, 5 formulários).
+9. ~~Erros de `tsc`~~ **feito** `b18fcf0` (strictNullChecks + ui em tsx; `npx tsc --noEmit` limpo).
 10. Push dos commits + deploy back/front quando o usuário pedir.
+
+## Sessão 2026-08-08 (continuação) — commits adicionados
+
+- `770f7bb` front: poda de deps não usadas (29) e componentes `ui/` órfãos (36)
+- `cc43ec9` docs: `DECISAO_PROGRAMA_FIDELIDADE.md` (decisão tier) + CHECKPOINT referenciando
+- `b18fcf0` front: `tsc --noEmit` limpo (strictNullChecks + input/label/button em tsx)
+- `a76b904` front: portal público usa action `available_slots` (não lista mais appointments)
+- `cbb279f` front: máscara/validação de telefone BR (`src/lib/phone.js`) em 5 formulários
+
+Skills migradas nesta sessão: `redesign-existing-projects`, `design-taste-frontend` e
+`kimi-webbridge` copiadas de `~/.kimi-code/skills/` para `~/.pi/agent/skills/` (sem symlink).
 
 ## Convenções do projeto
 

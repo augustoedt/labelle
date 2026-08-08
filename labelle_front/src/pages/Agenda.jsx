@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppointmentsApi, ServicesApi, ProfessionalsApi, ClientsApi } from "@/server/api";
 import { Plus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
@@ -23,11 +23,22 @@ export default function Agenda() {
   const [finalizingApt, setFinalizingApt] = useState(null);
   const queryClient = useQueryClient();
   const dateStr = format(selectedDate, "yyyy-MM-dd");
+  const weekRowRef = useRef(null);
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments"],
     queryFn: () => AppointmentsApi.list({ sort: "-date", limit: 500 }),
   });
+
+  // Mantém o dia selecionado visível na fileira scrollável (centraliza).
+  useEffect(() => {
+    const row = weekRowRef.current;
+    if (!row) return;
+    const chip = row.querySelector(`[data-date="${dateStr}"]`);
+    if (!chip) return;
+    const target = chip.offsetLeft - row.clientWidth / 2 + chip.offsetWidth / 2;
+    row.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+  }, [dateStr, isLoading]);
 
   const { data: services = [] } = useQuery({
     queryKey: ["services"],
@@ -180,7 +191,7 @@ export default function Agenda() {
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
-        <div className="flex gap-1 overflow-x-auto -mx-5 px-5 pb-1">
+        <div ref={weekRowRef} className="flex gap-1 overflow-x-auto -mx-5 px-5 pb-1">
           {isLoading ? (
             Array.from({ length: 7 }).map((_, i) => (
               <Skeleton key={i} className="h-14 flex-1 rounded-xl" />
@@ -196,6 +207,7 @@ export default function Agenda() {
             return (
               <button
                 key={d.toISOString()}
+                data-date={format(d, "yyyy-MM-dd")}
                 onClick={() => setSelectedDate(d)}
                 className={cn(
                   "flex flex-col items-center py-2 px-3 rounded-xl transition-all duration-150 shrink-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

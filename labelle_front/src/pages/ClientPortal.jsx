@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ServicesApi, ProfessionalsApi, AppointmentsApi, PromotionsApi } from "@/server/api";
+import { ServicesApi, ProfessionalsApi, AppointmentsApi, PromotionsApi, getAvailableSlots } from "@/server/api";
 import { ChevronRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -31,11 +32,6 @@ export default function ClientPortal() {
     queryFn: () => ProfessionalsApi.list(),
   });
 
-  const { data: appointments = [] } = useQuery({
-    queryKey: ["appointments"],
-    queryFn: () => AppointmentsApi.list({ sort: "-date", limit: 500 }),
-  });
-
   const { data: promotions = [] } = useQuery({
     queryKey: ["promotions"],
     queryFn: () => PromotionsApi.list(),
@@ -44,7 +40,7 @@ export default function ClientPortal() {
   const createMutation = useMutation({
     mutationFn: (data) => AppointmentsApi.bookOnline({ data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["slots"] });
       setStep(5);
     },
   });
@@ -59,43 +55,23 @@ export default function ClientPortal() {
   // Available dates (next 14 days)
   const availableDates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
 
-  // Available time slots
-  const getAvailableSlots = () => {
-    if (!selectedProfessional || !selectedDate) return [];
-    const dateStr = format(selectedDate, "yyyy-MM-dd");
-    const profStart = selectedProfessional.work_start || "09:00";
-    const profEnd = selectedProfessional.work_end || "18:00";
-    const duration = selectedService?.duration_minutes || 60;
-
-    const existingAppts = appointments.filter(
-      a => a.date === dateStr && a.professional_id === selectedProfessional.id && a.status !== "cancelado"
-    );
-
-    const slots = [];
-    const [startH, startM] = profStart.split(":").map(Number);
-    const [endH, endM] = profEnd.split(":").map(Number);
-    const startMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-
-    for (let m = startMinutes; m + duration <= endMinutes; m += 30) {
-      const hour = Math.floor(m / 60);
-      const min = m % 60;
-      const slotTime = `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
-      const slotEnd = m + duration;
-
-      const hasConflict = existingAppts.some(a => {
-        const [aH, aM] = (a.time || "00:00").split(":").map(Number);
-        const aStart = aH * 60 + aM;
-        const aEnd = aStart + (a.duration_minutes || 60);
-        return m < aEnd && slotEnd > aStart;
-      });
-
-      if (!hasConflict) {
-        slots.push(slotTime);
-      }
-    }
-    return slots;
-  };
+  // Available time slots — calculados no backend (action available_slots),
+  // que considera a grade do profissional e os agendamentos existentes sem
+  // expor a lista completa de appointments ao portal público.
+  const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
+  const { data: availableSlots = [], isLoading: isLoadingSlots } = useQuery({
+    queryKey: ["slots", selectedProfessional?.id, dateStr, selectedService?.duration_minutes],
+    queryFn: () => getAvailableSlots({
+      data: {
+        professional_id: selectedProfessional.id,
+        date: dateStr,
+        duration_minutes: selectedService?.duration_minutes || 60,
+        work_start: selectedProfessional.work_start || "09:00",
+        work_end: selectedProfessional.work_end || "18:00",
+      },
+    }).then(r => r.slots || []),
+    enabled: !!selectedProfessional && !!dateStr,
+  });
 
   const handleBook = () => {
     // Preço, duração, status e origem são calculados no backend (action
@@ -119,8 +95,6 @@ export default function ClientPortal() {
     setSelectedTime(null);
     setClientInfo({ name: "", phone: "" });
   };
-
-  const availableSlots = getAvailableSlots();
 
   return (
     <div className="min-h-dvh bg-background max-w-lg mx-auto">
@@ -225,7 +199,13 @@ export default function ClientPortal() {
             {selectedDate && (
               <div>
                 <p className="text-sm font-medium mb-2">Horários disponíveis</p>
-                {availableSlots.length === 0 ? (
+                {isLoadingSlots ? (
+                  <div className="grid grid-cols-4 gap-2">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <Skeleton key={i} className="h-10 rounded-xl" />
+                    ))}
+                  </div>
+                ) : availableSlots.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">Sem horários disponíveis neste dia</p>
                 ) : (
                   <div className="grid grid-cols-4 gap-2">

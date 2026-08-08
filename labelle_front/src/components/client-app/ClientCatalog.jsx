@@ -106,7 +106,7 @@ export default function ClientCatalog({ onNavigate }) {
             <button
               key={svc.id}
               onClick={() => setSelectedService(svc)}
-              className="bg-card border border-border/50 rounded-2xl overflow-hidden text-left hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="bg-card border border-border/50 rounded-2xl overflow-hidden text-left hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex flex-col"
             >
               <div className="relative">
                 <img
@@ -120,13 +120,13 @@ export default function ClientCatalog({ onNavigate }) {
                   </span>
                 )}
               </div>
-              <div className="p-3">
-                <p className="font-semibold text-sm leading-tight">{svc.name}</p>
+              <div className="p-3 flex flex-col flex-1">
+                <p className="font-semibold text-sm leading-tight line-clamp-2">{svc.name}</p>
                 <div className="flex items-center gap-1 mt-1 text-muted-foreground">
                   <Clock className="w-3 h-3" />
                   <span className="text-xs">{svc.duration_minutes}min</span>
                 </div>
-                <div className="mt-1.5 flex items-baseline gap-1.5">
+                <div className="mt-auto pt-2 flex items-baseline gap-1.5">
                   {promo && <p className="text-xs line-through text-muted-foreground tabular-nums">{formatBRL(svc.price)}</p>}
                   <p className="font-heading font-bold text-sm tabular-nums">{formatBRL(finalPrice)}</p>
                 </div>
@@ -153,7 +153,7 @@ export default function ClientCatalog({ onNavigate }) {
 
 function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+    <div className="fixed inset-0 z-[60] flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-background rounded-t-3xl overflow-hidden max-h-[85vh] flex flex-col">
         {/* Image */}

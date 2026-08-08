@@ -107,7 +107,7 @@ export default function Reminders() {
           </div>
         ) : (
           filtered.map((reminder) => (
-            <div key={reminder.id} className="bg-card rounded-2xl border border-border/50 shadow-sm p-4">
+            <div key={reminder.id} className="bg-card rounded-2xl border border-border/50 p-4">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-semibold text-sm">{reminder.client_name}</p>

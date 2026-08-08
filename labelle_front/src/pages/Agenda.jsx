@@ -232,7 +232,7 @@ export default function Agenda() {
               key={apt.id}
               role="button"
               tabIndex={0}
-              className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="bg-card rounded-2xl border border-border/50 overflow-hidden cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() => { setEditingApt(apt); setShowForm(true); }}
             >
               <div className="flex">

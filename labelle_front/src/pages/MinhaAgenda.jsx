@@ -250,7 +250,7 @@ export default function MinhaAgenda() {
           </div>
         ) : (
           dayAppointments.map((apt) => (
-            <div key={apt.id} className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
+            <div key={apt.id} className="bg-card rounded-2xl border border-border/50 overflow-hidden">
               <div className="flex">
                 <div className="w-1.5 bg-primary/70 flex-shrink-0" />
                 <div className="flex-1 p-4">

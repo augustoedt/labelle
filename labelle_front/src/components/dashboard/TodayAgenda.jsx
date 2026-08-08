@@ -29,7 +29,7 @@ export default function TodayAgenda({ appointments, isLoading }) {
       {appointments.map((apt) => (
         <div
           key={apt.id}
-          className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border/50 shadow-sm"
+          className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border/50"
         >
           <div className="text-center min-w-[50px]">
             <p className="text-sm font-bold text-foreground">{apt.time}</p>

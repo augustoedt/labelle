@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 export default function StatCard({ title, value, icon: Icon, trend, className }) {
   return (
-    <div className={cn("bg-card rounded-2xl p-4 border border-border/50 shadow-sm", className)}>
+    <div className={cn("bg-card rounded-2xl p-4 border border-border/50", className)}>
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>

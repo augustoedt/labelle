@@ -144,7 +144,7 @@ export default function Reports() {
         {isLoading ? (
           <Skeleton className="h-48 rounded-2xl" />
         ) : (
-        <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-4 h-48">
+        <div className="bg-card rounded-2xl border border-border/50 p-4 h-48">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={last7Days}>
               <XAxis dataKey="day" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />

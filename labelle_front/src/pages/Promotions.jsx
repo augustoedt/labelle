@@ -59,7 +59,7 @@ export default function Promotions() {
         ) : (
           <>
         {promotions.map((promo) => (
-          <div key={promo.id} className="bg-card rounded-2xl border border-border/50 shadow-sm p-4">
+          <div key={promo.id} className="bg-card rounded-2xl border border-border/50 p-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-accent/20">

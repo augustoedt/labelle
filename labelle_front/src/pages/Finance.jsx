@@ -155,7 +155,7 @@ export default function Finance() {
           <>
         {filtered.map((t) => (
           <div key={t.id} className={cn(
-            "bg-card rounded-xl border border-border/50 shadow-sm p-3 flex items-center gap-3",
+            "bg-card rounded-xl border border-border/50 p-3 flex items-center gap-3",
             t.status === "pendente_confirmacao" && "border-amber-200 bg-amber-50/50",
             t.status === "cancelado" && "opacity-60",
           )}>

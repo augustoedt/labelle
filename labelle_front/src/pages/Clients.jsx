@@ -94,7 +94,7 @@ export default function Clients() {
             key={client.id}
             role="button"
             tabIndex={0}
-            className="bg-card rounded-2xl border border-border/50 shadow-sm p-4 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="bg-card rounded-2xl border border-border/50 p-4 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => { setEditing(client); setShowForm(true); }}
           >
             <div className="flex items-start justify-between">

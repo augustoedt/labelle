@@ -139,6 +139,24 @@ alcançável por scroll. Screenshot de referência: `/tmp/minha_agenda_fix.jpeg`
 > Nota de teste: a extensão de browser do usuário (classes `aiinhbfoop-*`, painel de
 > 440px) também injeta elementos no DOM e polui medições de layout — ignorar ao depurar.
 
+## Shell único admin+profissional — FIX `d082cea`
+
+Unificado `AppLayout` + `ProfissionalLayout` em um só layout (`_staff`, URLs inalteradas)
+com `RoleNav` (nav inferior por permissão). Admin e profissional veem o MESMO shell;
+muda só o que a permissão libera.
+
+- Admin: Início(/), Agenda, Clientes, Financeiro, Mais. Profissional: Início
+  (/minha-agenda), Clientes (leitura), Comissões, Mais (filtrado: Serviços/Promoções).
+- Guards por rota: só-admin → redireciona profissional p/ `/minha-agenda`; só-profissional
+  → redireciona admin p/ `/`.
+- Páginas role-aware: Clientes, Serviços, Promoções escondem ações de escrita p/
+  profissional; Mais filtra itens. (Backend já bloqueava escrita; UI agora consistente.)
+- Removidos: `BottomNav.jsx`, `ProfissionalLayout.jsx`, grupos `_admin`/`_professional`.
+- **Atenção**: o grupo não pode se chamar `_app` — colide com a rota `app.tsx` no
+  routeTree gerado (identificador `AppRouteImport` duplicado). Usar nome único (`_staff`).
+- App da cliente (`/app`) e portal (`/agendar`) continuam separados (outro modelo de
+  auth: token por telefone / link público).
+
 ## Convenções do projeto
 
 - Commit por correção, mensagens em pt-BR começando com `front:`/`back:`. **Nunca** `git push` sem pedir.

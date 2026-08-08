@@ -197,6 +197,20 @@ instalada em `~/.pi/agent/skills/high-end-visual-design/`).
 - Nada de cores de acento mudou (item 2 pendente). Desktop não recebe atenção
   especial (app mobile-first, `max-w-lg` centralizado — decisão do usuário).
 
+## Animações no app da cliente (`ce2a73b`, `9efa020`, `a59b6ac`)
+
+- Catálogo: painel de detalhe sobe de baixo (spring, AnimatePresence); cards em
+  stagger vertical (y+opacidade).
+- Início (`9efa020`) e Agendar (`a59b6ac`): serviços populares/serviços crescem
+  da direita — começam pequenos (scaleX 0.25, `originX:1`) e crescem ao tamanho
+  natural, um a um (stagger). Aprovado pelo usuário após testar scaleX vs
+  translateX (escolheu scaleX).
+- **Armadilha framer-motion v11**: `useReducedMotion()` retorna `null` no 1º
+  render e `false` depois — `animate={prefersReduced ? false : {...}}` cancela
+  a animação no meio (cards presos no estado inicial). Fix: `initial`/`animate`
+  sempre objetos; gating só no `delay`. Também: `variants/staggerChildren` falha
+  com SSR — usar `delay: i * x` por item.
+
 ## Convenções do projeto
 
 - Commit por correção, mensagens em pt-BR começando com `front:`/`back:`. **Nunca** `git push` sem pedir.

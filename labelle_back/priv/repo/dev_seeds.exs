@@ -243,4 +243,131 @@ else
   IO.puts("Criados 5 agendamentos futuros.")
 end
 
+# ---------------------------------------------------------------------------
+# Catálogo real de serviços (espelho da produção) + vínculos com profissionais
+# ---------------------------------------------------------------------------
+
+real_catalog = [
+  %{name: "Adicional", category: :cabelo, price: 10, duration_minutes: 60, commission_percent: 0, is_active: true},
+  %{name: "Adicional escova modelada", category: :cabelo, price: 20, duration_minutes: 20, commission_percent: 40, is_active: true},
+  %{name: "Adicional química", category: :cabelo, price: 10, duration_minutes: 60, commission_percent: 30, is_active: true},
+  %{name: "Aplicação de tinta (cliente)", category: :cabelo, price: 60, duration_minutes: 90, commission_percent: 40, is_active: true},
+  %{name: "Botox P", category: :cabelo, price: 150, duration_minutes: 60, commission_percent: 30, is_active: true},
+  %{name: "Coloração cabelo curto", category: :cabelo, price: 120, duration_minutes: 120, commission_percent: 30, is_active: true},
+  %{name: "Corte Feminino", category: :cabelo, price: 100, duration_minutes: 60, commission_percent: 40, is_active: true},
+  %{name: "Corte Masculino", category: :cabelo, price: 50, duration_minutes: 30, commission_percent: 40, is_active: false},
+  %{name: "Escova G", category: :cabelo, price: 60, duration_minutes: 40, commission_percent: 40, is_active: true},
+  %{name: "Escova M", category: :cabelo, price: 50, duration_minutes: 30, commission_percent: 40, is_active: true},
+  %{name: "Escova P", category: :cabelo, price: 45, duration_minutes: 30, commission_percent: 40, is_active: true},
+  %{name: "Mechas Cabelo Curto", category: :cabelo, price: 400, duration_minutes: 180, commission_percent: 30, is_active: true},
+  %{name: "Penteado", category: :cabelo, price: 120, duration_minutes: 40, commission_percent: 40, is_active: true},
+  %{name: "Reconstrução Joico - Cabelos Curtos", category: :cabelo, price: 200, duration_minutes: 120, commission_percent: 30, is_active: true},
+  %{name: "Reconstrução Truss com molecular", category: :cabelo, price: 150, duration_minutes: 120, commission_percent: 30, is_active: true},
+  %{name: "Reconstrução Wella - Cabelos Curtos", category: :cabelo, price: 120, duration_minutes: 60, commission_percent: 30, is_active: true},
+  %{name: "Selagem P", category: :cabelo, price: 200, duration_minutes: 60, commission_percent: 30, is_active: true},
+  %{name: "Limpeza de Pele", category: :estetica, price: 90, duration_minutes: 60, commission_percent: 40, is_active: false},
+  %{name: "Maquiagem Básica", category: :maquiagem, price: 120, duration_minutes: 40, commission_percent: 100, is_active: true},
+  %{name: "Maquiagem para Noivas", category: :maquiagem, price: 350, duration_minutes: 90, commission_percent: 100, is_active: true},
+  %{name: "Maquiagem Social", category: :maquiagem, price: 150, duration_minutes: 60, commission_percent: 100, is_active: true},
+  %{name: "Adicional Sobrancelha", category: :sobrancelha, price: 10, duration_minutes: 30, commission_percent: 40, is_active: true},
+  %{name: "Design de Sobrancelha", category: :sobrancelha, price: 40, duration_minutes: 20, commission_percent: 40, is_active: true},
+  %{name: "Adicional Francesinha", category: :unha, price: 5, duration_minutes: 10, commission_percent: 40, is_active: true},
+  %{name: "Adicional francesinha permanente", category: :unha, price: 10, duration_minutes: 10, commission_percent: 40, is_active: true},
+  %{name: "Adicional Molde F1", category: :unha, price: 20, duration_minutes: 30, commission_percent: 40, is_active: true},
+  %{name: "Apenas esmaltação mão", category: :unha, price: 20, duration_minutes: 15, commission_percent: 40, is_active: true},
+  %{name: "Apenas esmaltação pé", category: :unha, price: 20, duration_minutes: 15, commission_percent: 40, is_active: true},
+  %{name: "Apenas esmaltação pé e mão", category: :unha, price: 30, duration_minutes: 20, commission_percent: 40, is_active: true},
+  %{name: "Banho com francesinha ou baby boomer", category: :unha, price: 120, duration_minutes: 120, commission_percent: 40, is_active: true},
+  %{name: "Banho de gel clássico", category: :unha, price: 80, duration_minutes: 90, commission_percent: 40, is_active: true},
+  %{name: "Banho de gel com esmaltação permanente", category: :unha, price: 120, duration_minutes: 120, commission_percent: 40, is_active: true},
+  %{name: "Blindagem em gel", category: :unha, price: 100, duration_minutes: 60, commission_percent: 40, is_active: true},
+  %{name: "Esmaltação permanente mão e pé", category: :unha, price: 100, duration_minutes: 120, commission_percent: 40, is_active: true},
+  %{name: "Esmaltação permanente + pedicure", category: :unha, price: 80, duration_minutes: 90, commission_percent: 40, is_active: true},
+  %{name: "Manicure", category: :unha, price: 30, duration_minutes: 30, commission_percent: 40, is_active: true},
+  %{name: "Pedicure", category: :unha, price: 30, duration_minutes: 30, commission_percent: 40, is_active: true},
+  %{name: "Pé e Mão", category: :unha, price: 45, duration_minutes: 60, commission_percent: 40, is_active: true},
+  %{name: "Plástica dos pés", category: :unha, price: 70, duration_minutes: 30, commission_percent: 40, is_active: true},
+  %{name: "Remoção de alongamento", category: :unha, price: 50, duration_minutes: 60, commission_percent: 40, is_active: true},
+  %{name: "Unhas em Gel - Aplicação", category: :unha, price: 120, duration_minutes: 60, commission_percent: 40, is_active: true},
+  %{name: "Unhas em Gel - Manutenção", category: :unha, price: 90, duration_minutes: 60, commission_percent: 40, is_active: true}
+]
+
+catalog_names = Enum.map(real_catalog, & &1.name)
+
+services_by_name =
+  Map.new(real_catalog, fn attrs ->
+    service =
+      case Studio.Service
+           |> Ash.Query.filter(name == ^attrs.name)
+           |> Ash.read_one!(authorize?: false) do
+        nil ->
+          Studio.Service
+          |> Ash.Changeset.for_create(:create, attrs, authorize?: false)
+          |> Ash.create!()
+
+        existing ->
+          existing
+          |> Ash.Changeset.for_update(:update, attrs, authorize?: false)
+          |> Ash.update!()
+      end
+
+    {service.name, service}
+  end)
+
+IO.puts("Catálogo real sincronizado: #{map_size(services_by_name)} serviços.")
+
+# Serviços que só existem no dev (não constam no catálogo real) ficam inativos
+Studio.Service
+|> Ash.read!(authorize?: false)
+|> Enum.reject(&(&1.name in catalog_names))
+|> Enum.each(fn service ->
+  if service.is_active do
+    service
+    |> Ash.Changeset.for_update(:update, %{is_active: false}, authorize?: false)
+    |> Ash.update!()
+
+    IO.puts("Serviço fora do catálogo real desativado: #{service.name}")
+  end
+end)
+
+# Vínculos profissional ↔ serviço por especialidade (mesmo recorte da produção:
+# unha / unha+sobrancelha / cabelo+sobrancelha+maquiagem)
+assignments = [
+  {"Joana Silva", [:unha]},
+  {"Camila Souza", [:unha, :sobrancelha]},
+  {"Beatriz Ramos", [:cabelo, :sobrancelha, :maquiagem]}
+]
+
+Enum.each(assignments, fn {professional_name, categories} ->
+  professional =
+    Studio.Professional
+    |> Ash.Query.filter(name == ^professional_name)
+    |> Ash.read_one!(authorize?: false)
+
+  services =
+    real_catalog
+    |> Enum.filter(&(&1.category in categories and &1.is_active))
+    |> Enum.map(&services_by_name[&1.name])
+
+  existing =
+    Studio.ProfessionalService
+    |> Ash.Query.filter(professional_id == ^professional.id)
+    |> Ash.read!(authorize?: false)
+    |> MapSet.new(& &1.service_id)
+
+  Enum.each(services, fn service ->
+    unless MapSet.member?(existing, service.id) do
+      Studio.ProfessionalService
+      |> Ash.Changeset.for_create(
+        :create,
+        %{professional_id: professional.id, service_id: service.id},
+        authorize?: false
+      )
+      |> Ash.create!()
+    end
+  end)
+
+  IO.puts("#{professional_name}: #{length(services)} serviços vinculados.")
+end)
+
 IO.puts("\nDev seed concluído. Senha de todos os usuários: #{password}")

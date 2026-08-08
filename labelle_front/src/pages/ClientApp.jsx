@@ -35,7 +35,7 @@ export default function ClientApp() {
   }, [client]);
 
   return (
-    <div className="min-h-dvh bg-background flex flex-col max-w-md mx-auto relative">
+    <div className="min-h-dvh bg-background flex flex-col max-w-lg mx-auto relative">
       <InstallPwaButton />
       {/* Header */}
       <div className="px-5 pt-10 pb-4 flex items-center justify-between bg-background">
@@ -95,7 +95,7 @@ export default function ClientApp() {
       </div>
 
       {/* Bottom Nav */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-card border-t border-border/50 flex z-50">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg bg-card border-t border-border/50 flex z-50">
         {tabs.map((tab, idx) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;

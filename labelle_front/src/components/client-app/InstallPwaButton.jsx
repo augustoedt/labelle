@@ -63,7 +63,7 @@ export default function InstallPwaButton() {
   return (
     <>
       {/* Banner fixo no topo */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 bg-primary shadow-lg px-4 py-3 flex items-center gap-3">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-lg z-50 bg-primary shadow-lg px-4 py-3 flex items-center gap-3">
         <Smartphone className="w-5 h-5 text-white flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-white text-xs font-semibold leading-tight">La Belle Studio</p>
@@ -86,7 +86,7 @@ export default function InstallPwaButton() {
       {/* Guia iOS */}
       {showIosGuide && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center" onClick={() => setShowIosGuide(false)}>
-          <div className="w-full max-w-md bg-card rounded-t-3xl p-6 pb-10" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-lg bg-card rounded-t-3xl p-6 pb-10" onClick={e => e.stopPropagation()}>
             <h3 className="font-heading font-semibold text-base mb-4 text-center">Adicionar à tela inicial</h3>
             <ol className="space-y-3 text-sm text-foreground">
               <li className="flex items-start gap-3">

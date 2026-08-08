@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import ServiceCard from "@/components/portal/ServiceCard";
 import { formatBRL } from "@/lib/format";
+import { maskPhone, isValidPhone } from "@/lib/phone";
 
 export default function ClientPortal() {
   const [step, setStep] = useState(1); // 1=services, 2=professional, 3=datetime, 4=info, 5=success
@@ -272,13 +273,13 @@ export default function ClientPortal() {
             </div>
             <div>
               <Label className="text-xs">WhatsApp</Label>
-              <Input value={clientInfo.phone} onChange={e => setClientInfo(p => ({ ...p, phone: e.target.value }))} placeholder="(00) 00000-0000" />
+              <Input value={clientInfo.phone} onChange={e => setClientInfo(p => ({ ...p, phone: maskPhone(e.target.value) }))} placeholder="(00) 00000-0000" />
             </div>
 
             <Button
               className="w-full rounded-xl h-12 font-semibold"
               onClick={handleBook}
-              disabled={!clientInfo.name || !clientInfo.phone || createMutation.isPending}
+              disabled={!clientInfo.name || !isValidPhone(clientInfo.phone) || createMutation.isPending}
             >
               {createMutation.isPending ? "Agendando..." : "Confirmar Agendamento"}
             </Button>

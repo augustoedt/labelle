@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { X } from "lucide-react";
 import { formatBRL } from "@/lib/format";
+import { maskPhone } from "@/lib/phone";
 
 export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment }) {
   // Só profissionais vinculadas ao serviço escolhido aparecem na lista —
@@ -121,7 +122,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             </div>
             <div>
               <Label className="text-xs">WhatsApp</Label>
-              <Input value={form.client_phone} onChange={e => setForm(prev => ({ ...prev, client_phone: e.target.value }))} placeholder="(00) 00000-0000" />
+              <Input value={form.client_phone} onChange={e => setForm(prev => ({ ...prev, client_phone: maskPhone(e.target.value) }))} placeholder="(00) 00000-0000" />
             </div>
           </div>
           <div>

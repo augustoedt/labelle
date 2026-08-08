@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { maskPhone } from "@/lib/phone";
 
 export default function ClientForm({ open, onClose, onSubmit, client }) {
   const [form, setForm] = useState({
@@ -39,7 +40,7 @@ export default function ClientForm({ open, onClose, onSubmit, client }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">WhatsApp *</Label>
-              <Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="(00) 00000-0000" />
+              <Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: maskPhone(e.target.value) }))} placeholder="(00) 00000-0000" />
             </div>
             <div>
               <Label className="text-xs">Email</Label>

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { normalizePhone } from "@/lib/clientUtils";
 import { formatBRL } from "@/lib/format";
+import { maskPhone } from "@/lib/phone";
 
 const categoryEmojis = { cabelo: "💇", unha: "💅", estetica: "✨", sobrancelha: "🪒", maquiagem: "💄", outros: "🌟" };
 
@@ -263,7 +264,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
             ) : (
               <div className="space-y-3">
                 <div><Label className="text-xs">Nome completo</Label><Input value={formName} onChange={e => setFormName(e.target.value)} placeholder="Seu nome" className="mt-1 rounded-xl" /></div>
-                <div><Label className="text-xs">WhatsApp</Label><Input value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="(00) 00000-0000" className="mt-1 rounded-xl" /></div>
+                <div><Label className="text-xs">WhatsApp</Label><Input value={formPhone} onChange={e => setFormPhone(maskPhone(e.target.value))} placeholder="(00) 00000-0000" className="mt-1 rounded-xl" /></div>
               </div>
             )}
 

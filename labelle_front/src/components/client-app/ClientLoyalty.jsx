@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { tierEmojis, tierLabels, tierSolidColors } from "@/lib/loyaltyTiers";
 import { formatBRL } from "@/lib/format";
+import { maskPhone, isValidPhone } from "@/lib/phone";
 
 // Limites de pontos por tier (atenção: divergem do admin — ver src/lib/loyaltyTiers.js)
 const tiers = {
@@ -37,7 +38,7 @@ export default function ClientLoyalty({ clientPhone, onSetPhone }) {
   });
 
   const handleSearch = () => {
-    if (phoneInput.length >= 8) {
+    if (isValidPhone(phoneInput)) {
       onSetPhone("", phoneInput);
       setSearched(true);
     }
@@ -55,9 +56,9 @@ export default function ClientLoyalty({ clientPhone, onSetPhone }) {
         </div>
         <div className="text-left space-y-2">
           <Label className="text-xs">WhatsApp</Label>
-          <Input value={phoneInput} onChange={e => setPhoneInput(e.target.value)} placeholder="(00) 00000-0000" className="rounded-xl" />
+          <Input value={phoneInput} onChange={e => setPhoneInput(maskPhone(e.target.value))} placeholder="(00) 00000-0000" className="rounded-xl" />
         </div>
-        <Button className="w-full rounded-xl h-11 font-semibold" onClick={handleSearch} disabled={phoneInput.length < 8}>
+        <Button className="w-full rounded-xl h-11 font-semibold" onClick={handleSearch} disabled={!isValidPhone(phoneInput)}>
           Ver meus pontos
         </Button>
       </div>

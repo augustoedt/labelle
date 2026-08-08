@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { formatBRL } from "@/lib/format";
 
 const METHOD_LABELS = {
   pix: "Pix", dinheiro: "Dinheiro", debito: "Débito",
@@ -125,18 +126,18 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-card rounded-xl border border-border/50 p-2">
                 <p className="text-xs text-muted-foreground">Total</p>
-                <p className="font-semibold text-sm">R$ {total.toFixed(2)}</p>
+                <p className="font-semibold text-sm tabular-nums">{formatBRL(total, { decimals: 2 })}</p>
               </div>
               <div className="bg-card rounded-xl border border-border/50 p-2">
                 <p className="text-xs text-muted-foreground">Informado</p>
-                <p className={cn("font-semibold text-sm", isOver ? "text-destructive" : isExact ? "text-emerald-600" : "text-amber-600")}>
-                  R$ {sumPaid.toFixed(2)}
+                <p className={cn("font-semibold text-sm tabular-nums", isOver ? "text-destructive" : isExact ? "text-emerald-600" : "text-amber-600")}>
+                  {formatBRL(sumPaid, { decimals: 2 })}
                 </p>
               </div>
               <div className="bg-card rounded-xl border border-border/50 p-2">
                 <p className="text-xs text-muted-foreground">{isOver ? "Excesso" : "Restante"}</p>
-                <p className={cn("font-semibold text-sm", isOver ? "text-destructive" : isPartial ? "text-amber-600" : "text-emerald-600")}>
-                  R$ {Math.abs(remaining).toFixed(2)}
+                <p className={cn("font-semibold text-sm tabular-nums", isOver ? "text-destructive" : isPartial ? "text-amber-600" : "text-emerald-600")}>
+                  {formatBRL(Math.abs(remaining), { decimals: 2 })}
                 </p>
               </div>
             </div>
@@ -151,7 +152,7 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
             {isPartial && !isOver && (
               <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-600">
                 <AlertCircle className="w-4 h-4 shrink-0" />
-                Pagamento parcial: faltam R$ {remaining.toFixed(2)}. O lançamento ficará como "Pagamento Parcial".
+                Pagamento parcial: faltam {formatBRL(remaining, { decimals: 2 })}. O lançamento ficará como "Pagamento Parcial".
               </div>
             )}
 
@@ -207,8 +208,8 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
                     </div>
                     <div>
                       <Label className="text-xs">Vlr. Líquido</Label>
-                      <div className="mt-0.5 h-8 rounded-lg border border-border/50 bg-secondary/30 px-2 flex items-center text-xs text-muted-foreground">
-                        R$ {(parseFloat(line.amount || 0) - calcFee(line.amount, line.fee_percent)).toFixed(2)}
+                      <div className="mt-0.5 h-8 rounded-lg border border-border/50 bg-secondary/30 px-2 flex items-center text-xs text-muted-foreground tabular-nums">
+                        {formatBRL(parseFloat(line.amount || 0) - calcFee(line.amount, line.fee_percent), { decimals: 2 })}
                       </div>
                     </div>
                   </div>
@@ -249,13 +250,13 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
             {totalFees > 0 && (
               <div className="bg-secondary/30 rounded-xl p-3 text-xs space-y-1">
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Valor bruto</span><span>R$ {sumPaid.toFixed(2)}</span>
+                  <span>Valor bruto</span><span className="tabular-nums">{formatBRL(sumPaid, { decimals: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-amber-600">
-                  <span>Total taxas</span><span>- R$ {totalFees.toFixed(2)}</span>
+                  <span>Total taxas</span><span className="tabular-nums">- {formatBRL(totalFees, { decimals: 2 })}</span>
                 </div>
                 <div className="flex justify-between font-semibold text-emerald-600">
-                  <span>Valor líquido</span><span>R$ {netAmount.toFixed(2)}</span>
+                  <span>Valor líquido</span><span className="tabular-nums">{formatBRL(netAmount, { decimals: 2 })}</span>
                 </div>
               </div>
             )}

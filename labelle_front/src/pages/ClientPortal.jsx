@@ -10,6 +10,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import ServiceCard from "@/components/portal/ServiceCard";
+import { formatBRL } from "@/lib/format";
 
 export default function ClientPortal() {
   const [step, setStep] = useState(1); // 1=services, 2=professional, 3=datetime, 4=info, 5=success
@@ -281,7 +282,7 @@ export default function ClientPortal() {
               </div>
               <div className="border-t pt-2 flex justify-between">
                 <span className="font-medium">Valor</span>
-                <span className="font-heading font-bold text-lg">R$ {selectedService?.price}</span>
+                <span className="font-heading font-bold text-lg tabular-nums">{formatBRL(selectedService?.price)}</span>
               </div>
             </div>
 

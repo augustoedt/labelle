@@ -10,6 +10,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import StatCard from "@/components/ui/StatCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as XLSX from "xlsx";
+import { formatBRL } from "@/lib/format";
 
 export default function Reports() {
   const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery({
@@ -130,10 +131,10 @@ export default function Reports() {
           ))
         ) : (
           <>
-            <StatCard title="Faturamento" value={`R$${monthEntradas.toFixed(0)}`} icon={TrendingUp} />
-            <StatCard title="Lucro Estimado" value={`R$${(monthEntradas - monthSaidas).toFixed(0)}`} icon={DollarSign} />
+            <StatCard title="Faturamento" value={formatBRL(monthEntradas)} icon={TrendingUp} />
+            <StatCard title="Lucro Estimado" value={formatBRL(monthEntradas - monthSaidas)} icon={DollarSign} />
             <StatCard title="Atendimentos" value={monthCompleted.length} icon={Scissors} />
-            <StatCard title="Ticket Médio" value={`R$${ticketMedio.toFixed(0)}`} icon={Users} />
+            <StatCard title="Ticket Médio" value={formatBRL(ticketMedio)} icon={Users} />
           </>
         )}
       </div>
@@ -149,7 +150,7 @@ export default function Reports() {
             <BarChart data={last7Days}>
               <XAxis dataKey="day" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={35} />
-              <Tooltip formatter={(v) => `R$${v}`} />
+              <Tooltip formatter={(v) => formatBRL(v)} />
               <Bar dataKey="value" fill="hsl(350, 45%, 55%)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -197,7 +198,7 @@ export default function Reports() {
                 <p className="text-sm font-medium">{p.name}</p>
                 <p className="text-xs text-muted-foreground">{p.count} atendimentos</p>
               </div>
-              <p className="font-heading font-bold text-sm">R${p.revenue.toFixed(0)}</p>
+              <p className="font-heading font-bold text-sm tabular-nums">{formatBRL(p.revenue)}</p>
             </div>
           ))}
           {profPerformance.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sem dados</p>}

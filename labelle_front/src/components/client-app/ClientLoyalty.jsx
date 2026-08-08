@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { tierEmojis, tierLabels, tierSolidColors } from "@/lib/loyaltyTiers";
+import { formatBRL } from "@/lib/format";
 
 // Limites de pontos por tier (atenção: divergem do admin — ver src/lib/loyaltyTiers.js)
 const tiers = {
@@ -134,7 +135,7 @@ export default function ClientLoyalty({ clientPhone, onSetPhone }) {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        {[["Visitas", visits, "🗓️"], ["Total gasto", `R$ ${spent.toFixed(0)}`, "💰"], ["Pontos", points, "⭐"]].map(([label, val, icon]) => (
+        {[["Visitas", visits, "🗓️"], ["Total gasto", formatBRL(spent), "💰"], ["Pontos", points, "⭐"]].map(([label, val, icon]) => (
           <div key={label} className="bg-card border border-border/50 rounded-2xl p-3 text-center">
             <p className="text-lg mb-1">{icon}</p>
             <p className="font-heading font-bold text-sm">{val}</p>

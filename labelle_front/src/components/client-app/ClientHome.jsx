@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatBRL } from "@/lib/format";
 
 export default function ClientHome({ clientPhone, clientName, onNavigate }) {
   const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery({
@@ -106,7 +107,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
                     <p className="text-xs text-muted-foreground mt-0.5">{promo.description}</p>
                   </div>
                   <span className="bg-foreground text-background px-3 py-1 text-xs font-bold rounded-lg">
-                    {promo.discount_type === "percent" ? `-${promo.discount_value}%` : `-R$ ${promo.discount_value}`}
+                    {promo.discount_type === "percent" ? `-${promo.discount_value}%` : `-${formatBRL(promo.discount_value)}`}
                   </span>
                 </div>
               </div>
@@ -135,7 +136,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
                 <p className="text-sm font-medium">{svc.name}</p>
                 <p className="text-xs text-muted-foreground">{svc.duration_minutes}min</p>
               </div>
-              <p className="font-heading font-bold text-sm">R$ {svc.price}</p>
+              <p className="font-heading font-bold text-sm tabular-nums">{formatBRL(svc.price)}</p>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
           )}

@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
+import { formatBRL } from "@/lib/format";
 
 const typeLabels = { fixo: "Fixo", comissao: "Comissão", aluguel: "Aluguel Cadeira" };
 const typeColors = { fixo: "bg-blue-100 text-blue-700", comissao: "bg-emerald-100 text-emerald-700", aluguel: "bg-purple-100 text-purple-700" };
@@ -174,7 +175,7 @@ export default function Professionals() {
                 <p className="text-xs text-muted-foreground mt-0.5">{prof.phone}</p>
                 <div className="flex gap-4 mt-2 text-xs">
                   <span className="text-muted-foreground">{getProfAppointments(prof.id)} atendimentos</span>
-                  <span className="font-medium">R$ {getProfRevenue(prof.id).toFixed(0)} no mês</span>
+                  <span className="font-medium tabular-nums">{formatBRL(getProfRevenue(prof.id))} no mês</span>
                   {prof.user_id && <span className="flex items-center gap-0.5 text-primary"><Link2 className="w-3 h-3" /> Vinculado</span>}
                 </div>
               </div>

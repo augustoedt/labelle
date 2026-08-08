@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import PageHeader from "@/components/ui/PageHeader";
+import { formatBRL } from "@/lib/format";
 
 export default function Promotions() {
   const [showForm, setShowForm] = useState(false);
@@ -68,7 +69,7 @@ export default function Promotions() {
                 <div>
                   <p className="font-semibold text-sm">{promo.name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {promo.discount_type === "percent" ? `${promo.discount_value}% OFF` : `R$${promo.discount_value} OFF`}
+                    {promo.discount_type === "percent" ? `${promo.discount_value}% OFF` : `${formatBRL(promo.discount_value)} OFF`}
                   </p>
                 </div>
               </div>

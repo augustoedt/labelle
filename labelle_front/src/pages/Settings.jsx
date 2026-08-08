@@ -288,7 +288,7 @@ export default function Settings() {
         </Button>
 
         {saveMutation.isSuccess && (
-          <p className="text-center text-xs text-emerald-600">Configurações salvas!</p>
+          <p className="text-center text-xs text-emerald-600">Configurações salvas</p>
         )}
         {saveMutation.isError && (
           <p className="text-center text-xs text-destructive">Não foi possível salvar. Tente novamente.</p>

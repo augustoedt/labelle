@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageHeader from "@/components/ui/PageHeader";
+import { formatBRL } from "@/lib/format";
 
 const categoryLabels = {
   cabelo: "Cabelo", unha: "Unha", estetica: "Estética", sobrancelha: "Sobrancelha", maquiagem: "Maquiagem", outros: "Outros"
@@ -119,7 +120,7 @@ export default function Services() {
                         {svc.commission_percent > 0 && <span>{svc.commission_percent}% comissão</span>}
                       </div>
                     </div>
-                    <p className="font-heading font-bold text-lg">R${svc.price}</p>
+                    <p className="font-heading font-bold text-lg tabular-nums">{formatBRL(svc.price)}</p>
                   </div>
                 </div>
               ))}

@@ -14,6 +14,7 @@ import AppointmentForm from "@/components/agenda/AppointmentForm";
 import FinalizeSheet from "@/components/agenda/FinalizeSheet";
 import { toast } from "@/components/ui/use-toast";
 import { statusColors, statusLabels } from "@/lib/appointmentStatus";
+import { formatBRL } from "@/lib/format";
 
 
 export default function MinhaAgenda() {
@@ -265,7 +266,7 @@ export default function MinhaAgenda() {
                   </div>
                   <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                     <span>{apt.time} • {apt.duration_minutes}min</span>
-                    {apt.price > 0 && <span className="font-medium text-foreground">R$ {apt.price}</span>}
+                    {apt.price > 0 && <span className="font-medium text-foreground tabular-nums">{formatBRL(apt.price)}</span>}
                   </div>
                   <div className="flex gap-1.5 mt-3 flex-wrap">
                     {apt.status === "agendado" && (

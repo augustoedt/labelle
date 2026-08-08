@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { X } from "lucide-react";
+import { formatBRL } from "@/lib/format";
 
 export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment }) {
   // Só profissionais vinculadas ao serviço escolhido aparecem na lista —
@@ -129,7 +130,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
               <SelectTrigger><SelectValue placeholder="Selecionar serviço..." /></SelectTrigger>
               <SelectContent>
                 {services?.filter(s => s.is_active !== false).map(s => (
-                  <SelectItem key={s.id} value={s.id}>{s.name} - R${s.price} ({s.duration_minutes}min)</SelectItem>
+                  <SelectItem key={s.id} value={s.id}>{s.name} - {formatBRL(s.price)} ({s.duration_minutes}min)</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -174,7 +175,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
           {selectedService && (
             <div className="bg-secondary/50 rounded-xl p-3 flex justify-between text-sm">
               <span className="text-muted-foreground">Duração: {selectedService.duration_minutes}min</span>
-              <span className="font-semibold">R$ {selectedService.price}</span>
+              <span className="font-semibold tabular-nums">{formatBRL(selectedService.price)}</span>
             </div>
           )}
           <div>

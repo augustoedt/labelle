@@ -7,6 +7,7 @@ import TodayAgenda from "@/components/dashboard/TodayAgenda";
 import AlertsSection from "@/components/dashboard/AlertsSection";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatBRL } from "@/lib/format";
 
 export default function Dashboard() {
   const today = format(new Date(), "yyyy-MM-dd");
@@ -64,12 +65,12 @@ export default function Dashboard() {
           <>
             <StatCard
               title="Hoje"
-              value={`R$ ${todayRevenue.toFixed(0)}`}
+              value={formatBRL(todayRevenue)}
               icon={DollarSign}
             />
             <StatCard
               title="Este Mês"
-              value={`R$ ${monthRevenue.toFixed(0)}`}
+              value={formatBRL(monthRevenue)}
               icon={TrendingUp}
             />
             <StatCard
@@ -80,7 +81,7 @@ export default function Dashboard() {
             />
             <StatCard
               title="Ticket Médio"
-              value={`R$ ${ticketMedio.toFixed(0)}`}
+              value={formatBRL(ticketMedio)}
               icon={Users}
             />
           </>

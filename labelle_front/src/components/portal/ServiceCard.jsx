@@ -1,5 +1,6 @@
 import { Clock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatBRL } from "@/lib/format";
 
 const categoryEmojis = {
   cabelo: "💇", unha: "💅", estetica: "✨", sobrancelha: "🪒", maquiagem: "💄", outros: "🌟"
@@ -34,9 +35,9 @@ export default function ServiceCard({ service, selected, onSelect, promotion }) 
         </div>
         <div className="text-right">
           {hasPromo && (
-            <p className="text-xs line-through text-muted-foreground">R$ {service.price}</p>
+            <p className="text-xs line-through text-muted-foreground tabular-nums">{formatBRL(service.price)}</p>
           )}
-          <p className="font-heading font-bold text-lg">{`R$ ${finalPrice.toFixed(0)}`}</p>
+          <p className="font-heading font-bold text-lg tabular-nums">{formatBRL(finalPrice)}</p>
           {hasPromo && (
             <span className="inline-flex items-center gap-0.5 text-xs font-medium text-primary">
               <Sparkles className="w-3 h-3" /> Promo

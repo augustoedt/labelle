@@ -11,6 +11,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import ClientForm from "@/components/clients/ClientForm";
 
 import { tierColors } from "@/lib/loyaltyTiers";
+import { formatBRL } from "@/lib/format";
 
 const sourceLabel = {
   app_cliente: { label: "App", icon: Smartphone, className: "text-primary" },
@@ -129,7 +130,7 @@ export default function Clients() {
             </div>
             <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground flex-wrap">
               <span>{client.visit_count || 0} visitas</span>
-              <span>R$ {(client.total_spent || 0).toFixed(0)} gastos</span>
+              <span className="tabular-nums">{formatBRL(client.total_spent)} gastos</span>
               {client.source && sourceLabel[client.source] && (() => {
                 const src = sourceLabel[client.source];
                 const Icon = src.icon;

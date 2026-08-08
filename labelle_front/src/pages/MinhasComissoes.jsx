@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PageHeader from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatBRL } from "@/lib/format";
 
 export default function MinhasComissoes() {
   const { user } = useRouteContext({ from: "__root__" });
@@ -119,11 +120,11 @@ export default function MinhasComissoes() {
           </div>
           <div className="bg-card rounded-2xl border border-border/50 p-4 text-center">
             <p className="text-xs text-muted-foreground">Faturamento</p>
-            <p className="text-lg font-heading font-bold mt-1">R$ {totalRevenue.toFixed(0)}</p>
+            <p className="text-lg font-heading font-bold mt-1 tabular-nums">{formatBRL(totalRevenue)}</p>
           </div>
           <div className="bg-primary/10 rounded-2xl border border-primary/20 p-4 text-center">
             <p className="text-xs text-muted-foreground">Comissão</p>
-            <p className="text-lg font-heading font-bold text-primary mt-1">R$ {myCommission.toFixed(0)}</p>
+            <p className="text-lg font-heading font-bold text-primary mt-1 tabular-nums">{formatBRL(myCommission)}</p>
           </div>
         </div>
 
@@ -145,8 +146,8 @@ export default function MinhasComissoes() {
                     <p className="text-xs text-muted-foreground">{format(new Date(apt.date + "T12:00"), "dd/MM/yyyy")}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium">R$ {revenueFor(apt).toFixed(0)}</p>
-                    <p className="text-xs text-primary font-semibold">+ R$ {commission.toFixed(0)}</p>
+                    <p className="text-sm font-medium tabular-nums">{formatBRL(revenueFor(apt))}</p>
+                    <p className="text-xs text-primary font-semibold tabular-nums">+ {formatBRL(commission)}</p>
                   </div>
                 </div>
               </div>

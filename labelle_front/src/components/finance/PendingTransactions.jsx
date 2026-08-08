@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { formatBRL } from "@/lib/format";
 import ConfirmPaymentSheet from "./ConfirmPaymentSheet";
 
 const STATUS_CONFIG = {
@@ -86,7 +87,7 @@ export default function PendingTransactions({ transactions, isLoading }) {
                     {" • "}<span className={cn("font-medium", cfg.badge)}>{cfg.label}</span>
                   </p>
                 </div>
-                <p className="font-semibold text-sm text-amber-700 ml-2">R$ {(t.amount || 0).toFixed(2)}</p>
+                <p className="font-semibold text-sm text-amber-700 ml-2 tabular-nums">{formatBRL(t.amount, { decimals: 2 })}</p>
               </div>
               <div className="flex gap-1.5 flex-wrap">
                 <Button

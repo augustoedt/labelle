@@ -11,6 +11,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { normalizePhone } from "@/lib/clientUtils";
+import { formatBRL } from "@/lib/format";
 
 const categoryEmojis = { cabelo: "💇", unha: "💅", estetica: "✨", sobrancelha: "🪒", maquiagem: "💄", outros: "🌟" };
 
@@ -141,8 +142,8 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
                       <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="w-3 h-3" /> {svc.duration_minutes}min</p>
                     </div>
                     <div className="text-right">
-                      {promo && <p className="text-xs line-through text-muted-foreground">R$ {svc.price}</p>}
-                      <p className="font-heading font-bold">R$ {finalPrice.toFixed(0)}</p>
+                      {promo && <p className="text-xs line-through text-muted-foreground tabular-nums">{formatBRL(svc.price)}</p>}
+                      <p className="font-heading font-bold tabular-nums">{formatBRL(finalPrice)}</p>
                     </div>
                   </div>
                 </button>
@@ -248,7 +249,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
               ))}
               <div className="border-t pt-2 flex justify-between">
                 <span className="font-medium">Valor</span>
-                <span className="font-heading font-bold text-lg">R$ {selectedService?.price}</span>
+                <span className="font-heading font-bold text-lg tabular-nums">{formatBRL(selectedService?.price)}</span>
               </div>
             </div>
 

@@ -14,6 +14,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import StatCard from "@/components/ui/StatCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import PendingTransactions from "@/components/finance/PendingTransactions";
+import { formatBRL } from "@/lib/format";
 
 export default function Finance() {
   const [showForm, setShowForm] = useState(false);
@@ -108,9 +109,9 @@ export default function Finance() {
           ))
         ) : (
           <>
-            <StatCard title="Entradas" value={`R$${entradas.toFixed(0)}`} icon={ArrowUpRight} />
-            <StatCard title="Saídas" value={`R$${saidas.toFixed(0)}`} icon={ArrowDownRight} />
-            <StatCard title="Lucro" value={`R$${lucro.toFixed(0)}`} icon={DollarSign} />
+            <StatCard title="Entradas" value={formatBRL(entradas)} icon={ArrowUpRight} />
+            <StatCard title="Saídas" value={formatBRL(saidas)} icon={ArrowDownRight} />
+            <StatCard title="Lucro" value={formatBRL(lucro)} icon={DollarSign} />
           </>
         )}
       </div>
@@ -178,8 +179,8 @@ export default function Finance() {
                 {" • "}<span className={cn("font-medium", statusBadgeClass[t.status || "pago"])}>{statusLabel[t.status || "pago"]}</span>
               </p>
             </div>
-            <p className={cn("font-semibold text-sm", t.type === "entrada" ? "text-emerald-600" : "text-red-600")}>
-              {t.type === "saida" ? "-" : "+"}R$ {(t.amount || 0).toFixed(2)}
+            <p className={cn("font-semibold text-sm tabular-nums", t.type === "entrada" ? "text-emerald-600" : "text-red-600")}>
+              {t.type === "saida" ? "-" : "+"}{formatBRL(t.amount, { decimals: 2 })}
             </p>
           </div>
         ))}

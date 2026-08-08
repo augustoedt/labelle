@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
+import { formatBRL } from "@/lib/format";
 
 export default function Products() {
   const [showForm, setShowForm] = useState(false);
@@ -100,7 +101,7 @@ export default function Products() {
                 <p className="text-xs text-muted-foreground">{p.category}</p>
               </div>
               <div className="text-right">
-                <p className="font-heading font-bold">R${p.price}</p>
+                <p className="font-heading font-bold tabular-nums">{formatBRL(p.price)}</p>
                 <p className={cn("text-xs", isLow ? "text-red-500 font-medium" : "text-muted-foreground")}>{p.quantity} un.</p>
               </div>
             </div>

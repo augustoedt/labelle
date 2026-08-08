@@ -5,6 +5,7 @@ import { Clock, X, CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatBRL } from "@/lib/format";
 
 const categoryEmojis = {
   cabelo: "💇",
@@ -115,7 +116,7 @@ export default function ClientCatalog({ onNavigate }) {
                 />
                 {promo && (
                   <span className="absolute top-2 right-2 bg-foreground text-background text-xs font-bold px-1.5 py-0.5 rounded-full">
-                    {promo.discount_type === "percent" ? `-${promo.discount_value}%` : `-R$${promo.discount_value}`}
+                    {promo.discount_type === "percent" ? `-${promo.discount_value}%` : `-${formatBRL(promo.discount_value)}`}
                   </span>
                 )}
               </div>
@@ -126,8 +127,8 @@ export default function ClientCatalog({ onNavigate }) {
                   <span className="text-xs">{svc.duration_minutes}min</span>
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
-                  {promo && <p className="text-xs line-through text-muted-foreground">R$ {svc.price}</p>}
-                  <p className="font-heading font-bold text-sm">R$ {finalPrice.toFixed(0)}</p>
+                  {promo && <p className="text-xs line-through text-muted-foreground tabular-nums">{formatBRL(svc.price)}</p>}
+                  <p className="font-heading font-bold text-sm tabular-nums">{formatBRL(finalPrice)}</p>
                 </div>
               </div>
             </button>
@@ -170,7 +171,7 @@ function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
           </button>
           {promo && (
             <span className="absolute top-4 left-4 bg-foreground text-background text-xs font-bold px-2 py-1 rounded-full">
-              {promo.discount_type === "percent" ? `-${promo.discount_value}%` : `-R$ ${promo.discount_value}`}
+              {promo.discount_type === "percent" ? `-${promo.discount_value}%` : `-${formatBRL(promo.discount_value)}`}
             </span>
           )}
         </div>
@@ -190,8 +191,8 @@ function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
               <span className="text-sm font-medium">{service.duration_minutes} min</span>
             </div>
             <div>
-              {promo && <p className="text-xs line-through text-muted-foreground">R$ {service.price}</p>}
-              <p className="text-2xl font-heading font-bold">R$ {finalPrice.toFixed(0)}</p>
+              {promo && <p className="text-xs line-through text-muted-foreground tabular-nums">{formatBRL(service.price)}</p>}
+              <p className="text-2xl font-heading font-bold tabular-nums">{formatBRL(finalPrice)}</p>
             </div>
           </div>
 

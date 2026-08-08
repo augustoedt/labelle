@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, X } from "lucide-react";
+import { formatBRL } from "@/lib/format";
 
 const paymentMethods = [
   { value: "pix", label: "Pix" },
@@ -90,7 +91,7 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
 
             <div className="flex items-center justify-between bg-secondary/50 rounded-xl p-3 text-sm">
               <span>{appointment.service_name}</span>
-              <span className="font-semibold">R$ {(appointment.price || 0).toFixed(2)}</span>
+              <span className="font-semibold tabular-nums">{formatBRL(appointment.price, { decimals: 2 })}</span>
             </div>
 
             {items.map((item) => (
@@ -135,7 +136,7 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
                 <SelectContent>
                   {availableServices.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.name} - R${s.price}
+                      {s.name} - {formatBRL(s.price)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -154,7 +155,7 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
           {/* Total */}
           <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl p-3">
             <span className="text-sm font-medium">Total a cobrar</span>
-            <span className="text-lg font-heading font-bold text-primary">R$ {total.toFixed(2)}</span>
+            <span className="text-lg font-heading font-bold text-primary tabular-nums">{formatBRL(total, { decimals: 2 })}</span>
           </div>
 
           {/* Cobrança */}

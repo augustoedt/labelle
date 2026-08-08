@@ -5,7 +5,6 @@ import {
   Scripts,
   createRootRoute,
 } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { QueryClientProvider } from '@tanstack/react-query'
 import * as React from 'react'
 import appCss from '~/index.css?url'
@@ -61,7 +60,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           {children}
           <Toaster />
         </QueryClientProvider>
-        {import.meta.env.DEV ? <TanStackRouterDevtools position="bottom-right" /> : null}
         <Scripts />
       </body>
     </html>

@@ -205,7 +205,7 @@ export default function MinhaAgenda() {
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
-        <div className="flex gap-1 justify-between">
+        <div className="flex gap-1 overflow-x-auto -mx-5 px-5 pb-1">
           {isLoading ? (
             Array.from({ length: 7 }).map((_, i) => (
               <Skeleton key={i} className="h-14 flex-1 rounded-xl" />
@@ -223,7 +223,7 @@ export default function MinhaAgenda() {
                 key={d.toISOString()}
                 onClick={() => setSelectedDate(d)}
                 className={cn(
-                  "flex flex-col items-center py-2 px-3 rounded-xl transition-all duration-150 flex-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "flex flex-col items-center py-2 px-3 rounded-xl transition-all duration-150 shrink-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   isSelected ? "bg-primary text-primary-foreground" : "bg-card hover:bg-secondary",
                   isToday && !isSelected && "ring-1 ring-primary/30"
                 )}

@@ -5,6 +5,7 @@ import { ChevronRight, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -23,8 +24,8 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
   const [formPhone, setFormPhone] = useState(clientPhone || "");
   const queryClient = useQueryClient();
 
-  const { data: services = [] } = useQuery({ queryKey: ["services"], queryFn: () => ServicesApi.list() });
-  const { data: professionals = [] } = useQuery({ queryKey: ["professionals"], queryFn: () => ProfessionalsApi.list() });
+  const { data: services = [], isLoading: isLoadingServices } = useQuery({ queryKey: ["services"], queryFn: () => ServicesApi.list() });
+  const { data: professionals = [], isLoading: isLoadingProfessionals } = useQuery({ queryKey: ["professionals"], queryFn: () => ProfessionalsApi.list() });
   const { data: promotions = [] } = useQuery({ queryKey: ["promotions"], queryFn: () => PromotionsApi.list() });
   const { data: professionalServices = [] } = useQuery({
     queryKey: ["professional-services"],
@@ -32,7 +33,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
   });
 
   const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
-  const { data: slots = [] } = useQuery({
+  const { data: slots = [], isLoading: isLoadingSlots } = useQuery({
     queryKey: ["slots", selectedProfessional?.id, dateStr, selectedService?.duration_minutes],
     queryFn: () => getAvailableSlots({
       data: {
@@ -122,7 +123,12 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
         {step === 1 && (
           <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
             <h2 className="text-lg font-heading font-semibold">Escolha o serviço</h2>
-            {activeServices.map(svc => {
+            {isLoadingServices ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-[72px] rounded-2xl" />
+              ))
+            ) : (
+            activeServices.map(svc => {
               const promo = getPromotion(svc.id);
               const finalPrice = promo ? (promo.discount_type === "percent" ? svc.price * (1 - promo.discount_value / 100) : svc.price - promo.discount_value) : svc.price;
               return (
@@ -141,7 +147,8 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
                   </div>
                 </button>
               );
-            })}
+            })
+            )}
             {selectedService && <Button className="w-full rounded-xl h-12 font-semibold" onClick={() => setStep(2)}>Continuar <ChevronRight className="w-4 h-4" /></Button>}
           </motion.div>
         )}
@@ -152,6 +159,12 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
               <h2 className="text-lg font-heading font-semibold">Profissional</h2>
               <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="text-xs">Voltar</Button>
             </div>
+            {isLoadingProfessionals ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-[76px] rounded-2xl" />
+              ))
+            ) : (
+              <>
             {activeProfessionals.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Nenhuma profissional disponível para este serviço no momento.
@@ -170,6 +183,8 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </button>
             ))}
+              </>
+            )}
           </motion.div>
         )}
 
@@ -196,7 +211,13 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
             {selectedDate && (
               <div>
                 <p className="text-sm font-medium mb-2">Horários disponíveis</p>
-                {slots.length === 0
+                {isLoadingSlots
+                  ? <div className="grid grid-cols-4 gap-2">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <Skeleton key={i} className="h-10 rounded-xl" />
+                    ))}
+                  </div>
+                  : slots.length === 0
                   ? <p className="text-sm text-muted-foreground text-center py-4">Sem horários neste dia</p>
                   : <div className="grid grid-cols-4 gap-2">
                     {slots.map(t => (

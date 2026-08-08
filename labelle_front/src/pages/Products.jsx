@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
 
@@ -18,7 +19,7 @@ export default function Products() {
   });
   const queryClient = useQueryClient();
 
-  const { data: products = [] } = useQuery({
+  const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
     queryFn: () => ProductsApi.list(),
   });
@@ -81,6 +82,12 @@ export default function Products() {
       />
 
       <div className="px-5 space-y-2">
+        {isLoading ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 rounded-xl" />
+          ))
+        ) : (
+          <>
         {products.map((p) => {
           const isLow = p.quantity <= (p.min_quantity || 5);
           return (
@@ -101,6 +108,8 @@ export default function Products() {
         })}
         {products.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-12">Nenhum produto cadastrado</p>
+        )}
+          </>
         )}
       </div>
 

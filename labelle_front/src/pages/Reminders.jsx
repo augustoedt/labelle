@@ -4,6 +4,7 @@ import { RemindersApi } from "@/server/api";
 import { MessageCircle, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
@@ -36,7 +37,7 @@ export default function Reminders() {
   const [statusFilter, setStatusFilter] = useState("pendente");
   const queryClient = useQueryClient();
 
-  const { data: reminders = [] } = useQuery({
+  const { data: reminders = [], isLoading } = useQuery({
     queryKey: ["client-reminders"],
     queryFn: () => RemindersApi.list({ sort: "-due_date", limit: 500 }),
   });
@@ -93,7 +94,11 @@ export default function Reminders() {
       </div>
 
       <div className="px-5 space-y-3">
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-2xl" />
+          ))
+        ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
             <p>Nenhum lembrete {statusFilter !== "todos" ? statusLabels[statusFilter]?.toLowerCase() : ""}</p>
             <p className="text-xs mt-1">

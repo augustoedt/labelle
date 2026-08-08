@@ -4,6 +4,7 @@ import { AppointmentsApi, ServicesApi, ProfessionalsApi, ClientsApi } from "@/se
 import { Plus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -36,7 +37,7 @@ export default function Agenda() {
   const queryClient = useQueryClient();
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
-  const { data: appointments = [] } = useQuery({
+  const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments"],
     queryFn: () => AppointmentsApi.list({ sort: "-date", limit: 500 }),
   });
@@ -193,7 +194,12 @@ export default function Agenda() {
           </Button>
         </div>
         <div className="flex gap-1 justify-between">
-          {weekDays.map((d) => {
+          {isLoading ? (
+            Array.from({ length: 7 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 flex-1 rounded-xl" />
+            ))
+          ) : (
+          weekDays.map((d) => {
             const isToday = format(d, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
             const isSelected = format(d, "yyyy-MM-dd") === dateStr;
             const dayAppts = appointments.filter(a => a.date === format(d, "yyyy-MM-dd"));
@@ -218,13 +224,18 @@ export default function Agenda() {
                 {hasOnlyCancelled && !isSelected && <div className="w-1 h-1 rounded-full bg-muted-foreground/40 mt-0.5" />}
               </button>
             );
-          })}
+          })
+          )}
         </div>
       </div>
 
       {/* Appointments list */}
       <div className="px-5 space-y-3">
-        {dayAppointments.length === 0 ? (
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-2xl" />
+          ))
+        ) : dayAppointments.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
             <p>Nenhum agendamento</p>
             <p className="text-xs mt-1">Toque em + para adicionar</p>

@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { getClientAppointments, ServicesApi, PromotionsApi } from "@/server/api";
 import { CalendarPlus, Clock, Sparkles, ChevronRight, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function ClientHome({ clientPhone, clientName, onNavigate }) {
-  const { data: appointments = [] } = useQuery({
+  const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery({
     queryKey: ["client-appointments", clientPhone],
     queryFn: () => getClientAppointments({ data: { phone: clientPhone } }).then(r => r.appointments || []),
     enabled: !!clientPhone
@@ -17,7 +18,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
     queryFn: () => PromotionsApi.list()
   });
 
-  const { data: services = [] } = useQuery({
+  const { data: services = [], isLoading: isLoadingServices } = useQuery({
     queryKey: ["services"],
     queryFn: () => ServicesApi.list()
   });
@@ -38,7 +39,10 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
   return (
     <div className="px-5 py-5 space-y-6">
       {/* Next appointment */}
-      {next ?
+      {isLoadingAppointments ?
+      <Skeleton className="h-36 rounded-2xl" /> :
+
+      next ?
       <div className="bg-foreground text-background rounded-2xl p-5">
           <p className="text-xs font-medium opacity-60 mb-1">Próximo agendamento</p>
           <p className="text-xl font-heading font-bold">{next.service_name}</p>
@@ -115,7 +119,12 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
       <div>
         <h2 className="text-sm font-semibold mb-3">Serviços populares</h2>
         <div className="space-y-2">
-          {services.filter((s) => s.is_active).slice(0, 4).map((svc) =>
+          {isLoadingServices ?
+          Array.from({ length: 4 }).map((_, i) =>
+          <Skeleton key={i} className="h-16 rounded-2xl" />
+          ) :
+
+          services.filter((s) => s.is_active).slice(0, 4).map((svc) =>
           <button
             key={svc.id}
             onClick={() => onNavigate("agendar")}

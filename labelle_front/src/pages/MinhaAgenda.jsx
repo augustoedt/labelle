@@ -5,6 +5,7 @@ import { AppointmentsApi, ProfessionalsApi, ServicesApi, ClientsApi } from "@/se
 import { Plus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,7 @@ export default function MinhaAgenda() {
   const queryClient = useQueryClient();
   const dateStr = format(selectedDate, "yyyy-MM-dd");
 
-  const { data: myProfessionals = [] } = useQuery({
+  const { data: myProfessionals = [], isLoading: isLoadingProfessional } = useQuery({
     queryKey: ["my-professional", user?.id],
     queryFn: () => ProfessionalsApi.list({ filter: { user_id: user.id } }),
     enabled: !!user,
@@ -47,7 +48,7 @@ export default function MinhaAgenda() {
   // The Appointment read policy already restricts a "profissional" actor to
   // their own appointments (professional.user_id == actor.id), so this list
   // is already scoped correctly by the backend.
-  const { data: appointments = [] } = useQuery({
+  const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["professional-appointments", user?.id],
     queryFn: () => AppointmentsApi.list({ sort: "-date", limit: 500 }),
     enabled: !!myProfessional,
@@ -165,6 +166,22 @@ export default function MinhaAgenda() {
     }
   };
 
+  if (isLoadingProfessional) {
+    return (
+      <div className="space-y-4 px-5 pt-6">
+        <Skeleton className="h-10 w-2/3 rounded-xl" />
+        <div className="flex gap-1 justify-between">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} className="h-14 flex-1 rounded-xl" />
+          ))}
+        </div>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-2xl" />
+        ))}
+      </div>
+    );
+  }
+
   if (!myProfessional) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center space-y-3">
@@ -202,7 +219,12 @@ export default function MinhaAgenda() {
           </Button>
         </div>
         <div className="flex gap-1 justify-between">
-          {weekDays.map((d) => {
+          {isLoading ? (
+            Array.from({ length: 7 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 flex-1 rounded-xl" />
+            ))
+          ) : (
+          weekDays.map((d) => {
             const isToday = format(d, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
             const isSelected = format(d, "yyyy-MM-dd") === dateStr;
             const dayAppts = myAppointments.filter(a => a.date === format(d, "yyyy-MM-dd"));
@@ -225,13 +247,18 @@ export default function MinhaAgenda() {
                 {hasOnlyCancelled && !isSelected && <div className="w-1 h-1 rounded-full bg-muted-foreground/40 mt-0.5" />}
               </button>
             );
-          })}
+          })
+          )}
         </div>
       </div>
 
       {/* Appointments */}
       <div className="px-5 space-y-3">
-        {dayAppointments.length === 0 ? (
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-2xl" />
+          ))
+        ) : dayAppointments.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
             <p>Nenhum agendamento para este dia</p>
           </div>

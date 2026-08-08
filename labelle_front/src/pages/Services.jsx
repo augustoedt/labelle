@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import PageHeader from "@/components/ui/PageHeader";
 
 const categoryLabels = {
@@ -22,7 +23,7 @@ export default function Services() {
   });
   const queryClient = useQueryClient();
 
-  const { data: services = [] } = useQuery({
+  const { data: services = [], isLoading } = useQuery({
     queryKey: ["services"],
     queryFn: () => ServicesApi.list(),
   });
@@ -94,7 +95,15 @@ export default function Services() {
       />
 
       <div className="px-5 space-y-5">
-        {Object.entries(grouped).map(([cat, svcs]) => (
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24 rounded" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 rounded-xl" />
+            ))}
+          </div>
+        ) : (
+        Object.entries(grouped).map(([cat, svcs]) => (
           <div key={cat}>
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               {categoryLabels[cat] || cat}
@@ -116,7 +125,8 @@ export default function Services() {
               ))}
             </div>
           </div>
-        ))}
+        ))
+        )}
       </div>
 
       <Sheet open={showForm} onOpenChange={() => { setShowForm(false); setEditing(null); }}>

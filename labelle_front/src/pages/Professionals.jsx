@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
 
@@ -30,7 +31,7 @@ export default function Professionals() {
   });
   const queryClient = useQueryClient();
 
-  const { data: professionals = [] } = useQuery({
+  const { data: professionals = [], isLoading } = useQuery({
     queryKey: ["professionals"],
     queryFn: () => ProfessionalsApi.list(),
   });
@@ -154,7 +155,12 @@ export default function Professionals() {
       />
 
       <div className="px-5 space-y-3">
-        {professionals.map((prof) => (
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl" />
+          ))
+        ) : (
+        professionals.map((prof) => (
           <div key={prof.id} role="button" tabIndex={0} className="bg-card rounded-2xl border border-border/50 shadow-sm p-4 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => openEdit(prof)}>
             <div className="flex items-start gap-3">
               <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
@@ -174,7 +180,8 @@ export default function Professionals() {
               </div>
             </div>
           </div>
-        ))}
+        ))
+        )}
       </div>
 
       <Sheet open={showForm} onOpenChange={() => { setShowForm(false); setEditing(null); }}>

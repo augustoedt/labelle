@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ServicesApi, PromotionsApi } from "@/server/api";
 import { Clock, X, CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 const categoryEmojis = {
@@ -37,7 +38,7 @@ export default function ClientCatalog({ onNavigate }) {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedService, setSelectedService] = useState(null);
 
-  const { data: services = [] } = useQuery({
+  const { data: services = [], isLoading } = useQuery({
     queryKey: ["services"],
     queryFn: () => ServicesApi.list(),
   });
@@ -68,7 +69,12 @@ export default function ClientCatalog({ onNavigate }) {
     <div className="pb-6">
       {/* Category filter */}
       <div className="flex gap-2 overflow-x-auto px-5 py-4 -mx-0 scrollbar-hide">
-        {categories.map(cat => (
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-8 w-24 rounded-full shrink-0" />
+          ))
+        ) : (
+        categories.map(cat => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
@@ -81,12 +87,18 @@ export default function ClientCatalog({ onNavigate }) {
           >
             {cat === "all" ? "✦ Todos" : `${categoryEmojis[cat] || "🌟"} ${categoryLabels[cat] || cat}`}
           </button>
-        ))}
+        ))
+        )}
       </div>
 
       {/* Service grid */}
       <div className="px-5 grid grid-cols-2 gap-3">
-        {filtered.map(svc => {
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-44 rounded-2xl" />
+          ))
+        ) : (
+        filtered.map(svc => {
           const promo = getPromo(svc.id);
           const finalPrice = getFinalPrice(svc);
           return (
@@ -120,7 +132,8 @@ export default function ClientCatalog({ onNavigate }) {
               </div>
             </button>
           );
-        })}
+        })
+        )}
       </div>
 
       {/* Service detail sheet */}

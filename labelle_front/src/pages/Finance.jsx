@@ -12,6 +12,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-f
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
 import StatCard from "@/components/ui/StatCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import PendingTransactions from "@/components/finance/PendingTransactions";
 
 export default function Finance() {
@@ -24,7 +25,7 @@ export default function Finance() {
   });
   const queryClient = useQueryClient();
 
-  const { data: transactions = [] } = useQuery({
+  const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],
     queryFn: () => TransactionsApi.list({ sort: "-date", limit: 500 }),
   });
@@ -101,13 +102,21 @@ export default function Finance() {
 
       {/* Stats — apenas lançamentos pagos */}
       <div className="px-5 grid grid-cols-3 gap-2">
-        <StatCard title="Entradas" value={`R$${entradas.toFixed(0)}`} icon={ArrowUpRight} />
-        <StatCard title="Saídas" value={`R$${saidas.toFixed(0)}`} icon={ArrowDownRight} />
-        <StatCard title="Lucro" value={`R$${lucro.toFixed(0)}`} icon={DollarSign} />
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl" />
+          ))
+        ) : (
+          <>
+            <StatCard title="Entradas" value={`R$${entradas.toFixed(0)}`} icon={ArrowUpRight} />
+            <StatCard title="Saídas" value={`R$${saidas.toFixed(0)}`} icon={ArrowDownRight} />
+            <StatCard title="Lucro" value={`R$${lucro.toFixed(0)}`} icon={DollarSign} />
+          </>
+        )}
       </div>
 
       {/* Pendentes de confirmação */}
-      <PendingTransactions transactions={transactions} />
+      <PendingTransactions transactions={transactions} isLoading={isLoading} />
 
       {/* Status filter */}
       <div className="px-5">
@@ -138,6 +147,12 @@ export default function Finance() {
       {/* Transaction list */}
       <div className="px-5 space-y-2">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Movimentações</h3>
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 rounded-xl" />
+          ))
+        ) : (
+          <>
         {filtered.map((t) => (
           <div key={t.id} className={cn(
             "bg-card rounded-xl border border-border/50 shadow-sm p-3 flex items-center gap-3",
@@ -170,6 +185,8 @@ export default function Finance() {
         ))}
         {filtered.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-12">Sem movimentações neste período</p>
+        )}
+          </>
         )}
       </div>
 

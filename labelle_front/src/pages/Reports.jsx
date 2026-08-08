@@ -8,15 +8,16 @@ import { ptBR } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import PageHeader from "@/components/ui/PageHeader";
 import StatCard from "@/components/ui/StatCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import * as XLSX from "xlsx";
 
 export default function Reports() {
-  const { data: appointments = [] } = useQuery({
+  const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery({
     queryKey: ["appointments"],
     queryFn: () => AppointmentsApi.list({ sort: "-date", limit: 500 }),
   });
 
-  const { data: transactions = [] } = useQuery({
+  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
     queryKey: ["transactions"],
     queryFn: () => TransactionsApi.list({ sort: "-date", limit: 500 }),
   });
@@ -25,6 +26,8 @@ export default function Reports() {
     queryKey: ["professionals"],
     queryFn: () => ProfessionalsApi.list(),
   });
+
+  const isLoading = isLoadingAppointments || isLoadingTransactions;
 
   // Last 7 days revenue chart
   const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -121,15 +124,26 @@ export default function Reports() {
 
       {/* Monthly summary */}
       <div className="px-5 grid grid-cols-2 gap-3">
-        <StatCard title="Faturamento" value={`R$${monthEntradas.toFixed(0)}`} icon={TrendingUp} />
-        <StatCard title="Lucro Estimado" value={`R$${(monthEntradas - monthSaidas).toFixed(0)}`} icon={DollarSign} />
-        <StatCard title="Atendimentos" value={monthCompleted.length} icon={Scissors} />
-        <StatCard title="Ticket Médio" value={`R$${ticketMedio.toFixed(0)}`} icon={Users} />
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl" />
+          ))
+        ) : (
+          <>
+            <StatCard title="Faturamento" value={`R$${monthEntradas.toFixed(0)}`} icon={TrendingUp} />
+            <StatCard title="Lucro Estimado" value={`R$${(monthEntradas - monthSaidas).toFixed(0)}`} icon={DollarSign} />
+            <StatCard title="Atendimentos" value={monthCompleted.length} icon={Scissors} />
+            <StatCard title="Ticket Médio" value={`R$${ticketMedio.toFixed(0)}`} icon={Users} />
+          </>
+        )}
       </div>
 
       {/* Revenue chart */}
       <div className="px-5">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Últimos 7 dias</h3>
+        {isLoading ? (
+          <Skeleton className="h-48 rounded-2xl" />
+        ) : (
         <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-4 h-48">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={last7Days}>
@@ -140,12 +154,19 @@ export default function Reports() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+        )}
       </div>
 
       {/* Top services */}
       <div className="px-5">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Serviços Mais Vendidos</h3>
         <div className="space-y-2">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 rounded-xl" />
+            ))
+          ) : (
+            <>
           {topServices.map(([name, count], i) => (
             <div key={name} className="bg-card rounded-xl border border-border/50 p-3 flex items-center gap-3">
               <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">{i + 1}</span>
@@ -154,6 +175,8 @@ export default function Reports() {
             </div>
           ))}
           {topServices.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sem dados</p>}
+            </>
+          )}
         </div>
       </div>
 
@@ -161,6 +184,12 @@ export default function Reports() {
       <div className="px-5 pb-8">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ranking Profissionais</h3>
         <div className="space-y-2">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 rounded-xl" />
+            ))
+          ) : (
+            <>
           {profPerformance.map((p, i) => (
             <div key={p.name} className="bg-card rounded-xl border border-border/50 p-3 flex items-center gap-3">
               <span className="w-6 h-6 rounded-full bg-accent/20 text-accent text-xs font-bold flex items-center justify-center">{i + 1}</span>
@@ -172,6 +201,8 @@ export default function Reports() {
             </div>
           ))}
           {profPerformance.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sem dados</p>}
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -4,18 +4,19 @@ import { ProfessionalsApi, AppointmentsApi, AppointmentServicesApi, ServicesApi 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PageHeader from "@/components/ui/PageHeader";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function MinhasComissoes() {
   const { user } = useRouteContext({ from: "__root__" });
 
-  const { data: professionals = [] } = useQuery({
+  const { data: professionals = [], isLoading: isLoadingProfessionals } = useQuery({
     queryKey: ["professionals"],
     queryFn: () => ProfessionalsApi.list(),
   });
 
   const myProfessional = professionals.find(p => p.user_id === user?.id);
 
-  const { data: appointments = [] } = useQuery({
+  const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery({
     queryKey: ["appointments"],
     queryFn: () => AppointmentsApi.list({ sort: "-date", limit: 500 }),
     enabled: !!myProfessional,
@@ -65,6 +66,22 @@ export default function MinhasComissoes() {
   const totalRevenue = myDone.reduce((s, a) => s + revenueFor(a), 0);
   const myCommission = myDone.reduce((s, a) => s + commissionFor(a), 0);
 
+  if (isLoadingProfessionals) {
+    return (
+      <div className="space-y-4 px-5 pt-6">
+        <Skeleton className="h-10 w-2/3 rounded-xl" />
+        <div className="grid grid-cols-3 gap-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-2xl" />
+          ))}
+        </div>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 rounded-2xl" />
+        ))}
+      </div>
+    );
+  }
+
   if (!myProfessional) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
@@ -82,6 +99,19 @@ export default function MinhasComissoes() {
 
       <div className="px-5 space-y-3">
         {/* Resumo */}
+        {isLoadingAppointments ? (
+          <>
+            <div className="grid grid-cols-3 gap-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 rounded-2xl" />
+              ))}
+            </div>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 rounded-2xl" />
+            ))}
+          </>
+        ) : (
+          <>
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-card rounded-2xl border border-border/50 p-4 text-center">
             <p className="text-xs text-muted-foreground">Atendimentos</p>
@@ -122,6 +152,8 @@ export default function MinhasComissoes() {
               </div>
             );
           })
+        )}
+          </>
         )}
       </div>
     </div>

@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import PageHeader from "@/components/ui/PageHeader";
 
@@ -21,7 +22,7 @@ export default function Promotions() {
   });
   const queryClient = useQueryClient();
 
-  const { data: promotions = [] } = useQuery({
+  const { data: promotions = [], isLoading } = useQuery({
     queryKey: ["promotions"],
     // note: no "created_date" field on our Promotion resource yet (no timestamps)
     queryFn: () => PromotionsApi.list(),
@@ -51,6 +52,12 @@ export default function Promotions() {
       />
 
       <div className="px-5 space-y-3">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-2xl" />
+          ))
+        ) : (
+          <>
         {promotions.map((promo) => (
           <div key={promo.id} className="bg-card rounded-2xl border border-border/50 shadow-sm p-4">
             <div className="flex items-start justify-between">
@@ -75,6 +82,8 @@ export default function Promotions() {
         ))}
         {promotions.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-12">Nenhuma promoção criada</p>
+        )}
+          </>
         )}
       </div>
 

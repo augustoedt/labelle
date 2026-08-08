@@ -5,6 +5,7 @@ import { Plus, Search, Crown, MessageCircle, Smartphone, Settings } from "lucide
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
 import ClientForm from "@/components/clients/ClientForm";
@@ -29,7 +30,7 @@ export default function Clients() {
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients"],
     // note: no "created_date" field on our Client resource yet (no timestamps),
     // so we can't sort newest-first like the old app did — follow-up: add
@@ -87,6 +88,12 @@ export default function Clients() {
 
       {/* Client list */}
       <div className="px-5 space-y-2">
+        {isLoading ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl" />
+          ))
+        ) : (
+          <>
         {filtered.map((client) => (
           <div
             key={client.id}
@@ -145,6 +152,8 @@ export default function Clients() {
         ))}
         {filtered.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-12">Nenhum cliente encontrado</p>
+        )}
+          </>
         )}
       </div>
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import ConfirmPaymentSheet from "./ConfirmPaymentSheet";
@@ -15,7 +16,7 @@ const STATUS_CONFIG = {
   pagamento_parcial: { label: "Parcial", className: "bg-orange-50 border-orange-200", badge: "text-orange-600" },
 };
 
-export default function PendingTransactions({ transactions }) {
+export default function PendingTransactions({ transactions, isLoading }) {
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -48,6 +49,15 @@ export default function PendingTransactions({ transactions }) {
   const handleCancel = (t) => {
     updateMutation.mutate({ id: t.id, data: { status: "cancelado" } });
   };
+
+  if (isLoading) {
+    return (
+      <div className="px-5 space-y-2">
+        <Skeleton className="h-4 w-40 rounded" />
+        <Skeleton className="h-20 rounded-xl" />
+      </div>
+    );
+  }
 
   if (pending.length === 0) return null;
 

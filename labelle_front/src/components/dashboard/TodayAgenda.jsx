@@ -1,5 +1,6 @@
 import { Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 const statusColors = {
@@ -18,7 +19,17 @@ const statusLabels = {
   cancelado: "Cancelado",
 };
 
-export default function TodayAgenda({ appointments }) {
+export default function TodayAgenda({ appointments, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="px-5 space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
   if (!appointments || appointments.length === 0) {
     return (
       <div className="px-5 py-8 text-center text-muted-foreground text-sm">

@@ -1,7 +1,16 @@
 import { AlertTriangle, CalendarCheck, Package, Target } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-export default function AlertsSection({ appointments, products }) {
+export default function AlertsSection({ appointments, products, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="px-5 space-y-2">
+        <Skeleton className="h-4 w-16 rounded" />
+        <Skeleton className="h-10 rounded-xl" />
+      </div>
+    );
+  }
   const alerts = [];
 
   const today = new Date().toISOString().split("T")[0];

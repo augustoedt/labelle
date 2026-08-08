@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getClientAppointments } from "@/server/api";
-import { Clock, Calendar, Loader2, Phone } from "lucide-react";
+import { Clock, Calendar, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +56,13 @@ export default function ClientHistory({ clientPhone, onSetPhone }) {
   }
 
   if (isLoading) {
-    return <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="px-5 py-5 space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 rounded-2xl" />
+        ))}
+      </div>
+    );
   }
 
   const upcoming = appointments.filter(a => a.status !== "cancelado" && a.status !== "concluido");

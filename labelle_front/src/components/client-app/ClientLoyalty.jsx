@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getClientLoyalty } from "@/server/api";
-import { Gift, Star, Loader2, Trophy } from "lucide-react";
+import { Gift, Star, Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 const tiers = {
@@ -61,7 +62,21 @@ export default function ClientLoyalty({ clientPhone, onSetPhone }) {
   }
 
   if (isLoading) {
-    return <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="px-5 py-5 space-y-5">
+        <Skeleton className="h-40 rounded-2xl" />
+        <div className="grid grid-cols-3 gap-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-2xl" />
+          ))}
+        </div>
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const client = loyaltyData?.client;

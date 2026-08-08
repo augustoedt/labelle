@@ -117,6 +117,28 @@ Skills migradas nesta sessão: `redesign-existing-projects`, `design-taste-front
 - **Obs.**: hydration mismatch em `/agendar` (dates via `Date.now()` no SSR) — não bloqueia;
   candidato a fix na fase taste.
 
+## Bug mobile reportado pelo usuário (sessão 2026-08-08) — FIX `82a373a`
+
+Sintoma: `/minha-agenda` em viewport mobile ficava "desfeito" — dias do calendário
+estouravam a tela, menu inferior deslocado para baixo, página zoomada (layout viewport
+544px em vez de 390).
+
+Causas (2, corrigidas juntas):
+1. **TanStackRouterDevtools** (dev-only, `__root.tsx`) abria um painel de 544px de
+   largura → Chrome mobile fazia auto-zoom-out da página toda. Removido do root e o
+   pacote `@tanstack/react-router-devtools` desinstalado.
+2. **Fileira de dias das agendas** (`MinhaAgenda.jsx` e `Agenda.jsx`): botões com
+   `flex-1` mas `min-width:auto` não encolhiam abaixo do conteúdo mínimo (~77px × 7 =
+   544px). Agora a fileira rola horizontalmente (`overflow-x-auto -mx-5 px-5 pb-1`,
+   mesmo padrão do portal `/agendar`) com chips `shrink-0`.
+
+Validação (WebBridge, emulação 390×844): `scrollW == clientW == 390` em `/agendar`,
+`/agenda`, `/app`, `/login`, `/minha-agenda`; nav fixo em `bottom:844`; último dia
+alcançável por scroll. Screenshot de referência: `/tmp/minha_agenda_fix.jpeg`.
+
+> Nota de teste: a extensão de browser do usuário (classes `aiinhbfoop-*`, painel de
+> 440px) também injeta elementos no DOM e polui medições de layout — ignorar ao depurar.
+
 ## Convenções do projeto
 
 - Commit por correção, mensagens em pt-BR começando com `front:`/`back:`. **Nunca** `git push` sem pedir.

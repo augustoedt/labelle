@@ -112,7 +112,7 @@ export default function Reminders() {
                     {reminder.sent_via === "automatico" && " • enviado automaticamente"}
                   </p>
                 </div>
-                <Badge className={cn("text-[10px] border-0", statusColors[reminder.status])}>
+                <Badge className={cn("text-xs border-0", statusColors[reminder.status])}>
                   {statusLabels[reminder.status]}
                 </Badge>
               </div>

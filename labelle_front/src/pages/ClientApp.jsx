@@ -109,7 +109,7 @@ export default function ClientApp() {
               )}
             >
               <Icon className={cn("w-5 h-5", isActive && "stroke-[2.5]")} />
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <span className="text-xs font-medium">{tab.label}</span>
               {isActive && (
                 <div
                   className="absolute top-0 h-0.5 bg-foreground"

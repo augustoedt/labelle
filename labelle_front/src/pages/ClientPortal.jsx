@@ -212,9 +212,9 @@ export default function ClientPortal() {
                       isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border/50 bg-card"
                     )}
                   >
-                    <span className="text-[10px] font-medium uppercase">{format(d, "EEE", { locale: ptBR })}</span>
+                    <span className="text-xs font-medium uppercase">{format(d, "EEE", { locale: ptBR })}</span>
                     <span className="text-xl font-bold">{format(d, "d")}</span>
-                    <span className="text-[10px]">{format(d, "MMM", { locale: ptBR })}</span>
+                    <span className="text-xs">{format(d, "MMM", { locale: ptBR })}</span>
                   </button>
                 );
               })}

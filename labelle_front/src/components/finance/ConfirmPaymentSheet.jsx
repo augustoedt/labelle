@@ -124,17 +124,17 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
             {/* Totals bar */}
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-card rounded-xl border border-border/50 p-2">
-                <p className="text-[10px] text-muted-foreground">Total</p>
+                <p className="text-xs text-muted-foreground">Total</p>
                 <p className="font-semibold text-sm">R$ {total.toFixed(2)}</p>
               </div>
               <div className="bg-card rounded-xl border border-border/50 p-2">
-                <p className="text-[10px] text-muted-foreground">Informado</p>
+                <p className="text-xs text-muted-foreground">Informado</p>
                 <p className={cn("font-semibold text-sm", isOver ? "text-destructive" : isExact ? "text-emerald-600" : "text-amber-600")}>
                   R$ {sumPaid.toFixed(2)}
                 </p>
               </div>
               <div className="bg-card rounded-xl border border-border/50 p-2">
-                <p className="text-[10px] text-muted-foreground">{isOver ? "Excesso" : "Restante"}</p>
+                <p className="text-xs text-muted-foreground">{isOver ? "Excesso" : "Restante"}</p>
                 <p className={cn("font-semibold text-sm", isOver ? "text-destructive" : isPartial ? "text-amber-600" : "text-emerald-600")}>
                   R$ {Math.abs(remaining).toFixed(2)}
                 </p>
@@ -172,7 +172,7 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-[10px]">Forma</Label>
+                      <Label className="text-xs">Forma</Label>
                       <Select value={line.method} onValueChange={v => updateLine(idx, "method", v)}>
                         <SelectTrigger className="mt-0.5 rounded-lg h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -183,7 +183,7 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-[10px]">Valor (R$)</Label>
+                      <Label className="text-xs">Valor (R$)</Label>
                       <Input
                         type="number"
                         value={line.amount}
@@ -196,7 +196,7 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-[10px]">Taxa (%)</Label>
+                      <Label className="text-xs">Taxa (%)</Label>
                       <Input
                         type="number"
                         value={line.fee_percent}
@@ -206,7 +206,7 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px]">Vlr. Líquido</Label>
+                      <Label className="text-xs">Vlr. Líquido</Label>
                       <div className="mt-0.5 h-8 rounded-lg border border-border/50 bg-secondary/30 px-2 flex items-center text-xs text-muted-foreground">
                         R$ {(parseFloat(line.amount || 0) - calcFee(line.amount, line.fee_percent)).toFixed(2)}
                       </div>
@@ -216,7 +216,7 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
                   {isCard(line.method) && (
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label className="text-[10px]">Parcelas</Label>
+                        <Label className="text-xs">Parcelas</Label>
                         <Select value={String(line.installments)} onValueChange={v => updateLine(idx, "installments", v)}>
                           <SelectTrigger className="mt-0.5 rounded-lg h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -227,7 +227,7 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-[10px]">Bandeira</Label>
+                        <Label className="text-xs">Bandeira</Label>
                         <Select value={line.card_brand} onValueChange={v => updateLine(idx, "card_brand", v)}>
                           <SelectTrigger className="mt-0.5 rounded-lg h-8 text-xs"><SelectValue placeholder="Selecione" /></SelectTrigger>
                           <SelectContent>

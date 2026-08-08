@@ -240,11 +240,11 @@ export default function Professionals() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground mt-1">Apenas usuários com role "profissional" aparecem aqui</p>
+              <p className="text-xs text-muted-foreground mt-1">Apenas usuários com role "profissional" aparecem aqui</p>
             </div>
             <div>
               <Label className="text-xs">Serviços que realiza</Label>
-              <p className="text-[10px] text-muted-foreground mb-2">
+              <p className="text-xs text-muted-foreground mb-2">
                 Só quem estiver marcado aqui aparece para esse serviço na hora de agendar.
               </p>
               <div className="space-y-2 max-h-56 overflow-y-auto">

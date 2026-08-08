@@ -67,7 +67,7 @@ export default function InstallPwaButton() {
         <Smartphone className="w-5 h-5 text-white flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-white text-xs font-semibold leading-tight">La Belle Studio</p>
-          <p className="text-white/80 text-[11px] leading-tight">Adicione à tela inicial para acesso rápido</p>
+          <p className="text-white/80 text-xs leading-tight">Adicione à tela inicial para acesso rápido</p>
         </div>
         <Button
           size="sm"

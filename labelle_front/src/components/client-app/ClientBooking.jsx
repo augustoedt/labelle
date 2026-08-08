@@ -186,9 +186,9 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
                   <button key={d.toISOString()} onClick={() => { setSelectedDate(d); setSelectedTime(null); }}
                     className={cn("flex flex-col items-center py-3 px-4 rounded-2xl min-w-[64px] border-2 transition-all",
                       sel ? "border-foreground bg-foreground text-background" : "border-border/50 bg-card")}>
-                    <span className="text-[10px] font-medium uppercase">{format(d, "EEE", { locale: ptBR })}</span>
+                    <span className="text-xs font-medium uppercase">{format(d, "EEE", { locale: ptBR })}</span>
                     <span className="text-xl font-bold">{format(d, "d")}</span>
-                    <span className="text-[10px]">{format(d, "MMM", { locale: ptBR })}</span>
+                    <span className="text-xs">{format(d, "MMM", { locale: ptBR })}</span>
                   </button>
                 );
               })}

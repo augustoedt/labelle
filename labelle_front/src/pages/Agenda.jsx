@@ -210,7 +210,7 @@ export default function Agenda() {
                   isToday && !isSelected && "ring-1 ring-primary/30"
                 )}
               >
-                <span className="text-[10px] font-medium uppercase">
+                <span className="text-xs font-medium uppercase">
                   {format(d, "EEE", { locale: ptBR })}
                 </span>
                 <span className="text-lg font-bold">{format(d, "d")}</span>
@@ -244,7 +244,7 @@ export default function Agenda() {
                       <p className="font-semibold text-sm">{apt.client_name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{apt.service_name}</p>
                     </div>
-                    <Badge className={cn("text-[10px] border-0", statusColors[apt.status])}>
+                    <Badge className={cn("text-xs border-0", statusColors[apt.status])}>
                       {statusLabels[apt.status]}
                     </Badge>
                   </div>

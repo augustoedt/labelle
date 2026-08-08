@@ -36,7 +36,7 @@ export default function TodayAgenda({ appointments }) {
         >
           <div className="text-center min-w-[50px]">
             <p className="text-sm font-bold text-foreground">{apt.time}</p>
-            <p className="text-[10px] text-muted-foreground">{apt.duration_minutes}min</p>
+            <p className="text-xs text-muted-foreground">{apt.duration_minutes}min</p>
           </div>
           <div className="w-px h-10 bg-primary/30 rounded-full" />
           <div className="flex-1 min-w-0">
@@ -44,10 +44,10 @@ export default function TodayAgenda({ appointments }) {
             <p className="text-xs text-muted-foreground truncate">{apt.service_name}</p>
             <div className="flex items-center gap-1.5 mt-1">
               <User className="w-3 h-3 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground">{apt.professional_name}</span>
+              <span className="text-xs text-muted-foreground">{apt.professional_name}</span>
             </div>
           </div>
-          <Badge className={cn("text-[10px] border-0 font-medium", statusColors[apt.status])}>
+          <Badge className={cn("text-xs border-0 font-medium", statusColors[apt.status])}>
             {statusLabels[apt.status]}
           </Badge>
         </div>

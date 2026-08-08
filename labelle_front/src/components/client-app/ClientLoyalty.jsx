@@ -121,7 +121,7 @@ export default function ClientLoyalty({ clientPhone, onSetPhone }) {
           <div key={label} className="bg-card border border-border/50 rounded-2xl p-3 text-center">
             <p className="text-lg mb-1">{icon}</p>
             <p className="font-heading font-bold text-sm">{val}</p>
-            <p className="text-[10px] text-muted-foreground">{label}</p>
+            <p className="text-xs text-muted-foreground">{label}</p>
           </div>
         ))}
       </div>
@@ -151,7 +151,7 @@ export default function ClientLoyalty({ clientPhone, onSetPhone }) {
                 <p className="font-semibold text-sm">{t.label}</p>
                 <p className="text-xs text-muted-foreground">{key === "vip" ? "2000+ pontos" : `${t.min} – ${t.max} pontos`}</p>
               </div>
-              {client.loyalty_tier === key && <span className="text-[10px] font-bold bg-foreground text-background px-2 py-0.5 rounded-full">Atual</span>}
+              {client.loyalty_tier === key && <span className="text-xs font-bold bg-foreground text-background px-2 py-0.5 rounded-full">Atual</span>}
             </div>
           ))}
         </div>

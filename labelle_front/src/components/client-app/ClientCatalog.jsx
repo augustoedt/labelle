@@ -102,7 +102,7 @@ export default function ClientCatalog({ onNavigate }) {
                   className="w-full h-28 object-cover"
                 />
                 {promo && (
-                  <span className="absolute top-2 right-2 bg-foreground text-background text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  <span className="absolute top-2 right-2 bg-foreground text-background text-xs font-bold px-1.5 py-0.5 rounded-full">
                     {promo.discount_type === "percent" ? `-${promo.discount_value}%` : `-R$${promo.discount_value}`}
                   </span>
                 )}
@@ -111,10 +111,10 @@ export default function ClientCatalog({ onNavigate }) {
                 <p className="font-semibold text-sm leading-tight">{svc.name}</p>
                 <div className="flex items-center gap-1 mt-1 text-muted-foreground">
                   <Clock className="w-3 h-3" />
-                  <span className="text-[10px]">{svc.duration_minutes}min</span>
+                  <span className="text-xs">{svc.duration_minutes}min</span>
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
-                  {promo && <p className="text-[10px] line-through text-muted-foreground">R$ {svc.price}</p>}
+                  {promo && <p className="text-xs line-through text-muted-foreground">R$ {svc.price}</p>}
                   <p className="font-heading font-bold text-sm">R$ {finalPrice.toFixed(0)}</p>
                 </div>
               </div>

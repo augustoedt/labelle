@@ -30,7 +30,7 @@ export default function ProfissionalLayout() {
                 )}
               >
                 <Icon className={cn("w-5 h-5", isActive && "stroke-[2.5px]")} />
-                <span className="text-[10px] font-medium">{label}</span>
+                <span className="text-xs font-medium">{label}</span>
                 {isActive && <div className="w-1 h-1 rounded-full bg-primary mt-0.5" />}
               </Link>
             );
@@ -40,7 +40,7 @@ export default function ProfissionalLayout() {
             className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-muted-foreground hover:text-destructive transition-all duration-200"
           >
             <LogOut className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Sair</span>
+            <span className="text-xs font-medium">Sair</span>
           </Link>
         </div>
       </nav>

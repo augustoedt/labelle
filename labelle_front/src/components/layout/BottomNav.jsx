@@ -30,7 +30,7 @@ export default function BottomNav() {
               )}
             >
               <Icon className={cn("w-5 h-5", isActive && "stroke-[2.5px]")} />
-              <span className="text-[10px] font-medium">{label}</span>
+              <span className="text-xs font-medium">{label}</span>
               {isActive && (
                 <div className="w-1 h-1 rounded-full bg-primary mt-0.5" />
               )}

@@ -159,7 +159,7 @@ export default function Settings() {
           <div>
             <Label className="text-xs">Telefone / WhatsApp do estúdio</Label>
             <Input value={form.whatsapp_phone || ""} onChange={set("whatsapp_phone")} placeholder="(11) 99999-0000" />
-            <p className="text-[11px] text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               É para este número que a cliente envia a notificação de novo agendamento. Salvo sempre normalizado (só números).
             </p>
           </div>
@@ -219,7 +219,7 @@ export default function Settings() {
             </div>
 
             {connectionStatus?.me && (
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Número pareado: {connectionStatus.me.id || connectionStatus.me.pushName}
               </p>
             )}
@@ -246,12 +246,12 @@ export default function Settings() {
             </div>
 
             {qrMutation.isError && (
-              <p className="text-[11px] text-destructive">Não foi possível gerar o QR code. Tente novamente.</p>
+              <p className="text-xs text-destructive">Não foi possível gerar o QR code. Tente novamente.</p>
             )}
             {qrImageSrc(qrMutation.data) && (
               <div className="flex flex-col items-center gap-2 pt-1">
                 <img src={qrImageSrc(qrMutation.data)} alt="QR code para parear o WhatsApp" className="w-48 h-48 rounded-xl border border-border/50" />
-                <p className="text-[11px] text-muted-foreground text-center">
+                <p className="text-xs text-muted-foreground text-center">
                   Escaneie com o WhatsApp do celular da empresa (Aparelhos conectados → Conectar um aparelho).
                 </p>
               </div>
@@ -266,7 +266,7 @@ export default function Settings() {
             <div key={key} className="bg-card rounded-2xl border border-border/50 p-4 space-y-2">
               <div>
                 <Label className="text-xs font-semibold">{label}</Label>
-                <p className="text-[11px] text-muted-foreground">{desc}</p>
+                <p className="text-xs text-muted-foreground">{desc}</p>
               </div>
               <Textarea
                 value={form[key] || ""}
@@ -274,7 +274,7 @@ export default function Settings() {
                 rows={6}
                 className="font-mono text-xs"
               />
-              <p className="text-[10px] text-muted-foreground">Placeholders disponíveis: {placeholders}</p>
+              <p className="text-xs text-muted-foreground">Placeholders disponíveis: {placeholders}</p>
             </div>
           ))}
         </div>

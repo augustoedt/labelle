@@ -69,7 +69,7 @@ export default function Promotions() {
             </div>
             {promo.description && <p className="text-xs text-muted-foreground mt-2">{promo.description}</p>}
             {promo.end_date && (
-              <p className="text-[10px] text-muted-foreground mt-2">Válido até {format(new Date(promo.end_date + "T12:00"), "dd/MM/yyyy")}</p>
+              <p className="text-xs text-muted-foreground mt-2">Válido até {format(new Date(promo.end_date + "T12:00"), "dd/MM/yyyy")}</p>
             )}
           </div>
         ))}

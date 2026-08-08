@@ -100,7 +100,7 @@ function AppointmentCard({ appt }) {
     <div className="bg-card border border-border/50 rounded-2xl p-4">
       <div className="flex items-start justify-between mb-2">
         <p className="font-semibold text-sm">{appt.service_name}</p>
-        <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full", cfg.color)}>{cfg.label}</span>
+        <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", cfg.color)}>{cfg.label}</span>
       </div>
       <p className="text-xs text-muted-foreground">com {appt.professional_name}</p>
       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">

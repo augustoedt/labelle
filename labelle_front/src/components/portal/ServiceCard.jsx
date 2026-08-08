@@ -38,7 +38,7 @@ export default function ServiceCard({ service, selected, onSelect, promotion }) 
           )}
           <p className="font-heading font-bold text-lg">{`R$ ${finalPrice.toFixed(0)}`}</p>
           {hasPromo && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-primary">
+            <span className="inline-flex items-center gap-0.5 text-xs font-medium text-primary">
               <Sparkles className="w-3 h-3" /> Promo
             </span>
           )}

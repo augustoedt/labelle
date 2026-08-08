@@ -219,7 +219,7 @@ export default function MinhaAgenda() {
                   isToday && !isSelected && "ring-1 ring-primary/30"
                 )}
               >
-                <span className="text-[10px] font-medium uppercase">{format(d, "EEE", { locale: ptBR })}</span>
+                <span className="text-xs font-medium uppercase">{format(d, "EEE", { locale: ptBR })}</span>
                 <span className="text-lg font-bold">{format(d, "d")}</span>
                 {hasAppts && !isSelected && <div className="w-1 h-1 rounded-full bg-primary mt-0.5" />}
                 {hasOnlyCancelled && !isSelected && <div className="w-1 h-1 rounded-full bg-muted-foreground/40 mt-0.5" />}
@@ -246,7 +246,7 @@ export default function MinhaAgenda() {
                       <p className="font-semibold text-sm">{apt.client_name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{apt.service_name}</p>
                     </div>
-                    <Badge className={cn("text-[10px] border-0", statusColors[apt.status])}>
+                    <Badge className={cn("text-xs border-0", statusColors[apt.status])}>
                       {statusLabels[apt.status]}
                     </Badge>
                   </div>

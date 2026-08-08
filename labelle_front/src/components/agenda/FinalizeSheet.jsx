@@ -98,7 +98,7 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
                 <div className="flex-1 min-w-0">
                   <span className="block truncate">{item.service_name}</span>
                   {item.unplanned && (
-                    <Badge className="text-[10px] border-0 bg-amber-100 text-amber-700 mt-0.5">
+                    <Badge className="text-xs border-0 bg-amber-100 text-amber-700 mt-0.5">
                       Não previsto
                     </Badge>
                   )}

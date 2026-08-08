@@ -151,7 +151,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
               </SelectContent>
             </Select>
             {form.service_id && qualifiedProfessionals?.filter(p => p.is_active !== false).length === 0 && (
-              <p className="text-[11px] text-destructive mt-1">
+              <p className="text-xs text-destructive mt-1">
                 Nenhuma profissional configurada para este serviço ainda. Cadastre em Profissionais → editar → "Serviços que realiza".
               </p>
             )}

@@ -65,7 +65,7 @@ export default function Loyalty() {
                   <p className="text-xs text-muted-foreground">{client.visit_count || 0} visitas</p>
                 </div>
                 <div className="text-right">
-                  <Badge className={cn("text-[10px] border-0", tierConfig[tier].color)}>
+                  <Badge className={cn("text-xs border-0", tierConfig[tier].color)}>
                     {client.loyalty_points || 0} pts
                   </Badge>
                 </div>

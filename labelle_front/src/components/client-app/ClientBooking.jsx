@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { normalizePhone } from "@/lib/clientUtils";
 import { formatBRL } from "@/lib/format";
 import { maskPhone } from "@/lib/phone";
@@ -18,6 +18,7 @@ const categoryEmojis = { cabelo: "💇", unha: "💅", estetica: "✨", sobrance
 
 export default function ClientBooking({ clientName, clientPhone, onSaveClient, onSuccess }) {
   const [step, setStep] = useState(1);
+  const prefersReduced = useReducedMotion();
   const [selectedService, setSelectedService] = useState(null);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -130,11 +131,17 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
                 <Skeleton key={i} className="h-[72px] rounded-2xl" />
               ))
             ) : (
-            activeServices.map(svc => {
+            activeServices.map((svc, i) => {
               const promo = getPromotion(svc.id);
               const finalPrice = promo ? (promo.discount_type === "percent" ? svc.price * (1 - promo.discount_value / 100) : svc.price - promo.discount_value) : svc.price;
               return (
-                <button key={svc.id} onClick={() => setSelectedService(svc)}
+                <motion.button
+                  key={svc.id}
+                  style={{ originX: 1 }}
+                  initial={{ opacity: 0, scaleX: 0.25 }}
+                  animate={{ opacity: 1, scaleX: 1 }}
+                  transition={{ duration: 0.4, delay: prefersReduced ? 0 : i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  onClick={() => setSelectedService(svc)}
                   className={cn("w-full text-left p-4 rounded-2xl border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", selectedService?.id === svc.id ? "border-foreground bg-foreground/5" : "border-border/50 bg-card")}>
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{categoryEmojis[svc.category] || "🌟"}</span>
@@ -147,7 +154,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
                       <p className="font-heading font-bold tracking-tight tabular-nums">{formatBRL(finalPrice)}</p>
                     </div>
                   </div>
-                </button>
+                </motion.button>
               );
             })
             )}

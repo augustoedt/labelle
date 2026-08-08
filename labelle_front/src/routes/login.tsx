@@ -28,7 +28,7 @@ function LoginPage() {
   })
 
   return (
-    <div className="fixed inset-0 page-background flex items-center justify-center p-6">
+    <div className="min-h-dvh page-background flex items-center justify-center p-6">
       <div className="w-full max-w-sm bg-card rounded-2xl shadow-lg p-8">
         <div className="flex justify-center mb-6">
           <LaBelleLogo size="lg" />

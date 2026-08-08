@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 const categoryEmojis = {
   cabelo: "💇",
@@ -38,6 +39,7 @@ const categoryPhotos = {
 export default function ClientCatalog({ onNavigate }) {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedService, setSelectedService] = useState(null);
+  const prefersReduced = useReducedMotion();
 
   const { data: services = [], isLoading } = useQuery({
     queryKey: ["services"],
@@ -92,19 +94,22 @@ export default function ClientCatalog({ onNavigate }) {
         )}
       </div>
 
-      {/* Service grid */}
-      <div className="px-5 grid grid-cols-2 gap-3">
+      {/* Service grid (stagger individual por item) */}
+      <div key={selectedCategory} className="px-5 grid grid-cols-2 gap-3">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-44 rounded-2xl" />
           ))
         ) : (
-        filtered.map(svc => {
+        filtered.map((svc, i) => {
           const promo = getPromo(svc.id);
           const finalPrice = getFinalPrice(svc);
           return (
-            <button
+            <motion.button
               key={svc.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: prefersReduced ? 0 : i * 0.08, ease: [0.16, 1, 0.3, 1] }}
               onClick={() => setSelectedService(svc)}
               className="bg-card border border-border/50 rounded-2xl overflow-hidden text-left hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex flex-col"
             >
@@ -131,31 +136,46 @@ export default function ClientCatalog({ onNavigate }) {
                   <p className="font-heading font-bold tracking-tight text-sm tabular-nums">{formatBRL(finalPrice)}</p>
                 </div>
               </div>
-            </button>
+            </motion.button>
           );
         })
         )}
       </div>
 
-      {/* Service detail sheet */}
-      {selectedService && (
-        <ServiceDetail
-          service={selectedService}
-          promo={getPromo(selectedService.id)}
-          finalPrice={getFinalPrice(selectedService)}
-          onClose={() => setSelectedService(null)}
-          onBook={() => { setSelectedService(null); onNavigate("agendar"); }}
-        />
-      )}
+      {/* Service detail sheet (sobe de baixo) */}
+      <AnimatePresence>
+        {selectedService && (
+          <ServiceDetail
+            service={selectedService}
+            promo={getPromo(selectedService.id)}
+            finalPrice={getFinalPrice(selectedService)}
+            onClose={() => setSelectedService(null)}
+            onBook={() => { setSelectedService(null); onNavigate("agendar"); }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
+  const prefersReduced = useReducedMotion();
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col justify-end">
+    <motion.div
+      className="fixed inset-0 z-[60] flex flex-col justify-end"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-background rounded-t-3xl overflow-hidden max-h-[85vh] flex flex-col">
+      <motion.div
+        className="relative bg-background rounded-t-3xl overflow-hidden max-h-[85vh] flex flex-col"
+        initial={prefersReduced ? false : { y: "100%" }}
+        animate={{ y: 0 }}
+        exit={prefersReduced ? false : { y: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 320 }}
+      >
         {/* Image */}
         <div className="relative shrink-0">
           <img
@@ -218,7 +238,7 @@ function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
             <CalendarPlus className="w-4 h-4" /> Agendar este serviço
           </Button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

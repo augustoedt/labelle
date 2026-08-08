@@ -6,8 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatBRL } from "@/lib/format";
+import { motion, useReducedMotion } from "framer-motion";
 
 export default function ClientHome({ clientPhone, clientName, onNavigate }) {
+  const prefersReduced = useReducedMotion();
   const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery({
     queryKey: ["client-appointments", clientPhone],
     queryFn: () => getClientAppointments({ data: { phone: clientPhone } }).then(r => r.appointments || []),
@@ -116,7 +118,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
         </div>
       }
 
-      {/* Popular services */}
+      {/* Popular services (crescem deslizando da direita, um a um) */}
       <div>
         <h2 className="font-heading text-base font-semibold tracking-tight mb-3">Serviços populares</h2>
         <div className="space-y-2">
@@ -125,9 +127,12 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
           <Skeleton key={i} className="h-16 rounded-2xl" />
           ) :
 
-          services.filter((s) => s.is_active).slice(0, 4).map((svc) =>
-          <button
+          services.filter((s) => s.is_active).slice(0, 4).map((svc, i) =>
+          <motion.button
             key={svc.id}
+            initial={{ opacity: 0, x: 48 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: prefersReduced ? 0 : i * 0.12, ease: [0.16, 1, 0.3, 1] }}
             onClick={() => onNavigate("agendar")}
             className="w-full flex items-center gap-3 bg-card border border-border/50 rounded-2xl p-3 hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
 
@@ -138,7 +143,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
               </div>
               <p className="font-heading font-bold tracking-tight text-sm tabular-nums">{formatBRL(svc.price)}</p>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            </button>
+            </motion.button>
           )}
         </div>
       </div>

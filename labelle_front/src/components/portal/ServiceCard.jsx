@@ -1,10 +1,7 @@
 import { Clock, Sparkles } from "lucide-react";
+import ServiceCategoryIcon from "@/components/ui/ServiceCategoryIcon";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
-
-const categoryEmojis = {
-  cabelo: "💇", unha: "💅", estetica: "✨", sobrancelha: "🪒", maquiagem: "💄", outros: "🌟"
-};
 
 export default function ServiceCard({ service, selected, onSelect, promotion }) {
   const hasPromo = !!promotion;
@@ -18,12 +15,14 @@ export default function ServiceCard({ service, selected, onSelect, promotion }) 
     <button
       onClick={() => onSelect(service)}
       className={cn(
-        "w-full text-left p-4 rounded-2xl border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        selected ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" : "border-border/50 bg-card hover:border-primary/30"
+        "w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        selected ? "border-primary bg-primary/5 shadow-[0_12px_28px_-18px_hsl(var(--primary)/0.7)]" : "border-border/60 bg-card/90 hover:border-primary/30"
       )}
     >
       <div className="flex items-start gap-3">
-        <span className="text-2xl">{categoryEmojis[service.category] || "🌟"}</span>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/70 text-foreground">
+          <ServiceCategoryIcon category={service.category} className="w-5 h-5" />
+        </span>
         <div className="flex-1">
           <p className="font-semibold text-sm">{service.name}</p>
           <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">

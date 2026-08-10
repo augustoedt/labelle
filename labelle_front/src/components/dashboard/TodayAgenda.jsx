@@ -2,6 +2,7 @@ import { Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import Reveal from "@/components/ui/Reveal";
 import { statusColors, statusLabels } from "@/lib/appointmentStatus";
 
 
@@ -26,11 +27,11 @@ export default function TodayAgenda({ appointments, isLoading }) {
 
   return (
     <div className="px-5 space-y-3">
-      {appointments.map((apt) => (
-        <div
-          key={apt.id}
-          className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border/50"
-        >
+      {appointments.map((apt, i) => (
+        <Reveal key={apt.id} index={i}>
+          <div
+            className="flex items-center gap-3 p-3 bg-card/90 rounded-2xl border border-border/60 shadow-[0_8px_20px_-18px_hsl(var(--foreground)/0.4)]"
+          >
           <div className="text-center min-w-[50px]">
             <p className="text-sm font-bold text-foreground">{apt.time}</p>
             <p className="text-xs text-muted-foreground">{apt.duration_minutes}min</p>
@@ -47,7 +48,8 @@ export default function TodayAgenda({ appointments, isLoading }) {
           <Badge className={cn("text-xs border-0 font-medium", statusColors[apt.status])}>
             {statusLabels[apt.status]}
           </Badge>
-        </div>
+          </div>
+        </Reveal>
       ))}
     </div>
   );

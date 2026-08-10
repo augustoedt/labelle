@@ -8,6 +8,7 @@ import AlertsSection from "@/components/dashboard/AlertsSection";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatBRL } from "@/lib/format";
+import Reveal from "@/components/ui/Reveal";
 
 export default function Dashboard() {
   const today = format(new Date(), "yyyy-MM-dd");
@@ -44,13 +45,14 @@ export default function Dashboard() {
   const ticketMedio = monthAppts.length > 0
     ? (monthRevenue / monthAppts.length)
     : 0;
+  const appointmentCountLabel = `${todayAppts.length} ${todayAppts.length === 1 ? "agendamento" : "agendamentos"}`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* Header */}
-      <div className="app-header px-5 pt-10 pb-5 flex items-center justify-between">
-        <span className="font-heading text-2xl text-white font-semibold">La Belle Studio</span>
-        <p className="text-xs text-white/90">
+      <div className="app-header rounded-b-[1.75rem] px-5 pt-8 pb-6 flex items-center justify-between">
+        <span className="font-heading text-2xl text-foreground font-semibold">La Belle Studio</span>
+        <p className="text-xs text-foreground/70">
           {format(new Date(), "EEEE, d/MM", { locale: ptBR })}
         </p>
       </div>
@@ -63,27 +65,27 @@ export default function Dashboard() {
           ))
         ) : (
           <>
-            <StatCard
+            <Reveal index={0} className="min-w-0"><StatCard
               title="Hoje"
               value={formatBRL(todayRevenue)}
               icon={DollarSign}
-            />
-            <StatCard
-              title="Este Mês"
+            /></Reveal>
+            <Reveal index={1} className="min-w-0"><StatCard
+              title="Este mês"
               value={formatBRL(monthRevenue)}
               icon={TrendingUp}
-            />
-            <StatCard
+            /></Reveal>
+            <Reveal index={2} className="min-w-0"><StatCard
               title="Atendimentos"
               value={todayAppts.length}
               icon={Scissors}
               trend={`${monthAppts.length} este mês`}
-            />
-            <StatCard
-              title="Ticket Médio"
+            /></Reveal>
+            <Reveal index={3} className="min-w-0"><StatCard
+              title="Ticket médio"
               value={formatBRL(ticketMedio)}
               icon={Users}
-            />
+            /></Reveal>
           </>
         )}
       </div>
@@ -95,7 +97,7 @@ export default function Dashboard() {
       <div>
         <div className="px-5 flex items-center justify-between mb-3">
           <h2 className="text-base font-heading font-semibold tracking-tight">Agenda de Hoje</h2>
-          <span className="text-xs text-primary font-medium">{todayAppts.length} agendamento(s)</span>
+          <span className="text-xs text-primary font-medium">{appointmentCountLabel}</span>
         </div>
         <TodayAgenda appointments={todayAppts.sort((a, b) => a.time?.localeCompare(b.time))} isLoading={isLoadingAppointments} />
       </div>

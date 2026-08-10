@@ -10,11 +10,11 @@ import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import Reveal from "@/components/ui/Reveal";
+import ServiceCategoryIcon from "@/components/ui/ServiceCategoryIcon";
 import { normalizePhone } from "@/lib/clientUtils";
 import { formatBRL } from "@/lib/format";
 import { maskPhone } from "@/lib/phone";
-
-const categoryEmojis = { cabelo: "💇", unha: "💅", estetica: "✨", sobrancelha: "🪒", maquiagem: "💄", outros: "🌟" };
 
 export default function ClientBooking({ clientName, clientPhone, onSaveClient, onSuccess }) {
   const [step, setStep] = useState(1);
@@ -124,7 +124,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
 
       <AnimatePresence mode="wait">
         {step === 1 && (
-          <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
+          <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: prefersReduced === true ? 0 : 0.25, ease: [0.16, 1, 0.3, 1] }} className="space-y-3">
             <h2 className="text-lg font-heading font-semibold tracking-tight">Escolha o serviço</h2>
             {isLoadingServices ? (
               Array.from({ length: 4 }).map((_, i) => (
@@ -135,16 +135,13 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
               const promo = getPromotion(svc.id);
               const finalPrice = promo ? (promo.discount_type === "percent" ? svc.price * (1 - promo.discount_value / 100) : svc.price - promo.discount_value) : svc.price;
               return (
-                <motion.button
-                  key={svc.id}
-                  style={{ originX: 1 }}
-                  initial={{ opacity: 0, scaleX: 0.25 }}
-                  animate={{ opacity: 1, scaleX: 1 }}
-                  transition={{ duration: 0.4, delay: prefersReduced ? 0 : i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  onClick={() => setSelectedService(svc)}
+                <Reveal key={svc.id} index={i} className="w-full">
+                  <button onClick={() => setSelectedService(svc)}
                   className={cn("w-full text-left p-4 rounded-2xl border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", selectedService?.id === svc.id ? "border-foreground bg-foreground/5" : "border-border/50 bg-card")}>
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{categoryEmojis[svc.category] || "🌟"}</span>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/70 text-foreground">
+                      <ServiceCategoryIcon category={svc.category} className="w-5 h-5" />
+                    </span>
                     <div className="flex-1">
                       <p className="font-semibold text-sm">{svc.name}</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="w-3 h-3" /> {svc.duration_minutes}min</p>
@@ -154,7 +151,8 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
                       <p className="font-heading font-bold tracking-tight tabular-nums">{formatBRL(finalPrice)}</p>
                     </div>
                   </div>
-                </motion.button>
+                  </button>
+                </Reveal>
               );
             })
             )}
@@ -162,7 +160,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
         )}
 
         {step === 2 && (
-          <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
+          <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: prefersReduced === true ? 0 : 0.25, ease: [0.16, 1, 0.3, 1] }} className="space-y-3">
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-lg font-heading font-semibold tracking-tight">Profissional</h2>
               <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="text-xs">Voltar</Button>
@@ -197,7 +195,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
         )}
 
         {step === 3 && (
-          <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+          <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: prefersReduced === true ? 0 : 0.25, ease: [0.16, 1, 0.3, 1] }} className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-heading font-semibold tracking-tight">Data e Horário</h2>
               <Button variant="ghost" size="sm" onClick={() => setStep(2)} className="text-xs">Voltar</Button>
@@ -242,7 +240,7 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
         )}
 
         {step === 4 && (
-          <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+          <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: prefersReduced === true ? 0 : 0.25, ease: [0.16, 1, 0.3, 1] }} className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-heading font-semibold tracking-tight">Confirmar agendamento</h2>
               <Button variant="ghost" size="sm" onClick={() => setStep(3)} className="text-xs">Voltar</Button>
@@ -287,18 +285,18 @@ export default function ClientBooking({ clientName, clientPhone, onSaveClient, o
         )}
 
         {step === 5 && (
-          <motion.div key="s5" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="py-16 text-center space-y-4">
+          <motion.div key="s5" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: prefersReduced === true ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }} className="py-16 text-center space-y-4">
             <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10 text-foreground" />
             </div>
-            <h2 className="text-2xl font-heading font-bold tracking-tight">Agendado! 🎉</h2>
+            <h2 className="text-2xl font-heading font-bold tracking-tight">Agendamento confirmado</h2>
             <p className="text-sm text-muted-foreground">Seu horário foi reservado. Aguarde a confirmação.</p>
             <Button variant="outline" className="rounded-xl" onClick={reset}>Fazer novo agendamento</Button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Botão flutuante "Continuar" (acima da barra inferior), aparece ao selecionar */}
+      {/* Botão flutuante "Continuar" acima da barra inferior */}
       <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-lg px-5 pointer-events-none z-40">
         <AnimatePresence>
           {(step === 1 && selectedService) || (step === 3 && selectedTime) ? (

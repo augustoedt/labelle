@@ -6,10 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatBRL } from "@/lib/format";
-import { motion, useReducedMotion } from "framer-motion";
+import Reveal from "@/components/ui/Reveal";
+import ServiceCategoryIcon from "@/components/ui/ServiceCategoryIcon";
 
 export default function ClientHome({ clientPhone, clientName, onNavigate }) {
-  const prefersReduced = useReducedMotion();
   const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery({
     queryKey: ["client-appointments", clientPhone],
     queryFn: () => getClientAppointments({ data: { phone: clientPhone } }).then(r => r.appointments || []),
@@ -36,8 +36,6 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
     if (isTomorrow(d)) return "Amanhã";
     return format(d, "dd 'de' MMMM", { locale: ptBR });
   };
-
-  const categoryEmojis = { cabelo: "💇", unha: "💅", estetica: "✨", sobrancelha: "🪒", maquiagem: "💄", outros: "🌟" };
 
   return (
     <div className="px-5 py-5 space-y-6">
@@ -78,7 +76,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => onNavigate("agendar")}
-          className="bg-card border border-border/50 rounded-2xl p-4 text-left hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          className="bg-card/90 border border-border/60 rounded-2xl p-4 text-left shadow-[0_8px_20px_-18px_hsl(var(--foreground)/0.4)] hover:border-primary/30 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
 
           <CalendarPlus className="w-6 h-6 mb-2" />
           <p className="font-semibold text-sm">Agendar</p>
@@ -86,7 +84,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
         </button>
         <button
           onClick={() => onNavigate("fidelidade")}
-          className="bg-card border border-border/50 rounded-2xl p-4 text-left hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          className="bg-card/90 border border-border/60 rounded-2xl p-4 text-left shadow-[0_8px_20px_-18px_hsl(var(--foreground)/0.4)] hover:border-primary/30 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
 
           <Sparkles className="w-6 h-6 mb-2" />
           <p className="font-semibold text-sm">Fidelidade</p>
@@ -118,7 +116,7 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
         </div>
       }
 
-      {/* Popular services (comeca pequeno e cresce da direita p/ esquerda, um a um) */}
+      {/* Popular services: entram suavemente em sequência */}
       <div>
         <h2 className="font-heading text-base font-semibold tracking-tight mb-3">Serviços populares</h2>
         <div className="space-y-2">
@@ -128,23 +126,22 @@ export default function ClientHome({ clientPhone, clientName, onNavigate }) {
           ) :
 
           services.filter((s) => s.is_active).slice(0, 4).map((svc, i) =>
-          <motion.button
-            key={svc.id}
-            style={{ originX: 1 }}
-            initial={{ opacity: 0, scaleX: 0.25 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            transition={{ duration: 0.4, delay: prefersReduced ? 0 : i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-            onClick={() => onNavigate("agendar")}
-            className="w-full flex items-center gap-3 bg-card border border-border/50 rounded-2xl p-3 hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Reveal key={svc.id} index={i} className="w-full">
+            <button
+              onClick={() => onNavigate("agendar")}
+              className="w-full flex items-center gap-3 bg-card/90 border border-border/60 rounded-2xl p-3 shadow-[0_8px_20px_-18px_hsl(var(--foreground)/0.4)] hover:border-primary/30 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
 
-              <span className="text-xl">{categoryEmojis[svc.category] || "🌟"}</span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/70 text-foreground">
+                <ServiceCategoryIcon category={svc.category} className="w-5 h-5" />
+              </span>
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium">{svc.name}</p>
                 <p className="text-xs text-muted-foreground">{svc.duration_minutes}min</p>
               </div>
               <p className="font-heading font-bold tracking-tight text-sm tabular-nums">{formatBRL(svc.price)}</p>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            </motion.button>
+            </button>
+          </Reveal>
           )}
         </div>
       </div>

@@ -35,7 +35,7 @@ export default function More() {
           <Link
             key={path}
             to={path}
-            className="flex items-center gap-4 p-4 bg-card rounded-2xl border border-border/50 hover:shadow-lg hover:shadow-primary/10 transition-all"
+            className="flex items-center gap-4 p-4 bg-card/90 rounded-2xl border border-border/60 hover:border-primary/30 transition-all duration-200 active:scale-[0.99]"
           >
             <div className="p-2.5 rounded-xl bg-primary/10">
               <Icon className="w-5 h-5 text-primary" />
@@ -49,7 +49,7 @@ export default function More() {
 
         <Link
           to="/logout"
-          className="flex items-center gap-4 p-4 bg-card rounded-2xl border border-border/50 hover:shadow-lg hover:shadow-destructive/10 transition-all text-destructive"
+          className="flex items-center gap-4 p-4 bg-card/90 rounded-2xl border border-border/60 hover:border-destructive/30 transition-all duration-200 active:scale-[0.99] text-destructive"
         >
           <div className="p-2.5 rounded-xl bg-destructive/10">
             <LogOut className="w-5 h-5" />

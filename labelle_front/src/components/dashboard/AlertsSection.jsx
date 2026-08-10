@@ -28,9 +28,9 @@ export default function AlertsSection({ appointments, products, isLoading }) {
 
   return (
     <div className="px-5 space-y-2">
-      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Alertas</h3>
+      <h3 className="text-xs font-semibold text-muted-foreground tracking-wide">Alertas</h3>
       {alerts.map((alert, i) => (
-        <div key={i} className={cn("flex items-center gap-3 p-3 rounded-xl", alert.color)}>
+        <div key={i} className={cn("flex items-center gap-3 p-3 rounded-2xl border border-current/10", alert.color)}>
           <alert.icon className="w-4 h-4 flex-shrink-0" />
           <span className="text-xs font-medium">{alert.text}</span>
         </div>

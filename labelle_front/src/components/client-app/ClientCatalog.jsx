@@ -1,30 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ServicesApi, PromotionsApi } from "@/server/api";
-import { Clock, X, CalendarPlus } from "lucide-react";
+import { CalendarPlus, Clock, LayoutGrid, Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-
-const categoryEmojis = {
-  cabelo: "💇",
-  unha: "💅",
-  estetica: "✨",
-  sobrancelha: "🪒",
-  maquiagem: "💄",
-  outros: "🌟",
-};
-
-const categoryLabels = {
-  cabelo: "Cabelo",
-  unha: "Unhas",
-  estetica: "Estética",
-  sobrancelha: "Sobrancelha",
-  maquiagem: "Maquiagem",
-  outros: "Outros",
-};
+import Reveal from "@/components/ui/Reveal";
+import ServiceCategoryIcon, { categoryLabels } from "@/components/ui/ServiceCategoryIcon";
 
 // Unsplash photos per category (curated, beauty-related)
 const categoryPhotos = {
@@ -88,7 +72,16 @@ export default function ClientCatalog({ onNavigate }) {
                 : "bg-card border-border/50 text-muted-foreground"
             )}
           >
-            {cat === "all" ? "✦ Todos" : `${categoryEmojis[cat] || "🌟"} ${categoryLabels[cat] || cat}`}
+            {cat === "all" ? (
+              <>
+                <LayoutGrid className="w-3.5 h-3.5" /> Todos
+              </>
+            ) : (
+              <>
+                <ServiceCategoryIcon category={cat} className="w-3.5 h-3.5" />
+                {categoryLabels[cat] || cat}
+              </>
+            )}
           </button>
         ))
         )}
@@ -105,14 +98,11 @@ export default function ClientCatalog({ onNavigate }) {
           const promo = getPromo(svc.id);
           const finalPrice = getFinalPrice(svc);
           return (
-            <motion.button
-              key={svc.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: prefersReduced ? 0 : i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-              onClick={() => setSelectedService(svc)}
-              className="bg-card border border-border/50 rounded-2xl overflow-hidden text-left hover:border-foreground/20 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex flex-col"
-            >
+            <Reveal key={svc.id} index={i} className="min-w-0 h-full">
+              <button
+                onClick={() => setSelectedService(svc)}
+                className="w-full h-full bg-card/90 border border-border/60 rounded-2xl overflow-hidden text-left hover:border-primary/30 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex flex-col shadow-[0_8px_20px_-18px_hsl(var(--foreground)/0.4)]"
+              >
               <div className="relative">
                 <img
                   src={categoryPhotos[svc.category] || categoryPhotos.outros}
@@ -136,7 +126,8 @@ export default function ClientCatalog({ onNavigate }) {
                   <p className="font-heading font-bold tracking-tight text-sm tabular-nums">{formatBRL(finalPrice)}</p>
                 </div>
               </div>
-            </motion.button>
+              </button>
+            </Reveal>
           );
         })
         )}
@@ -160,21 +151,22 @@ export default function ClientCatalog({ onNavigate }) {
 
 function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
   const prefersReduced = useReducedMotion();
+  const isReduced = prefersReduced === true;
   return (
     <motion.div
       className="fixed inset-0 z-[60] flex flex-col justify-end"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={isReduced ? { duration: 0 } : { duration: 0.2 }}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <motion.div
         className="relative bg-background rounded-t-3xl overflow-hidden max-h-[85vh] flex flex-col"
-        initial={prefersReduced ? false : { y: "100%" }}
+        initial={{ y: "100%" }}
         animate={{ y: 0 }}
-        exit={prefersReduced ? false : { y: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 320 }}
+        exit={{ y: "100%" }}
+        transition={isReduced ? { duration: 0 } : { type: "spring", damping: 30, stiffness: 320 }}
       >
         {/* Image */}
         <div className="relative shrink-0">
@@ -199,9 +191,10 @@ function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-              {categoryEmojis[service.category]} {categoryLabels[service.category] || service.category}
-            </p>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium tracking-wide">
+              <ServiceCategoryIcon category={service.category} className="w-3.5 h-3.5" />
+              <span>{categoryLabels[service.category] || service.category}</span>
+            </div>
             <h2 className="text-2xl font-heading font-bold tracking-tight mt-1">{service.name}</h2>
           </div>
 
@@ -225,7 +218,7 @@ function ServiceDetail({ service, promo, finalPrice, onClose, onBook }) {
 
           {promo && (
             <div className="bg-secondary/40 border border-secondary rounded-2xl p-4">
-              <p className="text-sm font-semibold">🏷️ {promo.name}</p>
+              <p className="flex items-center gap-1.5 text-sm font-semibold"><Tag className="w-4 h-4" /> {promo.name}</p>
               {promo.description && <p className="text-xs text-muted-foreground mt-1">{promo.description}</p>}
               {promo.rules && <p className="text-xs text-muted-foreground mt-1">{promo.rules}</p>}
             </div>

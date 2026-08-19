@@ -1,7 +1,6 @@
 defmodule LabelleBackWeb.Router do
   use LabelleBackWeb, :router
 
-  import Oban.Web.Router
   use AshAuthentication.Phoenix.Router
 
   import AshAuthentication.Plug.Helpers
@@ -140,12 +139,6 @@ defmodule LabelleBackWeb.Router do
 
       live_dashboard "/dashboard", metrics: LabelleBackWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
-    end
-
-    scope "/" do
-      pipe_through :browser
-
-      oban_dashboard("/oban")
     end
   end
 

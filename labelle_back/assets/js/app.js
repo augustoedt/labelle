@@ -1,6 +1,3 @@
-// phia_hooks_registered
-import PhiaHooks from './phia_hooks/index.js'
-
 // If you want to use Phoenix channels, run `mix help phx.gen.channel`
 // to get started and then uncomment the line below.
 // import "./user_socket.js"

@@ -64,9 +64,7 @@ defmodule LabelleBack.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:ash_ai, "~> 0.8"},
-      {:ash_events, "~> 0.7"},
-      {:phia_ui, "~> 0.1.17"},
+      {:ash_ai, "~> 0.8", only: [:dev, :test]},
       {:bcrypt_elixir, "~> 3.0"},
       {:picosat_elixir, "~> 0.2"},
       {:sourceror, "~> 1.8", only: [:dev, :test]},
@@ -76,7 +74,6 @@ defmodule LabelleBack.MixProject do
       {:tidewave, "~> 0.6", only: [:dev]},
       {:live_debugger, "~> 1.0", only: [:dev]},
       {:ash_state_machine, "~> 0.2"},
-      {:oban_web, "~> 2.0"},
       {:ash_oban, "~> 0.8"},
       {:ash_admin, "~> 1.0"},
       {:ash_authentication_phoenix, "~> 2.0"},

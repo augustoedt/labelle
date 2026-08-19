@@ -54,20 +54,14 @@
 		}
 	}
 
-	# WAHA's admin dashboard (session status, QR code, etc.), gated by its
-	# own HTTP Basic Auth (WAHA_DASHBOARD_USERNAME/PASSWORD on labelle_waha).
-	handle /dashboard* {
-		reverse_proxy labellewaha.railway.internal:8080 {
-			header_up Host labellewaha.railway.internal
-		}
-	}
-
-	# WAHA's own REST API (session management, sendText...), so the
-	# dashboard above can call it from the browser. Gated by WAHA's
-	# x-api-key, not by anything this proxy enforces.
-	handle /api/* {
-		reverse_proxy labellewaha.railway.internal:8080 {
-			header_up Host labellewaha.railway.internal
+	# Webhook do WAHA (WhatsApp) — o WAHA roda fora da Railway (local, atrás
+	# de tunnel Cloudflare) e precisa de uma URL pública pra entregar eventos
+	# (message, message.ack, session.status). Só esse path da API é exposto;
+	# precisa vir ANTES de qualquer outro bloco /api* (handle é avaliado em
+	# ordem, primeiro match vence).
+	handle /api/webhooks/waha* {
+		reverse_proxy labelleback.railway.internal:8080 {
+			header_up Host labelleback.railway.internal
 		}
 	}
 

@@ -82,13 +82,14 @@ if config_env() == :prod do
         System.get_env("WAHA_API_KEY") ||
           raise("Missing environment variable `WAHA_API_KEY`!"),
       session: System.get_env("WAHA_SESSION") || "default",
-      # WAHA roda como outro serviço no mesmo projeto Railway — chama esse
-      # endpoint pela rede privada (`RAILWAY_PRIVATE_DOMAIN` é injetado pelo
-      # próprio Railway com o domínio interno deste serviço).
+      # WAHA roda fora da Railway (local, atrás de tunnel Cloudflare) e
+      # precisa de uma URL pública pra entregar os webhooks. O labelle_proxy
+      # expõe apenas POST /api/webhooks/waha -> este serviço pela rede
+      # privada. `WAHA_WEBHOOK_PUBLIC_URL` permite sobrescrever (ex.: domínio
+      # custom do proxy).
       webhook_url:
-        if(private_domain = System.get_env("RAILWAY_PRIVATE_DOMAIN"),
-          do: "http://#{private_domain}:#{System.get_env("PORT", "4000")}/api/webhooks/waha"
-        )
+        System.get_env("WAHA_WEBHOOK_PUBLIC_URL") ||
+          "https://labelleproxy-production.up.railway.app/api/webhooks/waha"
   end
 
   # ## SSL Support

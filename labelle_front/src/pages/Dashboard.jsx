@@ -1,105 +1,239 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { AppointmentsApi, TransactionsApi, ProductsApi } from "@/server/api";
-import { DollarSign, Users, Scissors, TrendingUp } from "lucide-react";
+import { DollarSign, Users, CalendarDays, TrendingUp } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 import StatCard from "@/components/ui/StatCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import TodayAgenda from "@/components/dashboard/TodayAgenda";
 import AlertsSection from "@/components/dashboard/AlertsSection";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { formatBRL } from "@/lib/format";
-import Reveal from "@/components/ui/Reveal";
 
 export default function Dashboard() {
-  const today = format(new Date(), "yyyy-MM-dd");
-  const monthStart = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd");
-
-  const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery({
+  const now = new Date();
+  const today = format(now, "yyyy-MM-dd");
+  const monthStart = format(
+    new Date(now.getFullYear(), now.getMonth(), 1),
+    "yyyy-MM-dd",
+  );
+  const appointmentQuery = useQuery({
     queryKey: ["appointments"],
     queryFn: () => AppointmentsApi.list({ sort: "-date", limit: 200 }),
   });
-
-  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
+  const transactionQuery = useQuery({
     queryKey: ["transactions"],
     queryFn: () => TransactionsApi.list({ sort: "-date", limit: 200 }),
   });
-
-  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
+  const productQuery = useQuery({
     queryKey: ["products"],
     queryFn: () => ProductsApi.list(),
   });
-
-  const isLoading = isLoadingAppointments || isLoadingTransactions || isLoadingProducts;
-
-  const todayAppts = appointments.filter(a => a.date === today && a.status !== "cancelado");
-  const monthAppts = appointments.filter(a => a.date >= monthStart && a.status === "concluido");
-
-  const todayRevenue = transactions
-    .filter(t => t.date === today && t.type === "entrada")
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
-
-  const monthRevenue = transactions
-    .filter(t => t.date >= monthStart && t.type === "entrada")
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
-
-  const ticketMedio = monthAppts.length > 0
-    ? (monthRevenue / monthAppts.length)
-    : 0;
-  const appointmentCountLabel = `${todayAppts.length} ${todayAppts.length === 1 ? "agendamento" : "agendamentos"}`;
-
+  const appointments = appointmentQuery.data || [];
+  const transactions = transactionQuery.data || [];
+  const products = productQuery.data || [];
+  const loading =
+    appointmentQuery.isPending ||
+    transactionQuery.isPending ||
+    productQuery.isPending;
+  const failed =
+    appointmentQuery.isError ||
+    transactionQuery.isError ||
+    productQuery.isError;
+  const todayAppointments = appointments.filter(
+    (a) => a.date === today && a.status !== "cancelado",
+  );
+  const completed = appointments.filter(
+    (a) => a.date === today && a.status === "concluido",
+  );
+  const paid = transactions.filter(
+    (t) => t.type === "entrada" && t.status === "pago",
+  );
+  const todayRevenue = paid
+    .filter((t) => t.date === today)
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const monthRevenue = paid
+    .filter((t) => t.date >= monthStart && t.date <= today)
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const day = subDays(now, 6 - i);
+    const date = format(day, "yyyy-MM-dd");
+    return {
+      day: format(day, "EEE", { locale: ptBR }),
+      value: paid
+        .filter((t) => t.date === date)
+        .reduce((sum, t) => sum + Number(t.amount || 0), 0),
+    };
+  });
+  const counts = appointments
+    .filter(
+      (a) =>
+        a.status === "concluido" && a.date >= monthStart && a.date <= today,
+    )
+    .reduce((acc, a) => {
+      const name = a.service_name || "Serviço";
+      acc[name] = (acc[name] || 0) + 1;
+      return acc;
+    }, {});
+  const topServices = Object.entries(counts)
+    .sort((a, b) => Number(b[1]) - Number(a[1]))
+    .slice(0, 5);
   return (
     <div className="space-y-7">
-      {/* Header */}
-      <div className="app-header rounded-b-[1.75rem] px-5 pt-8 pb-6 flex items-center justify-between">
-        <span className="font-heading text-2xl text-foreground font-semibold">La Belle Studio</span>
-        <p className="text-xs text-foreground/70">
-          {format(new Date(), "EEEE, d/MM", { locale: ptBR })}
-        </p>
+      <div className="dashboard-heading">
+        <div>
+          <h1>Olá, Admin!</h1>
+          <p>Aqui está um resumo do seu salão hoje.</p>
+        </div>
+        <div className="dashboard-date">
+          <CalendarDays size={16} />
+          {format(now, "EEEE, d 'de' MMMM", { locale: ptBR })}
+        </div>
       </div>
-
-      {/* Stats */}
-      <div className="px-5 grid grid-cols-2 gap-3">
-        {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-2xl" />
+      {failed && (
+        <p role="alert" className="mx-5 rounded-xl border p-4 text-sm">
+          Alguns dados não puderam ser carregados.{" "}
+          <button
+            className="text-action"
+            onClick={() => {
+              appointmentQuery.refetch();
+              transactionQuery.refetch();
+              productQuery.refetch();
+            }}
+          >
+            Tentar novamente
+          </button>
+        </p>
+      )}
+      <div className="dashboard-stats">
+        {loading ? (
+          [1, 2, 3, 4].map((n) => (
+            <Skeleton key={n} className="h-28 rounded-xl" />
           ))
         ) : (
           <>
-            <Reveal index={0} className="min-w-0"><StatCard
-              title="Hoje"
+            <StatCard
+              title="Agendamentos hoje"
+              value={todayAppointments.length}
+              icon={CalendarDays}
+            />
+            <StatCard
+              title="Atendimentos concluídos"
+              value={completed.length}
+              icon={Users}
+            />
+            <StatCard
+              title="Recebido hoje"
               value={formatBRL(todayRevenue)}
               icon={DollarSign}
-            /></Reveal>
-            <Reveal index={1} className="min-w-0"><StatCard
-              title="Este mês"
+            />
+            <StatCard
+              title="Recebido no mês"
               value={formatBRL(monthRevenue)}
               icon={TrendingUp}
-            /></Reveal>
-            <Reveal index={2} className="min-w-0"><StatCard
-              title="Atendimentos"
-              value={todayAppts.length}
-              icon={Scissors}
-              trend={`${monthAppts.length} este mês`}
-            /></Reveal>
-            <Reveal index={3} className="min-w-0"><StatCard
-              title="Ticket médio"
-              value={formatBRL(ticketMedio)}
-              icon={Users}
-            /></Reveal>
+            />
           </>
         )}
       </div>
-
-      {/* Alerts */}
-      <AlertsSection appointments={appointments} products={products} isLoading={isLoading} />
-
-      {/* Today's Agenda */}
-      <div>
-        <div className="px-5 flex items-center justify-between mb-3">
-          <h2 className="text-base font-heading font-semibold tracking-tight">Agenda de Hoje</h2>
-          <span className="text-xs text-primary font-medium">{appointmentCountLabel}</span>
+      <AlertsSection
+        appointments={appointments}
+        products={products}
+        isLoading={loading}
+      />
+      <div className="dashboard-panels">
+        <section className="dashboard-panel">
+          <div className="dashboard-panel-title">
+            <h2>Agenda de hoje</h2>
+            <Link to="/agenda">Ver agenda →</Link>
+          </div>
+          <TodayAgenda
+            appointments={[...todayAppointments].sort((a, b) =>
+              a.time?.localeCompare(b.time),
+            )}
+            isLoading={appointmentQuery.isPending}
+          />
+        </section>
+        <div className="dashboard-side">
+          <section className="dashboard-panel">
+            <div className="dashboard-panel-title">
+              <h2>Recebimentos da semana</h2>
+              <Link to="/financeiro">Ver financeiro</Link>
+            </div>
+            <div className="dashboard-chart">
+              {transactionQuery.isPending ? (
+                <Skeleton className="h-full w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={days}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#ede5df"
+                    />
+                    <XAxis
+                      dataKey="day"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#9c8879", fontSize: 10 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#9c8879", fontSize: 10 }}
+                      width={45}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "#f8f0eb" }}
+                      formatter={(value) => [
+                        formatBRL(Number(value)),
+                        "Recebido",
+                      ]}
+                    />
+                    <Bar
+                      dataKey="value"
+                      fill="#bc8881"
+                      radius={[5, 5, 0, 0]}
+                      maxBarSize={30}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2">
+              Pagamentos registrados como pagos nos dados carregados.
+            </p>
+          </section>
+          <section className="dashboard-panel">
+            <div className="dashboard-panel-title">
+              <h2>Serviços mais realizados no mês</h2>
+              <Link to="/relatorios">Ver relatórios</Link>
+            </div>
+            {topServices.length ? (
+              <ol className="dashboard-service-list">
+                {topServices.map(([name, count], index) => (
+                  <li key={name}>
+                    <span>{index + 1}</span>
+                    <span>{name}</span>
+                    <small>{count}</small>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-xs text-muted-foreground py-4">
+                Nenhum atendimento concluído neste mês.
+              </p>
+            )}
+          </section>
         </div>
-        <TodayAgenda appointments={todayAppts.sort((a, b) => a.time?.localeCompare(b.time))} isLoading={isLoadingAppointments} />
       </div>
     </div>
   );

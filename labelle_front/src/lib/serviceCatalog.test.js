@@ -55,3 +55,18 @@ test("calendar exports actual variant duration and phone calendar reminders in U
     appointmentCalendar({ ...appointment, status: "agendado" }),
   );
 });
+
+import { durationLabel } from "./brand.js";
+test("P/M/G options use a stable size order and concise duration labels", () => {
+  const options = [
+    { service_id: "s", name: "G", price: 60, duration_minutes: 40 },
+    { service_id: "s", name: "P", price: 45, duration_minutes: 30 },
+    { service_id: "s", name: "M", price: 50, duration_minutes: 30 },
+  ];
+  assert.deepEqual(
+    activeVariants(options, "s").map((v) => v.name),
+    ["P", "M", "G"],
+  );
+  assert.equal(durationLabel(service, options), "30–40 min");
+  assert.equal(durationLabel(service, [options[0]]), "40 min");
+});

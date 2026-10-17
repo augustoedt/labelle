@@ -25,17 +25,14 @@ import {
   availableService,
 } from "@/lib/serviceCatalog";
 
-const photos = {
-  cabelo:
-    "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80",
-  unha: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&q=80",
-  estetica:
-    "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80",
-  maquiagem:
-    "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80",
-};
-export default function ClientCatalog({ onNavigate, onBook }) {
-  const [category, setCategory] = useState("all");
+import { categoryPhotos as photos, durationLabel } from "@/lib/brand";
+
+export default function ClientCatalog({
+  onNavigate,
+  onBook,
+  initialCategory = "all",
+}) {
+  const [category, setCategory] = useState(initialCategory);
   const [search, setSearch] = useState("");
   const [service, setService] = useState(null);
   const [variant, setVariant] = useState(null);
@@ -75,7 +72,7 @@ export default function ClientCatalog({ onNavigate, onBook }) {
   const option = variant || service;
   const promo = service && promotionFor(promotions, service.id);
   return (
-    <div className="px-5 py-6 space-y-5">
+    <div className="catalog-content px-5 py-6 space-y-5">
       <div>
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
           Seu momento de cuidado
@@ -128,7 +125,7 @@ export default function ClientCatalog({ onNavigate, onBook }) {
           </Button>
         </div>
       ) : loading ? (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="catalog-service-grid">
           {[1, 2, 3, 4].map((n) => (
             <Skeleton key={n} className="h-64 rounded-2xl" />
           ))}
@@ -143,7 +140,7 @@ export default function ClientCatalog({ onNavigate, onBook }) {
               Nenhum serviço encontrado. Tente outro nome ou categoria.
             </p>
           )}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="catalog-service-grid">
             {filtered.map((s) => {
               const choices = activeVariants(variants, s.id);
               return (
@@ -159,7 +156,7 @@ export default function ClientCatalog({ onNavigate, onBook }) {
                     src={photos[s.category] || photos.cabelo}
                     alt=""
                     loading="lazy"
-                    className="h-32 w-full object-cover"
+                    className="catalog-service-photo w-full object-cover"
                   />
                   <div className="p-3 space-y-2">
                     <p className="text-xs text-muted-foreground">
@@ -172,10 +169,7 @@ export default function ClientCatalog({ onNavigate, onBook }) {
                     </p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {choices.length
-                        ? `${Math.min(...choices.map((v) => v.duration_minutes))}–${Math.max(...choices.map((v) => v.duration_minutes))}`
-                        : s.duration_minutes}{" "}
-                      min
+                      {durationLabel(s, variants)}
                     </p>
                     <p className="font-semibold">
                       {choices.length > 0 && (

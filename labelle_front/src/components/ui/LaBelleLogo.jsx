@@ -1,20 +1,29 @@
-// Logo La Belle Studio (asset local em public/logo.png)
-export default function LaBelleLogo({ size = "md", dark = false, imageOnly = false, white = false }) {
-  const imgUrl = "/logo.png";
+import { cn } from "@/lib/utils";
 
-  const sizes = {
-    sm: "h-8",
-    md: "h-12",
-    lg: "h-16",
-    xl: "h-24",
-  };
-
+export default function LaBelleLogo({
+  size = "md",
+  white = false,
+  imageOnly = false,
+}) {
   return (
-    <img
-      src={imgUrl}
-      alt="La Belle Studio"
-      className={`${sizes[size] || sizes.md} w-auto object-contain`}
-      style={white ? { filter: "brightness(0) invert(1)" } : dark ? {} : { filter: "brightness(0) saturate(100%)" }}
-    />
+    <span
+      className={cn(
+        "brand-logo",
+        `brand-logo-${size}`,
+        white && "brand-logo-white",
+      )}
+      role="img"
+      aria-label="La Belle Studio"
+    >
+      <span className="brand-emblem" aria-hidden="true">
+        <img src="/logo.png" alt="" />
+      </span>
+      {!imageOnly && (
+        <span className="brand-wordmark" aria-hidden="true">
+          <span>LA BELLE</span>
+          <small>Studio</small>
+        </span>
+      )}
+    </span>
   );
 }

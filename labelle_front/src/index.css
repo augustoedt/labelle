@@ -7,27 +7,27 @@
     --font-heading: 'Playfair Display', serif;
     --font-body: 'Outfit', sans-serif;
 
-    --background: 348 100% 98%;
-    --foreground: 0 0% 17%;
+    --background: 28 50% 98%;
+    --foreground: 18 22% 22%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 17%;
+    --card-foreground: 18 22% 22%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 17%;
-    --primary: 348 82% 76%;
-    --primary-foreground: 0 0% 17%;
-    --secondary: 348 100% 95%;
-    --secondary-foreground: 0 0% 17%;
-    --muted: 348 60% 94%;
-    --muted-foreground: 0 0% 47%;
-    --accent: 348 72% 82%;
-    --accent-foreground: 0 0% 17%;
+    --popover-foreground: 18 22% 22%;
+    --primary: 5 25% 49%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 16 37% 93%;
+    --secondary-foreground: 18 22% 22%;
+    --muted: 24 25% 94%;
+    --muted-foreground: 18 8% 43%;
+    --accent: 10 32% 89%;
+    --accent-foreground: 18 22% 22%;
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 348 40% 90%;
-    --input: 348 40% 90%;
-    --ring: 348 62% 58%;
-    --chart-1: 348 82% 76%;
-    --chart-2: 348 72% 82%;
+    --border: 20 23% 88%;
+    --input: 20 23% 88%;
+    --ring: 5 25% 49%;
+    --chart-1: 5 25% 49%;
+    --chart-2: 16 37% 75%;
     --chart-3: 348 60% 70%;
     --chart-4: 348 40% 60%;
     --chart-5: 0 0% 40%;
@@ -81,14 +81,9 @@
 
 /* Brand utility classes */
 .app-header {
-  position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 100% 0%, rgb(255 255 255 / 0.28), transparent 34%),
-    linear-gradient(135deg, #F28FA3 0%, #F7A6B8 100%);
-  color: #FFFFFF;
-  border-bottom: none;
-  box-shadow: 0 14px 32px -24px hsl(var(--primary) / 0.75);
+  position: relative; color: hsl(var(--foreground));
+  background: linear-gradient(120deg, #f4e9e3, #fbf8f5);
+  border-bottom: 1px solid hsl(var(--border) / .6);
 }
 
 .page-background {

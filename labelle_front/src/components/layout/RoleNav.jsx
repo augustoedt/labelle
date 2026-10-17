@@ -28,7 +28,7 @@ export default function RoleNav() {
   const items = NAV[user?.role] || NAV.admin;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/90 backdrop-blur-xl border-t border-border/60 shadow-[0_-8px_24px_-22px_hsl(var(--foreground)/0.45)] safe-area-bottom">
+    <nav className="staff-mobile-nav fixed bottom-0 left-0 right-0 z-50 bg-card/90 backdrop-blur-xl border-t border-border/60 shadow-[0_-8px_24px_-22px_hsl(var(--foreground)/0.45)] safe-area-bottom">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
         {items.map(({ path, label, icon: Icon, exact }) => {
           const isActive = exact

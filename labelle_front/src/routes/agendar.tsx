@@ -1,6 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import ClientPortal from '~/pages/ClientPortal'
-
-export const Route = createFileRoute('/agendar')({
-  component: ClientPortal,
-})
+import { createFileRoute } from "@tanstack/react-router";
+import ClientApp from "~/pages/ClientApp";
+export const Route = createFileRoute("/agendar")({
+  component: () => <ClientApp initialTab="agendar" />,
+});

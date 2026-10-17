@@ -8,6 +8,7 @@ import {
 import { QueryClientProvider } from '@tanstack/react-query'
 import * as React from 'react'
 import appCss from '~/index.css?url'
+import websiteCss from '~/website.css?url'
 import { fetchUser } from '~/server/auth'
 import { queryClientInstance } from '~/lib/query-client'
 import { Toaster } from '~/components/ui/toaster'
@@ -23,7 +24,7 @@ export const Route = createRootRoute({
       { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
       { title: 'La Belle Studio' },
       { name: 'description', content: 'Gestão e agendamento online do La Belle Studio' },
-      { name: 'theme-color', content: '#F28FA3' },
+      { name: 'theme-color', content: '#a76c68' },
     ],
     links: [
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -33,6 +34,7 @@ export const Route = createRootRoute({
         href: 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap',
       },
       { rel: 'stylesheet', href: appCss },
+      { rel: 'stylesheet', href: websiteCss },
       { rel: 'manifest', href: '/manifest.webmanifest' },
       { rel: 'icon', type: 'image/png', href: '/favicon.png' },
       { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },

@@ -385,6 +385,9 @@ async function publicRequest(path: string, body: Record<string, any>) {
   return json
 }
 
+export const getPublicStudioSettings = createServerFn({ method: 'GET' })
+  .handler(() => publicRequest('/api/client/settings', {}))
+
 export const getAvailableSlots = createServerFn({ method: 'POST' })
   .validator(
     (data: {

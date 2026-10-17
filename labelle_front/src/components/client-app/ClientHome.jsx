@@ -1,150 +1,386 @@
 import { useQuery } from "@tanstack/react-query";
-import { getClientAppointments, ServicesApi, PromotionsApi } from "@/server/api";
-import { CalendarPlus, Clock, Sparkles, ChevronRight, Tag } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { format, isToday, isTomorrow, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import {
+  ServicesApi,
+  PromotionsApi,
+  ServiceVariantsApi,
+  ProfessionalsApi,
+  getPublicStudioSettings,
+} from "@/server/api";
+import {
+  ArrowRight,
+  CalendarDays,
+  Heart,
+  MapPin,
+  MessageCircle,
+  Instagram,
+  ShieldCheck,
+  Sparkles,
+  Clock,
+  UserRound,
+} from "lucide-react";
 import { formatBRL } from "@/lib/format";
-import Reveal from "@/components/ui/Reveal";
-import ServiceCategoryIcon from "@/components/ui/ServiceCategoryIcon";
+import { availableService, minimumPrice } from "@/lib/serviceCatalog";
+import { categoryPhotos, categoryDescriptions } from "@/lib/brand";
+import ServiceCategoryIcon, {
+  categoryLabels,
+} from "@/components/ui/ServiceCategoryIcon";
 
-export default function ClientHome({ clientPhone, clientName, onNavigate }) {
-  const { data: appointments = [], isLoading: isLoadingAppointments } = useQuery({
-    queryKey: ["client-appointments", clientPhone],
-    queryFn: () => getClientAppointments({ data: { phone: clientPhone } }).then(r => r.appointments || []),
-    enabled: !!clientPhone
-  });
-
-  const { data: promotions = [] } = useQuery({
-    queryKey: ["promotions"],
-    queryFn: () => PromotionsApi.list()
-  });
-
-  const { data: services = [], isLoading: isLoadingServices } = useQuery({
+export default function ClientHome({ clientName, onNavigate, onCategory }) {
+  const serviceQuery = useQuery({
     queryKey: ["services"],
-    queryFn: () => ServicesApi.list()
+    queryFn: () => ServicesApi.list(),
   });
-
-  const activePromotions = promotions.filter((p) => p.is_active);
-  const upcoming = appointments.filter((a) => a.status !== "cancelado" && a.status !== "concluido");
-  const next = upcoming[0];
-
-  const getDateLabel = (dateStr) => {
-    const d = parseISO(dateStr);
-    if (isToday(d)) return "Hoje";
-    if (isTomorrow(d)) return "Amanhã";
-    return format(d, "dd 'de' MMMM", { locale: ptBR });
-  };
-
+  const variantQuery = useQuery({
+    queryKey: ["service-variants"],
+    queryFn: () => ServiceVariantsApi.list({ limit: 1000 }),
+  });
+  const { data: promotions = [] } = useQuery({queryKey:["promotions"],queryFn:()=>PromotionsApi.list()});
+  const professionalQuery = useQuery({
+    queryKey: ["professionals"],
+    queryFn: () => ProfessionalsApi.list(),
+  });
+  const settingsQuery = useQuery({
+    queryKey: ["public-studio-settings"],
+    queryFn: () => getPublicStudioSettings(),
+  });
+  const variants = variantQuery.data || [];
+  const services = (serviceQuery.data || []).filter((s) =>
+    availableService(s, variants),
+  );
+  const categories = [...new Set(services.map((s) => s.category))];
+  const professionals = (professionalQuery.data || []).filter(
+    (p) => p.is_active !== false,
+  );
+  const settings = settingsQuery.data;
+  const phone = (settings?.whatsapp_phone || "").replace(/\D/g, "");
+  const whatsapp =
+    phone.length >= 10
+      ? `https://wa.me/${phone.startsWith("55") ? phone : "55" + phone}`
+      : null;
+  const loading = serviceQuery.isPending || variantQuery.isPending;
+  const failed = serviceQuery.isError || variantQuery.isError;
   return (
-    <div className="px-5 py-5 space-y-6">
-      {/* Next appointment */}
-      {isLoadingAppointments ?
-      <Skeleton className="h-36 rounded-2xl" /> :
-
-      next ?
-      <div className="bg-foreground text-background rounded-2xl p-5">
-          <p className="text-xs font-medium opacity-60 mb-1">Próximo agendamento</p>
-          <p className="text-xl font-heading font-bold tracking-tight">{next.service_name}</p>
-          <p className="text-sm opacity-80 mt-1">com {next.professional_name}</p>
-          <div className="flex items-center gap-4 mt-3">
-            <div className="flex items-center gap-1.5 text-sm">
-              <Clock className="w-4 h-4 opacity-70" />
-              <span>{next.time}</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-sm">
-              <Sparkles className="w-4 h-4 opacity-70" />
-              <span>{getDateLabel(next.date)}</span>
-            </div>
-          </div>
-        </div> :
-
-      <div className="bg-secondary/30 rounded-2xl p-5 text-center">
-          <p className="text-sm text-muted-foreground mb-3">Nenhum agendamento próximo</p>
-          <Button
-          size="sm"
-          className="rounded-xl font-semibold"
-          onClick={() => onNavigate("agendar")}>
-
-            <CalendarPlus className="w-4 h-4 mr-1" /> Agendar agora
-          </Button>
-        </div>
-      }
-
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={() => onNavigate("agendar")}
-          className="bg-card/90 border border-border/60 rounded-2xl p-4 text-left shadow-[0_8px_20px_-18px_hsl(var(--foreground)/0.4)] hover:border-primary/30 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-
-          <CalendarPlus className="w-6 h-6 mb-2" />
-          <p className="font-semibold text-sm">Agendar</p>
-          <p className="text-xs text-muted-foreground">Marque seu horário</p>
-        </button>
-        <button
-          onClick={() => onNavigate("fidelidade")}
-          className="bg-card/90 border border-border/60 rounded-2xl p-4 text-left shadow-[0_8px_20px_-18px_hsl(var(--foreground)/0.4)] hover:border-primary/30 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-
-          <Sparkles className="w-6 h-6 mb-2" />
-          <p className="font-semibold text-sm">Fidelidade</p>
-          <p className="text-xs text-muted-foreground">Seus pontos e prêmios</p>
-        </button>
-      </div>
-
-      {/* Active promotions */}
-      {activePromotions.length > 0 &&
-      <div>
-          <h2 className="font-heading text-base font-semibold tracking-tight mb-3 flex items-center gap-2">
-            <Tag className="w-4 h-4" /> Promoções ativas
-          </h2>
-          <div className="space-y-2">
-            {activePromotions.map((promo) =>
-          <div key={promo.id} className="bg-secondary/30 border border-secondary rounded-2xl p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold text-sm">{promo.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{promo.description}</p>
-                  </div>
-                  <span className="bg-foreground text-background px-3 py-1 text-xs font-bold rounded-lg">
-                    {promo.discount_type === "percent" ? `-${promo.discount_value}%` : `-${formatBRL(promo.discount_value)}`}
-                  </span>
-                </div>
-              </div>
-          )}
+    <>
+      <section id="inicio" className="website-hero">
+        <div className="hero-copy">
+          <p className="eyebrow">
+            Beleza <span>·</span> Bem-estar <span>·</span> Autocuidado
+          </p>
+          <p className="mobile-greeting">
+            {clientName
+              ? `Olá, ${clientName.split(" ")[0]}!`
+              : "Bem-vinda ao La Belle"}
+          </p>
+          <h1>
+            Sua beleza,
+            <br />
+            em um só <em>lugar.</em>
+          </h1>
+          <p className="hero-description">
+            Cabelos, unhas e bem-estar.
+            <br className="desktop-break" /> Um momento para cuidar de você e
+            realçar a sua melhor versão.
+          </p>
+          <button
+            className="brand-button"
+            onClick={() => onNavigate("agendar")}
+          >
+            Agendar meu horário <ArrowRight size={17} />
+          </button>
+          <div className="hero-details">
+            <span>
+              <UserRound />
+              <small>
+                Escolha sua
+                <br />
+                profissional
+              </small>
+            </span>
+            <span>
+              <Heart />
+              <small>
+                Um cuidado
+                <br />
+                feito para você
+              </small>
+            </span>
+            <span>
+              <CalendarDays />
+              <small>
+                Agende com
+                <br />
+                praticidade
+              </small>
+            </span>
           </div>
         </div>
-      }
+        <div className="hero-image">
+          <img
+            src="/images/salon-hero.webp"
+            alt="Ambiente de beleza em tons de bege e cobre, imagem ilustrativa"
+            fetchPriority="high"
+          />
+          <span className="hero-image-note">
+            Inspiração La Belle · imagem ilustrativa
+          </span>
+        </div>
+        <div className="mobile-hero-bottom">
+          <Sparkles size={15} /> Seu momento de beleza começa aqui.
+        </div>
+      </section>
 
-      {/* Popular services: entram suavemente em sequência */}
-      <div>
-        <h2 className="font-heading text-base font-semibold tracking-tight mb-3">Serviços populares</h2>
-        <div className="space-y-2">
-          {isLoadingServices ?
-          Array.from({ length: 4 }).map((_, i) =>
-          <Skeleton key={i} className="h-16 rounded-2xl" />
-          ) :
-
-          services.filter((s) => s.is_active).slice(0, 4).map((svc, i) =>
-          <Reveal key={svc.id} index={i} className="w-full">
+      <section id="servicos" className="website-section services-overview">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Cuidado em cada detalhe</p>
+            <h2>Nossos serviços</h2>
+          </div>
+          <button
+            className="text-action"
+            onClick={() => onNavigate("catalogo")}
+          >
+            Ver catálogo completo <ArrowRight size={16} />
+          </button>
+        </div>
+        <p className="section-intro">
+          Tudo o que você precisa para se sentir ainda mais você.
+        </p>
+        {failed ? (
+          <div role="alert" className="website-empty">
+            <p>Não foi possível carregar os serviços.</p>
             <button
-              onClick={() => onNavigate("agendar")}
-              className="w-full flex items-center gap-3 bg-card/90 border border-border/60 rounded-2xl p-3 shadow-[0_8px_20px_-18px_hsl(var(--foreground)/0.4)] hover:border-primary/30 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/70 text-foreground">
-                <ServiceCategoryIcon category={svc.category} className="w-5 h-5" />
-              </span>
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium">{svc.name}</p>
-                <p className="text-xs text-muted-foreground">{svc.duration_minutes}min</p>
-              </div>
-              <p className="font-heading font-bold tracking-tight text-sm tabular-nums">{formatBRL(svc.price)}</p>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              className="text-action"
+              onClick={() => {
+                serviceQuery.refetch();
+                variantQuery.refetch();
+              }}
+            >
+              Tentar novamente <ArrowRight size={16} />
             </button>
-          </Reveal>
-          )}
-        </div>
-      </div>
-    </div>);
+          </div>
+        ) : loading ? (
+          <div className="category-grid" aria-label="Carregando serviços">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="category-placeholder animate-pulse" />
+            ))}
+          </div>
+        ) : categories.length ? (
+          <div className="category-grid">
+            {categories.map((category) => {
+              const offerings = services.filter((s) => s.category === category);
+              const minimum = Math.min(
+                ...offerings.map((s) => minimumPrice(s, variants)),
+              );
+              return (
+                <button
+                  className="category-card"
+                  key={category}
+                  onClick={() => onCategory(category)}
+                >
+                  <div className="category-image">
+                    <img
+                      src={categoryPhotos[category] || categoryPhotos.outros}
+                      alt=""
+                      loading="lazy"
+                    />
+                    <span>
+                      <ServiceCategoryIcon category={category} />
+                    </span>
+                  </div>
+                  <div className="category-copy">
+                    <h3>{categoryLabels[category] || category}</h3>
+                    <p>
+                      {categoryDescriptions[category] ||
+                        "Conheça nossos serviços"}
+                    </p>
+                    <div>
+                      <small>A partir de {formatBRL(minimum)}</small>
+                      <ArrowRight size={17} />
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="website-empty">
+            Nosso catálogo está sendo preparado. Fale com o salão para conhecer
+            os atendimentos disponíveis.
+          </div>
+        )}
+      </section>
 
+      {promotions.some(p => p.is_active) && <section className="website-section website-offers"><div className="section-heading"><div><p className="eyebrow">Para aproveitar</p><h2>Promoções do salão</h2></div></div><div className="offers-grid">{promotions.filter(p => p.is_active).map(promo => <button className="offer-card" key={promo.id} onClick={() => onNavigate("catalogo")}><div><h3>{promo.name}</h3><p>{promo.description || promo.rules || "Consulte as condições do atendimento no catálogo."}</p></div><strong>{promo.discount_type === "percent" ? `−${promo.discount_value}%` : `−${formatBRL(promo.discount_value)}`}</strong></button>)}</div></section>}
+
+      <section id="sobre" className="website-about website-section">
+        <div className="about-image">
+          <img
+            src={categoryPhotos.cabelo}
+            alt="Cuidados com a beleza e os cabelos"
+            loading="lazy"
+          />
+          <span className="about-seal">
+            <Heart size={23} />
+            <small>
+              Seu tempo.
+              <br />
+              Seu cuidado.
+            </small>
+          </span>
+        </div>
+        <div className="about-copy">
+          <p className="eyebrow">La Belle Studio</p>
+          <h2>
+            Mais que beleza.
+            <br />
+            Um momento <em>seu.</em>
+          </h2>
+          <p>
+            Entre a rotina e tantos compromissos, existe um tempo que é só seu.
+            Aqui, você encontra diferentes cuidados em um só lugar e escolhe o
+            atendimento que combina com o seu momento.
+          </p>
+          <div className="about-feature">
+            <ShieldCheck />
+            <span>
+              <strong>Você escolhe, o salão confirma.</strong>
+              <small>
+                Selecione o serviço, a opção e a profissional. Nós conferimos a
+                agenda para confirmar seu horário.
+              </small>
+            </span>
+          </div>
+          <button
+            className="text-action"
+            onClick={() => onNavigate("catalogo")}
+          >
+            Encontre o seu cuidado <ArrowRight size={17} />
+          </button>
+        </div>
+      </section>
+
+      <section id="profissionais" className="website-section team-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Cuidado com quem entende</p>
+            <h2>Nossas profissionais</h2>
+          </div>
+        </div>
+        <p className="section-intro">
+          Conheça a equipe e escolha com quem deseja agendar.
+        </p>
+        {professionalQuery.isPending ? (
+          <p className="text-muted-foreground">Carregando equipe...</p>
+        ) : professionalQuery.isError ? (
+          <div role="alert" className="website-empty">
+            Não foi possível carregar a equipe.{" "}
+            <button
+              className="text-action"
+              onClick={() => professionalQuery.refetch()}
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : professionals.length ? (
+          <div className="team-grid">
+            {professionals.map((prof) => (
+              <article className="team-card" key={prof.id}>
+                <div className="team-avatar">
+                  {prof.avatar_url ? (
+                    <img src={prof.avatar_url} alt="" loading="lazy" />
+                  ) : (
+                    <span>
+                      {prof.name
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .slice(0, 2)
+                        .join("")}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h3>{prof.name}</h3>
+                  <p>Equipe La Belle Studio</p>
+                  <button
+                    className="text-action"
+                    onClick={() => onNavigate("agendar")}
+                  >
+                    Ver disponibilidade <ArrowRight size={15} />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="website-empty">
+            Fale com o salão para conhecer a equipe.
+          </p>
+        )}
+      </section>
+
+      <section className="website-cta">
+        <Sparkles />
+        <p className="eyebrow">Um convite ao autocuidado</p>
+        <h2>
+          O seu próximo momento
+          <br />
+          de beleza começa aqui.
+        </h2>
+        <button className="brand-button" onClick={() => onNavigate("agendar")}>
+          Quero agendar <ArrowRight size={17} />
+        </button>
+        <p>Escolha seu horário e aguarde a confirmação do salão.</p>
+      </section>
+      <footer id="contato" className="website-footer website-section">
+        <div>
+          <p className="eyebrow">Vamos conversar?</p>
+          <h2>Encontre o La Belle</h2>
+          <p>Informações e agendamentos nos canais do salão.</p>
+          <div className="contact-actions">
+            {whatsapp && (
+              <a
+                className="brand-button"
+                href={whatsapp}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <MessageCircle size={17} /> Falar no WhatsApp
+              </a>
+            )}
+            <a
+              className="text-action"
+              href="https://www.instagram.com/labellestudio_jp/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Instagram size={18} /> Instagram
+            </a>
+          </div>
+        </div>
+        <div className="footer-details">
+          {settings?.address && (
+            <p>
+              <MapPin size={18} />
+              <span>{settings.address}</span>
+            </p>
+          )}
+          <p>
+            <Clock size={18} />
+            <span>Consulte os horários disponíveis no agendamento.</span>
+          </p>
+          <button
+            className="text-action"
+            onClick={() => onNavigate("historico")}
+          >
+            Meus agendamentos <ArrowRight size={16} />
+          </button>
+          <a href="/login">Acesso da equipe</a>
+        </div>
+        <div className="footer-bottom">
+          <span>© {new Date().getFullYear()} La Belle Studio</span>
+          <span>Beleza · Bem-estar · Autocuidado</span>
+        </div>
+      </footer>
+    </>
+  );
 }

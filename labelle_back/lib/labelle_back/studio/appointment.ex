@@ -12,8 +12,7 @@ defmodule LabelleBack.Studio.Appointment do
 
     check_constraints do
       check_constraint :status, "appointments_status_valid",
-        check:
-          "status IN ('agendado', 'confirmado', 'em_atendimento', 'concluido', 'cancelado')",
+        check: "status IN ('agendado', 'confirmado', 'em_atendimento', 'concluido', 'cancelado')",
         message: "status inválido"
 
       check_constraint :price, "appointments_price_non_negative",
@@ -56,6 +55,7 @@ defmodule LabelleBack.Studio.Appointment do
         :client_phone,
         :professional_id,
         :service_id,
+        :service_variant_id,
         :date,
         :time,
         :duration_minutes,
@@ -88,6 +88,7 @@ defmodule LabelleBack.Studio.Appointment do
         :client_phone,
         :professional_id,
         :service_id,
+        :service_variant_id,
         :date,
         :time
       ]
@@ -95,6 +96,8 @@ defmodule LabelleBack.Studio.Appointment do
       change set_attribute(:source, :online)
       change LabelleBack.Studio.Changes.SnapshotAppointmentFields
       change LabelleBack.Studio.Changes.ApplyActivePromotion
+      change LabelleBack.Studio.Changes.ValidateOnlineAvailability
+      change LabelleBack.Studio.Changes.ResolveBookingClient
       change {LabelleBack.Studio.Changes.SendWhatsAppMessage, kind: :new_booking_notification}
     end
 
@@ -104,6 +107,7 @@ defmodule LabelleBack.Studio.Appointment do
       accept [
         :professional_id,
         :service_id,
+        :service_variant_id,
         :date,
         :time,
         :duration_minutes,
@@ -210,6 +214,8 @@ defmodule LabelleBack.Studio.Appointment do
     attribute :client_phone, :string, public?: true
     attribute :professional_name, :string, public?: true
     attribute :service_name, :string, public?: true
+    attribute :variant_name, :string, public?: true
+    attribute :commission_percent, :decimal, public?: true
     attribute :date, :date, allow_nil?: false, public?: true
     attribute :time, :time, allow_nil?: false, public?: true
     attribute :duration_minutes, :integer, public?: true
@@ -246,6 +252,8 @@ defmodule LabelleBack.Studio.Appointment do
       allow_nil? false
       public? true
     end
+
+    belongs_to :service_variant, LabelleBack.Studio.ServiceVariant, public?: true
 
     belongs_to :service, LabelleBack.Studio.Service do
       allow_nil? false

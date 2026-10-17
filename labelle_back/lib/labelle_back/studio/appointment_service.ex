@@ -36,7 +36,14 @@ defmodule LabelleBack.Studio.AppointmentService do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:appointment_id, :service_id, :price, :duration_minutes, :unplanned]
+      accept [
+        :appointment_id,
+        :service_id,
+        :service_variant_id,
+        :price,
+        :duration_minutes,
+        :unplanned
+      ]
 
       change LabelleBack.Studio.Changes.SnapshotServiceItemFields
     end
@@ -44,7 +51,7 @@ defmodule LabelleBack.Studio.AppointmentService do
     update :update do
       require_atomic? false
 
-      accept [:service_id, :price, :duration_minutes, :unplanned]
+      accept [:service_id, :service_variant_id, :price, :duration_minutes, :unplanned]
 
       change LabelleBack.Studio.Changes.SnapshotServiceItemFields
     end
@@ -68,6 +75,8 @@ defmodule LabelleBack.Studio.AppointmentService do
     uuid_primary_key :id
 
     attribute :service_name, :string, public?: true
+    attribute :variant_name, :string, public?: true
+    attribute :commission_percent, :decimal, public?: true
     attribute :price, :decimal, public?: true
     attribute :duration_minutes, :integer, public?: true
 
@@ -85,6 +94,8 @@ defmodule LabelleBack.Studio.AppointmentService do
       allow_nil? false
       public? true
     end
+
+    belongs_to :service_variant, LabelleBack.Studio.ServiceVariant, public?: true
 
     belongs_to :service, LabelleBack.Studio.Service do
       allow_nil? false

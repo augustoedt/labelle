@@ -58,9 +58,9 @@ export default function MinhasComissoes() {
     (apt.price || 0) + (itemsByAppointment[apt.id] || []).reduce((s, i) => s + (i.price || 0), 0);
 
   const commissionFor = apt =>
-    (apt.price || 0) * ((commissionRateByServiceId[apt.service_id] || 0) / 100) +
+    (apt.price || 0) * ((apt.commission_percent ?? commissionRateByServiceId[apt.service_id] ?? 0) / 100) +
     (itemsByAppointment[apt.id] || []).reduce(
-      (s, i) => s + (i.price || 0) * ((commissionRateByServiceId[i.service_id] || 0) / 100),
+      (s, i) => s + (i.price || 0) * ((i.commission_percent ?? commissionRateByServiceId[i.service_id] ?? 0) / 100),
       0
     );
 

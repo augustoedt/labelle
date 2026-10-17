@@ -40,6 +40,13 @@ defmodule LabelleBack.Studio do
         delete :destroy
       end
 
+      base_route "/service_variants", LabelleBack.Studio.ServiceVariant do
+        index :read
+        get :read
+        post :create
+        patch :update
+      end
+
       base_route "/appointments", LabelleBack.Studio.Appointment do
         get :read
         index :read
@@ -123,12 +130,14 @@ defmodule LabelleBack.Studio do
         action: :read,
         get_by: [:phone_normalized],
         not_found_error?: false
+
       define :upsert_client_from_booking, action: :upsert_from_booking, args: [:name, :phone]
     end
 
     resource LabelleBack.Studio.Professional
     resource LabelleBack.Studio.ProfessionalService
     resource LabelleBack.Studio.Service
+    resource LabelleBack.Studio.ServiceVariant
 
     resource LabelleBack.Studio.Appointment do
       define :list_appointments_by_client_phone, action: :by_client_phone, args: [:phone]
@@ -140,6 +149,7 @@ defmodule LabelleBack.Studio do
     resource LabelleBack.Studio.ClientReminder do
       define :generate_due_reminders, action: :generate_due
     end
+
     resource LabelleBack.Studio.Product
     resource LabelleBack.Studio.Promotion
     resource LabelleBack.Studio.Transaction

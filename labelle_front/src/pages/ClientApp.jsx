@@ -23,6 +23,7 @@ const tabs = [
 
 export default function ClientApp() {
   const [activeTab, setActiveTab] = useState("home");
+  const [bookingSelection, setBookingSelection] = useState(null);
   const [client, setClient] = useState(() => getClientSession());
   const prefersReduced = useReducedMotion();
 
@@ -40,18 +41,18 @@ export default function ClientApp() {
     <div className="min-h-dvh bg-background flex flex-col max-w-lg mx-auto relative">
       <InstallPwaButton />
       {/* Header */}
-      <div className="sticky top-0 z-40 px-5 pt-7 pb-3 flex items-center justify-between border-b border-border/50 bg-background/90 backdrop-blur-xl">
-        <LaBelleLogo size="lg" />
+      <div className="sticky top-0 z-40 px-5 pt-7 pb-3 flex items-center justify-between app-header client-app-header rounded-b-3xl">
+        <LaBelleLogo size="lg" white />
         <div className="flex flex-col items-end gap-1">
           {client?.name && (
             <>
-              <p className="text-xs text-muted-foreground font-medium">
+              <p className="text-xs text-white font-medium">
                 Olá, {client.name.split(" ")[0]}
               </p>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 text-xs text-muted-foreground gap-1 px-2"
+                className="h-7 text-xs text-white gap-1 px-2"
                 onClick={() => { clearClientSession(); setClient(null); setActiveTab("home"); }}
               >
                 <LogOut className="w-3 h-3" /> Sair
@@ -78,10 +79,12 @@ export default function ClientApp() {
               />
             )}
             {activeTab === "catalogo" && (
-              <ClientCatalog onNavigate={handleTabClick} />
+              <ClientCatalog onNavigate={handleTabClick} onBook={selection => { setBookingSelection(selection); setActiveTab("agendar"); }} />
             )}
             {activeTab === "agendar" && (
               <ClientBooking
+                initialSelection={bookingSelection}
+                onClearSelection={() => setBookingSelection(null)}
                 clientName={client?.name || ""}
                 clientPhone={client?.phone || ""}
                 onSaveClient={(name, phone) => updateClient({ name, phone })}

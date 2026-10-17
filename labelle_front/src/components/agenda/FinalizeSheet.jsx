@@ -1,12 +1,27 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AppointmentsApi, AppointmentServicesApi } from "@/server/api";
+import {
+  ServiceVariantsApi,
+  AppointmentsApi,
+  AppointmentServicesApi,
+} from "@/server/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Plus, X } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 
@@ -20,19 +35,39 @@ const paymentMethods = [
 // Painel do atendimento: gerencia os serviços realizados (inclusive os não
 // previstos, adicionados durante o atendimento) e finaliza com a cobrança —
 // o backend soma tudo e registra a transação como paga na forma escolhida.
-export default function FinalizeSheet({ open, onClose, appointment, services, onFinalized }) {
+export default function FinalizeSheet({
+  open,
+  onClose,
+  appointment,
+  services,
+  onFinalized,
+}) {
   const queryClient = useQueryClient();
   const [addingServiceId, setAddingServiceId] = useState("");
+  const [addingVariantId, setAddingVariantId] = useState("");
+  const variantsQuery = useQuery({
+    queryKey: ["service-variants"],
+    queryFn: () => ServiceVariantsApi.list({ limit: 1000 }),
+    enabled: open,
+  });
+  const options = (variantsQuery.data || []).filter(
+    (v) => v.service_id === addingServiceId && v.is_active !== false,
+  );
   const [paymentMethod, setPaymentMethod] = useState("");
 
   const { data: items = [] } = useQuery({
     queryKey: ["appointment-services", appointment?.id],
-    queryFn: () => AppointmentServicesApi.list({ filter: { appointment_id: appointment.id } }),
+    queryFn: () =>
+      AppointmentServicesApi.list({
+        filter: { appointment_id: appointment.id },
+      }),
     enabled: open && !!appointment,
   });
 
   const invalidateItems = () =>
-    queryClient.invalidateQueries({ queryKey: ["appointment-services", appointment?.id] });
+    queryClient.invalidateQueries({
+      queryKey: ["appointment-services", appointment?.id],
+    });
 
   const addMutation = useMutation({
     mutationFn: (serviceId) =>
@@ -40,11 +75,13 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
         data: {
           appointment_id: appointment.id,
           service_id: serviceId,
+          ...(addingVariantId ? { service_variant_id: addingVariantId } : {}),
           unplanned: appointment.status === "em_atendimento",
         },
       }),
     onSuccess: () => {
       setAddingServiceId("");
+      setAddingVariantId("");
       invalidateItems();
     },
   });
@@ -62,10 +99,15 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
 
   const finalizeMutation = useMutation({
     mutationFn: () =>
-      AppointmentsApi.finalize({ id: appointment.id, payment_method: paymentMethod }),
+      AppointmentsApi.finalize({
+        id: appointment.id,
+        payment_method: paymentMethod,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["professional-appointments"] });
+      queryClient.invalidateQueries({
+        queryKey: ["professional-appointments"],
+      });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       onFinalized?.();
       onClose();
@@ -74,14 +116,22 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
 
   if (!appointment) return null;
 
-  const total = (appointment.price || 0) + items.reduce((s, i) => s + (i.price || 0), 0);
-  const availableServices = (services || []).filter((s) => s.is_active !== false);
+  const total =
+    (appointment.price || 0) + items.reduce((s, i) => s + (i.price || 0), 0);
+  const availableServices = (services || []).filter(
+    (s) => s.is_active !== false,
+  );
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="max-h-[90vh] rounded-t-3xl overflow-y-auto">
+      <SheetContent
+        side="bottom"
+        className="max-h-[90vh] rounded-t-3xl overflow-y-auto"
+      >
         <SheetHeader className="pb-3">
-          <SheetTitle className="font-heading">Atendimento — {appointment.client_name}</SheetTitle>
+          <SheetTitle className="font-heading">
+            Atendimento — {appointment.client_name}
+          </SheetTitle>
         </SheetHeader>
 
         <div className="space-y-4 pb-8">
@@ -91,11 +141,16 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
 
             <div className="flex items-center justify-between bg-secondary/50 rounded-xl p-3 text-sm">
               <span>{appointment.service_name}</span>
-              <span className="font-semibold tabular-nums">{formatBRL(appointment.price, { decimals: 2 })}</span>
+              <span className="font-semibold tabular-nums">
+                {formatBRL(appointment.price, { decimals: 2 })}
+              </span>
             </div>
 
             {items.map((item) => (
-              <div key={item.id} className="flex items-center gap-2 bg-secondary/50 rounded-xl p-3 text-sm">
+              <div
+                key={item.id}
+                className="flex items-center gap-2 bg-secondary/50 rounded-xl p-3 text-sm"
+              >
                 <div className="flex-1 min-w-0">
                   <span className="block truncate">{item.service_name}</span>
                   {item.unplanned && (
@@ -129,7 +184,13 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
 
             {/* Adicionar serviço (previsto ou não) */}
             <div className="flex gap-2">
-              <Select value={addingServiceId} onValueChange={setAddingServiceId}>
+              <Select
+                value={addingServiceId}
+                onValueChange={(id) => {
+                  setAddingServiceId(id);
+                  setAddingVariantId("");
+                }}
+              >
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Adicionar serviço..." />
                 </SelectTrigger>
@@ -144,7 +205,12 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
               <Button
                 variant="outline"
                 className="rounded-xl gap-1"
-                disabled={!addingServiceId || addMutation.isPending}
+                disabled={
+                  !addingServiceId ||
+                  addMutation.isPending ||
+                  !variantsQuery.isSuccess ||
+                  (options.length > 0 && !addingVariantId)
+                }
                 onClick={() => addMutation.mutate(addingServiceId)}
               >
                 <Plus className="w-4 h-4" /> Incluir
@@ -152,10 +218,32 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
             </div>
           </div>
 
+          {options.length > 0 && (
+            <Select value={addingVariantId} onValueChange={setAddingVariantId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Escolha a opção do serviço adicional" />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((v) => (
+                  <SelectItem key={v.id} value={v.id}>
+                    {v.name} — {formatBRL(v.price)} ({v.duration_minutes}min)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {(addMutation.isError || variantsQuery.isError) && (
+            <p role="alert" className="text-sm text-destructive">
+              Não foi possível carregar ou incluir a opção do serviço. Tente
+              novamente.
+            </p>
+          )}
           {/* Total */}
           <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl p-3">
             <span className="text-sm font-medium">Total a cobrar</span>
-            <span className="text-lg font-heading font-bold tracking-tight text-primary tabular-nums">{formatBRL(total, { decimals: 2 })}</span>
+            <span className="text-lg font-heading font-bold tracking-tight text-primary tabular-nums">
+              {formatBRL(total, { decimals: 2 })}
+            </span>
           </div>
 
           {/* Cobrança */}
@@ -182,7 +270,11 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
           )}
 
           <div className="flex gap-2">
-            <Button variant="outline" className="rounded-xl h-12 flex-1" onClick={onClose}>
+            <Button
+              variant="outline"
+              className="rounded-xl h-12 flex-1"
+              onClick={onClose}
+            >
               Salvar e voltar
             </Button>
             <Button
@@ -190,7 +282,9 @@ export default function FinalizeSheet({ open, onClose, appointment, services, on
               disabled={!paymentMethod || finalizeMutation.isPending}
               onClick={() => finalizeMutation.mutate()}
             >
-              {finalizeMutation.isPending ? "Finalizando..." : "Finalizar e cobrar"}
+              {finalizeMutation.isPending
+                ? "Finalizando..."
+                : "Finalizar e cobrar"}
             </Button>
           </div>
         </div>

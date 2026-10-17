@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
+import { downloadAppointmentCalendar } from "@/lib/appointmentCalendar";
 import { formatBRL } from "@/lib/format";
 
 const statusConfig = {
-  agendado: { label: "Agendado", color: "bg-secondary text-foreground" },
+  agendado: { label: "Aguardando confirmação", color: "bg-secondary text-foreground" },
   confirmado: { label: "Confirmado", color: "bg-secondary text-foreground" },
   em_atendimento: { label: "Em atendimento", color: "bg-foreground text-background" },
   concluido: { label: "Concluído", color: "bg-foreground/10 text-foreground" },
@@ -115,6 +116,7 @@ function AppointmentCard({ appt }) {
         <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {format(parseISO(appt.date), "dd/MM/yyyy")}</span>
         <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {appt.time}</span>
       </div>
+      {appt.status === "confirmado" && <Button variant="outline" className="w-full mt-3 rounded-full text-xs" onClick={() => downloadAppointmentCalendar(appt)}>Adicionar ao calendário · lembretes de 24h e 1h</Button>}
       {appt.price && <p className="mt-2 text-sm font-heading font-bold tracking-tight tabular-nums">{formatBRL(appt.price)}</p>}
     </div>
   );

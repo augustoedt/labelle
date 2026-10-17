@@ -29,6 +29,9 @@ defmodule LabelleBack.Studio.Service do
     defaults [:read, :destroy]
 
     create :create do
+      argument :variants, {:array, :map}
+      change manage_relationship(:variants, type: :direct_control, on_missing: :ignore)
+
       accept [
         :name,
         :category,
@@ -42,6 +45,10 @@ defmodule LabelleBack.Studio.Service do
     end
 
     update :update do
+      require_atomic? false
+      argument :variants, {:array, :map}
+      change manage_relationship(:variants, type: :direct_control, on_missing: :ignore)
+
       accept [
         :name,
         :category,
@@ -88,6 +95,7 @@ defmodule LabelleBack.Studio.Service do
   end
 
   relationships do
+    has_many :variants, LabelleBack.Studio.ServiceVariant, public?: true
     has_many :appointments, LabelleBack.Studio.Appointment, public?: true
     has_many :professional_services, LabelleBack.Studio.ProfessionalService, public?: true
 

@@ -33,7 +33,7 @@ export default function ShareAppButton({ className }) {
 
   return (
     <div className={`relative ${className}`}>
-      <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8" onClick={handleNativeShare}>
+      <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8 bg-foreground/30 text-white border-white/40 hover:bg-foreground/40 hover:text-white" onClick={handleNativeShare}>
         <Share2 className="w-3.5 h-3.5" />
         Compartilhar
       </Button>
@@ -41,7 +41,7 @@ export default function ShareAppButton({ className }) {
       {showMenu && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-          <div className="absolute right-0 top-10 z-50 bg-card border border-border rounded-xl shadow-lg p-2 min-w-[180px] space-y-1">
+          <div className="absolute right-0 top-10 z-50 bg-card text-foreground border border-border rounded-xl shadow-lg p-2 min-w-[180px] space-y-1">
             <button
               onClick={handleWhatsApp}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-secondary transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

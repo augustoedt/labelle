@@ -95,6 +95,7 @@ defmodule LabelleBackWeb.Api.ClientController do
     %{
       id: appt.id,
       service_name: appt.service_name,
+      duration_minutes: appt.duration_minutes,
       professional_name: appt.professional_name,
       date: appt.date,
       time: appt.time,

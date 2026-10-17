@@ -1,6 +1,6 @@
 # Operar e publicar os serviços Railway
 
-**Verificado em:** 2026-10-17 17:19 UTC — leitura de `railway status --json`, variáveis do backend (somente nomes e host não secreto) e [estado WAHA via RPC](verificar-waha.md). **O procedimento de deploy e seu checklist pós-deploy não foram executados** nesta atualização; registrar data/contexto deles após um deploy real.
+**Verificado em:** 2026-10-17 — fonte GitHub `main` ligada a backend/frontend; deployments do commit `5f8fc2e` em `SUCCESS` e instâncias `RUNNING` (`back` `2f41d344-e3fa-4aa3-9161-a50e549d255d`, `front` `5b63a7bc-9e91-4bf0-b6b0-c2784197cad0`). Verificações técnicas descritas abaixo foram executadas; login autenticado e envio WhatsApp não foram testados neste deploy e exigem conta/número de teste autorizados no próximo ciclo.
 
 ## Quando usar
 
@@ -12,7 +12,7 @@ Para confirmar a topologia, configurar o ambiente e publicar `labelle_back`, `la
 - A interface pública acessa o backend por funções de servidor do frontend: `LABELLE_API_URL` é a URL **privada** do backend. O navegador não deve receber token do WAHA nem chamar a API interna diretamente. Confira [`labelle_front/src/server/api.ts`](../../labelle_front/src/server/api.ts), [`labelle_back/config/runtime.exs`](../../labelle_back/config/runtime.exs) e [`labelle_proxy/Caddyfile`](../../labelle_proxy/Caddyfile).
 - Use uma conta Railway com acesso ao projeto correto e confirme o ambiente selecionado com `railway status` antes de comandos que alteram serviços. O CLI deve estar instalado (`railway --version`). Não registrar valores de secrets em comandos compartilhados, logs ou documentos.
 - Hosts, domínios, IDs, variáveis efetivas e saúde dos serviços são estado externo ao Git: consultar serviços, variáveis e deployments no painel Railway. Confirmar DNS/túnel e sessão WAHA no host/Cloudflare e no painel do produto. Não inferir o estado real a partir deste arquivo.
-- Na leitura de `railway status --json`, os serviços de aplicação apareciam com `source.repo: null` e deployments anteriores por CLI; o push do commit de revisão `ce3a831` não mostrou um novo deployment ativo na consulta de 2026-10-17. Antes do próximo push operacional, conferir no painel a configuração atual de fonte/gatilhos de cada serviço. Se houver autodeploy seguindo `main`, configurar watch paths para ignorar `docs/**` e validar pelo histórico que commits só de docs não iniciam build.
+- `labelle_back` e `labelle_front` foram ligados ao repositório GitHub `augustoedt/labelle`, branch `main`. São subprojetos isolados: root directory `/labelle_back` e `/labelle_front`, respectivamente. Watch paths `/labelle_back/**` e `/labelle_front/**` impedem que mudanças somente em `docs/**` iniciem builds desses dois serviços. O backend usa Dockerfile em `/labelle_back/Dockerfile`; o frontend usa Railpack. A fonte e os caminhos foram lidos de volta em `railway environment config --json` após a alteração. `labelle_proxy` não foi vinculado nesta etapa e permanece com deploy via CLI.
 
 ## Preparação e validação local
 
@@ -21,7 +21,7 @@ Para confirmar a topologia, configurar o ambiente e publicar `labelle_back`, `la
 3. Frontend: em `labelle_front/`, executar `npm run build` e `npx tsc --noEmit` (com dependências instaladas).
 4. Proxy: conferir as rotas e o destino privado em [`labelle_proxy/Caddyfile`](../../labelle_proxy/Caddyfile); não expor `/api/json/*` por engano.
 
-**Última evidência local:** na revisão de backend registrada em [revisao-backend-ash.md](../reviews/revisao-backend-ash.md), `mix test` passou (43 testes). Isso não verifica o frontend nem um deploy.
+**Última evidência local:** `mix test` no backend passou com 43 testes na [revisão](../reviews/revisao-backend-ash.md); `npm run build && npx tsc --noEmit` no frontend passou antes do vínculo GitHub. Isso não substitui a verificação dos deployments.
 
 ## Variáveis e roteamento
 
@@ -33,7 +33,9 @@ Para confirmar a topologia, configurar o ambiente e publicar `labelle_back`, `la
 
 ## Publicar (apenas com autorização)
 
-Rodar o comando da pasta de **cada serviço alterado**; `--path-as-root .` garante que o contexto de build tenha seu Dockerfile ou `package.json`. Confirmar o projeto/ambiente antes de iniciar. Serviços independentes podem ser publicados separadamente quando suas alterações não exigirem ordem por contrato.
+Para backend e frontend, o fluxo principal é fazer commit e push para `main`: Railway observa **apenas** a pasta correspondente de cada serviço. Antes do push, confirmar `git status -sb`, o diff e a branch. Após o push, acompanhar pelo ID do deployment de **cada serviço alterado** até `SUCCESS`; upload/build iniciado não equivale a deploy concluído. Mudanças fora das pastas monitoradas, inclusive `docs/**`, não iniciam builds desses dois serviços.
+
+Como alternativa para um deploy manual de código local, `railway up` continua disponível; confirme se deseja publicar o checkout local em vez do commit de `main`:
 
 ```bash
 cd labelle_back
@@ -46,9 +48,11 @@ cd ../labelle_proxy
 railway up --service labelle_proxy --ci --path-as-root .
 ```
 
-Não executar os três comandos por rotina se só um serviço mudou. Não usar `railway run` como se estivesse dentro da rede privada: ele executa localmente. Migrações normais são executadas pela release do backend; antes de qualquer seed em produção, conferir variáveis obrigatórias e credenciais de contas no script [`priv/repo/seeds.exs`](../../labelle_back/priv/repo/seeds.exs) para evitar senhas de fallback.
+`labelle_proxy` permanece sem fonte GitHub e requer publicação manual da pasta `labelle_proxy/` quando seu código mudar. Não executar comandos dos três serviços por rotina se só um mudou. Não usar `railway run` como se estivesse dentro da rede privada: ele executa localmente. Migrações normais são executadas pela release do backend; antes de qualquer seed em produção, conferir variáveis obrigatórias e credenciais de contas no script [`priv/repo/seeds.exs`](../../labelle_back/priv/repo/seeds.exs) para evitar senhas de fallback.
 
 ## Verificação pós-deploy e rollback
+
+**Execução de 2026-10-17:** ambos os deployments GitHub chegaram a `SUCCESS` e `RUNNING`; `GET /agendar` e `GET /login` no frontend responderam 200; `GET /admin` no proxy respondeu 302 (redirecionamento de autenticação); `GET /api/json/` pelo proxy respondeu 404. Via SSH/RPC, o backend executou `SELECT 1` no PostgreSQL; do container frontend, `POST /api/client/settings` na API privada respondeu 200. Essas verificações comprovam roteamento e conectividade, não um atendimento completo. **Na próxima publicação funcional autorizada**, executar também login/logout com conta de teste e, quando WAHA estiver `WORKING`, envio controlado ao número de teste.
 
 1. No Railway, confirmar que o deployment do serviço alterado terminou em sucesso e verificar logs/health. Se a CLI de logs ficar em streaming indefinidamente, usar a tela do deployment no painel.
 2. Abrir o domínio público do frontend e verificar login/logout com conta de teste autorizada; verificar uma leitura administrativa e a disponibilidade do portal de agendamento. Para uma reserva real de teste, usar apenas cliente/horário autorizados e desfazer os dados de teste depois.
@@ -58,6 +62,7 @@ Não executar os três comandos por rotina se só um serviço mudou. Não usar `
 
 ## Armadilhas preservadas
 
+- Ao conectar um monorepo GitHub, o caminho configurado do Dockerfile é relativo à raiz do repositório, mesmo com `rootDirectory: /labelle_back`: usar `/labelle_back/Dockerfile`. O primeiro build automático falhou com `failed to read Dockerfile at 'Dockerfile'` quando foi usado `/Dockerfile`; a correção foi aplicada antes do redeploy a partir da fonte.
 - Na rede privada o DNS pode sanitizar o nome do serviço (`labelle_back` não implica host com underscore); obter o domínio no Railway. Frontend e proxy precisam usar a porta em que o backend realmente escuta.
 - O backend exclui o host privado de `force_ssl`; o proxy reescreve o header `Host` para evitar loop de redirect. A origem do LiveView via proxy é configurada no endpoint.
 - A ordem textual de diretivas Caddy não substitui os blocos `handle`: mudanças nas rotas exigem validar o match real, sobretudo `/admin` e o webhook.

@@ -1,5 +1,5 @@
 // Logo La Belle Studio (asset local em public/logo.png)
-export default function LaBelleLogo({ size = "md", dark = false, imageOnly = false }) {
+export default function LaBelleLogo({ size = "md", dark = false, imageOnly = false, white = false }) {
   const imgUrl = "/logo.png";
 
   const sizes = {
@@ -14,7 +14,7 @@ export default function LaBelleLogo({ size = "md", dark = false, imageOnly = fal
       src={imgUrl}
       alt="La Belle Studio"
       className={`${sizes[size] || sizes.md} w-auto object-contain`}
-      style={dark ? {} : { filter: "brightness(0) saturate(100%)" }}
+      style={white ? { filter: "brightness(0) invert(1)" } : dark ? {} : { filter: "brightness(0) saturate(100%)" }}
     />
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ProfessionalServicesApi } from "@/server/api";
+import { ProfessionalServicesApi, ServiceVariantsApi } from "@/server/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,11 +18,13 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
     queryKey: ["professional-services"],
     queryFn: () => ProfessionalServicesApi.list({ limit: 1000 }),
   });
+  const { data: variants = [] } = useQuery({ queryKey: ["service-variants"], queryFn: () => ServiceVariantsApi.list({ limit: 1000 }) });
   const [form, setForm] = useState({
     client_name: "",
     client_phone: "",
     client_id: "",
     service_id: "",
+    service_variant_id: null,
     professional_id: "",
     date: new Date().toISOString().split("T")[0],
     time: "09:00",
@@ -36,6 +38,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
         client_phone: appointment.client_phone || "",
         client_id: appointment.client_id || "",
         service_id: appointment.service_id || "",
+        service_variant_id: appointment.service_variant_id || null,
         professional_id: appointment.professional_id || "",
         date: appointment.date || new Date().toISOString().split("T")[0],
         time: appointment.time || "09:00",
@@ -44,13 +47,17 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
     } else {
       setForm({
         client_name: "", client_phone: "", client_id: "",
-        service_id: "", professional_id: "",
+        service_id: "",
+    service_variant_id: null, professional_id: "",
         date: new Date().toISOString().split("T")[0], time: "09:00", notes: "",
       });
     }
   }, [appointment, open]);
 
   const selectedService = services?.find(s => s.id === form.service_id);
+
+  const serviceVariants = variants.filter(v => v.service_id === form.service_id && v.is_active !== false);
+  const selectedOption = variants.find(v => v.id === form.service_variant_id) || selectedService;
 
   // Sem serviço escolhido ainda, mostra todo mundo. Com serviço escolhido,
   // mostra só quem está vinculada — inclusive se ninguém estiver vinculado
@@ -85,8 +92,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
       ...form,
       service_name: selectedService?.name || "",
       professional_name: professional?.name || "",
-      duration_minutes: selectedService?.duration_minutes || 60,
-      price: selectedService?.price || 0,
+
     };
     onSubmit(payload);
   };
@@ -127,7 +133,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
           </div>
           <div>
             <Label className="text-xs">Serviço</Label>
-            <Select value={form.service_id} onValueChange={v => setForm(prev => ({ ...prev, service_id: v }))}>
+            <Select value={form.service_id} onValueChange={v => setForm(prev => ({ ...prev, service_id: v, service_variant_id: null }))}>
               <SelectTrigger><SelectValue placeholder="Selecionar serviço..." /></SelectTrigger>
               <SelectContent>
                 {services?.filter(s => s.is_active !== false).map(s => (
@@ -137,6 +143,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             </Select>
           </div>
           <div>
+            {serviceVariants.length > 0 && <div className="mb-4"><Label>Opção do serviço</Label><Select value={form.service_variant_id || ""} onValueChange={v => setForm(prev => ({ ...prev, service_variant_id: v }))}><SelectTrigger><SelectValue placeholder="Escolher opção..." /></SelectTrigger><SelectContent>{serviceVariants.map(v => <SelectItem key={v.id} value={v.id}>{v.name} — {formatBRL(v.price)} ({v.duration_minutes}min)</SelectItem>)}</SelectContent></Select></div>}
             <Label className="text-xs">Profissional</Label>
             <Select
               value={form.professional_id}
@@ -175,15 +182,15 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
           </div>
           {selectedService && (
             <div className="bg-secondary/50 rounded-xl p-3 flex justify-between text-sm">
-              <span className="text-muted-foreground">Duração: {selectedService.duration_minutes}min</span>
-              <span className="font-semibold tabular-nums">{formatBRL(selectedService.price)}</span>
+              <span className="text-muted-foreground">Duração: {selectedOption.duration_minutes}min</span>
+              <span className="font-semibold tabular-nums">{formatBRL(selectedOption.price)}</span>
             </div>
           )}
           <div>
             <Label className="text-xs">Observações</Label>
             <Textarea value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Observações..." rows={2} />
           </div>
-          <Button onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
+          <Button disabled={!form.client_name.trim() || !form.service_id || !form.professional_id || (serviceVariants.length > 0 && !form.service_variant_id)} onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
             {appointment ? "Atualizar" : "Agendar"}
           </Button>
         </div>

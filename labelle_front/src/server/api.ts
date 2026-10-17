@@ -211,6 +211,10 @@ export const deleteProfessionalService = createServerFn({ method: 'POST' })
   .validator((data: { id: string }) => data)
   .handler(({ data }) => jsonApiDelete('professional_services', data.id))
 
+export const listServiceVariants = createServerFn({ method: 'GET' })
+  .validator((d?: ListParams) => d)
+  .handler(({ data }) => jsonApiList('service_variants', data))
+
 export const listServices = createServerFn({ method: 'GET' })
   .validator((data?: ListParams) => data)
   .handler(({ data }) => jsonApiList('services', data))
@@ -350,6 +354,7 @@ const wrapInput =
 export const ClientsApi = { list: wrapList(listClients), create: createClient, update: wrapInput(updateClient) }
 export const ProfessionalsApi = { list: wrapList(listProfessionals), create: createProfessional, update: wrapInput(updateProfessional) }
 export const ProfessionalServicesApi = { list: wrapList(listProfessionalServices), create: createProfessionalService, delete: wrapInput(deleteProfessionalService) }
+export const ServiceVariantsApi = { list: wrapList(listServiceVariants) }
 export const ServicesApi = { list: wrapList(listServices), create: createService, update: wrapInput(updateService) }
 export const AppointmentsApi = { list: wrapList(listAppointments), create: createAppointment, bookOnline: bookAppointmentOnline, update: wrapInput(updateAppointment), finalize: wrapInput(finalizeAppointment), confirm: wrapInput(confirmAppointment), start: wrapInput(startAppointment), cancel: wrapInput(cancelAppointment), sendReminder: wrapInput(sendAppointmentReminder) }
 export const AppointmentServicesApi = { list: wrapList(listAppointmentServices), create: createAppointmentService, update: wrapInput(updateAppointmentService), delete: wrapInput(deleteAppointmentService) }

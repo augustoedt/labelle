@@ -9,7 +9,14 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
   """
   use LabelleBack.DataCase, async: true
 
-  alias LabelleBack.Studio.{Appointment, AppointmentService, Client, Professional, Promotion, Service}
+  alias LabelleBack.Studio.{
+    Appointment,
+    AppointmentService,
+    Client,
+    Professional,
+    Promotion,
+    Service
+  }
 
   setup do
     LabelleBack.Studio.Settings
@@ -158,12 +165,18 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
 
       percent_booking =
         Appointment
-        |> Ash.Changeset.for_create(:book_online, book_online_attrs(professional, percent_service))
+        |> Ash.Changeset.for_create(
+          :book_online,
+          book_online_attrs(professional, percent_service)
+        )
         |> Ash.create!()
 
       value_booking =
         Appointment
-        |> Ash.Changeset.for_create(:book_online, book_online_attrs(professional, value_service))
+        |> Ash.Changeset.for_create(
+          :book_online,
+          Map.put(book_online_attrs(professional, value_service), :time, ~T[16:00:00])
+        )
         |> Ash.create!()
 
       assert Decimal.equal?(percent_booking.price, Decimal.new("90.00"))

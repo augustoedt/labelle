@@ -17,7 +17,10 @@ defmodule LabelleBack.Studio.Actions.ComputeAvailableSlots do
   def run(input, _opts, _context) do
     args = input.arguments
     duration = args[:duration_minutes] || 60
-    work_start = args[:work_start] || professional_time(args.professional_id, :work_start) || "09:00"
+
+    work_start =
+      args[:work_start] || professional_time(args.professional_id, :work_start) || "09:00"
+
     work_end = args[:work_end] || professional_time(args.professional_id, :work_end) || "18:00"
 
     booked =
@@ -26,7 +29,19 @@ defmodule LabelleBack.Studio.Actions.ComputeAvailableSlots do
       |> Ash.Query.filter(status != :cancelado)
       |> Ash.read!(authorize?: false)
 
-    {:ok, compute_slots(booked, duration, work_start, work_end)}
+    professional = Ash.get!(Professional, args.professional_id, authorize?: false)
+    day = rem(Date.day_of_week(args.date), 7)
+
+    open? =
+      professional.is_active and
+        (is_nil(professional.work_days) or professional.work_days == [] or
+           day in professional.work_days)
+
+    if open? do
+      {:ok, compute_slots(booked, duration, work_start, work_end)}
+    else
+      {:ok, []}
+    end
   end
 
   defp professional_time(professional_id, field) do

@@ -28,6 +28,7 @@ import {
   minimumPrice,
   finalPrice,
   promotionFor,
+  normalizeSearch,
   availableService,
 } from "@/lib/serviceCatalog";
 import { maskPhone } from "@/lib/phone";
@@ -41,6 +42,7 @@ export default function ClientBooking({
   onClearSelection,
 }) {
   const [step, setStep] = useState(1);
+  const [serviceSearch, setServiceSearch] = useState("");
   const prefersReduced = useReducedMotion();
   const [selectedService, setSelectedService] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
@@ -89,14 +91,19 @@ export default function ClientBooking({
       (s) => s.id === initialSelection.serviceId && s.is_active !== false,
     );
     setSelectedService(service || null);
-    setSelectedVariant(
+    const variant =
       variants.find(
         (v) =>
           v.id === initialSelection.variantId &&
           v.service_id === service?.id &&
           v.is_active !== false,
-      ) || null,
-    );
+      ) || null;
+    setSelectedVariant(variant);
+    if (
+      service &&
+      (variant || activeVariants(variants, service.id).length === 0)
+    )
+      setStep(2);
   }, [initialSelection, services, variantsQuery.data]);
   const chooseService = (svc) => {
     setSelectedService(svc);
@@ -193,7 +200,11 @@ export default function ClientBooking({
     setSelectedDate(null);
     setSelectedTime(null);
   };
-  const activeServices = services.filter((s) => availableService(s, variants));
+  const activeServices = services.filter(
+    (s) =>
+      availableService(s, variants) &&
+      normalizeSearch(s.name).includes(normalizeSearch(serviceSearch)),
+  );
 
   // Só mostra quem sabe fazer o serviço escolhido. Se ninguém estiver
   // vinculado ainda, a lista fica vazia de propósito — melhor bloquear o
@@ -214,17 +225,20 @@ export default function ClientBooking({
   return (
     <div className="px-5 py-5 pb-32">
       {step < 5 && (
-        <div className="flex gap-1 mb-5">
-          {[1, 2, 3, 4].map((s) => (
-            <div
-              key={s}
-              className={cn(
-                "h-1 flex-1 rounded-full transition-all",
-                s <= step ? "bg-foreground" : "bg-border",
-              )}
-            />
-          ))}
-        </div>
+        <ol className="booking-steps" aria-label="Etapas do agendamento">
+          {["Serviço", "Profissional", "Horário", "Confirmação"].map(
+            (label, index) => (
+              <li
+                key={label}
+                className={index + 1 <= step ? "current" : ""}
+                aria-current={index + 1 === step ? "step" : undefined}
+              >
+                <span>{index + 1}</span>
+                {label}
+              </li>
+            ),
+          )}
+        </ol>
       )}
 
       <AnimatePresence mode="wait">
@@ -243,6 +257,13 @@ export default function ClientBooking({
             <h2 className="text-lg font-heading font-semibold tracking-tight">
               Escolha o serviço
             </h2>
+            <Input
+              className="booking-search"
+              aria-label="Buscar serviço para agendar"
+              placeholder="Buscar serviço..."
+              value={serviceSearch}
+              onChange={(e) => setServiceSearch(e.target.value)}
+            />
             {isLoadingServices
               ? Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} className="h-[72px] rounded-2xl" />
@@ -257,7 +278,7 @@ export default function ClientBooking({
                         className={cn(
                           "w-full text-left p-4 rounded-2xl border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           selectedService?.id === svc.id
-                            ? "border-foreground bg-foreground/5"
+                            ? "border-primary bg-secondary"
                             : "border-border/50 bg-card",
                         )}
                       >
@@ -456,7 +477,7 @@ export default function ClientBooking({
                     className={cn(
                       "flex flex-col items-center py-3 px-4 rounded-2xl min-w-[64px] border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       sel
-                        ? "border-foreground bg-foreground text-background"
+                        ? "border-primary bg-primary text-primary-foreground"
                         : "border-border/50 bg-card",
                     )}
                   >
@@ -493,7 +514,7 @@ export default function ClientBooking({
                         className={cn(
                           "py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           selectedTime === t
-                            ? "border-foreground bg-foreground text-background"
+                            ? "border-primary bg-primary text-primary-foreground"
                             : "border-border/50 bg-card",
                         )}
                       >
@@ -659,7 +680,7 @@ export default function ClientBooking({
       </AnimatePresence>
 
       {/* Botão flutuante "Continuar" acima da barra inferior */}
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-lg px-5 pointer-events-none z-40">
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-3xl px-5 pointer-events-none z-40">
         <AnimatePresence>
           {(step === 1 && ready) || (step === 3 && selectedTime) ? (
             <motion.div

@@ -9,7 +9,7 @@ import { statusColors, statusLabels } from "@/lib/appointmentStatus";
 export default function TodayAgenda({ appointments, isLoading }) {
   if (isLoading) {
     return (
-      <div className="px-5 space-y-3">
+      <div className="today-agenda px-5 space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-20 rounded-xl" />
         ))}
@@ -26,7 +26,7 @@ export default function TodayAgenda({ appointments, isLoading }) {
   }
 
   return (
-    <div className="px-5 space-y-3">
+    <div className="today-agenda px-5 space-y-3">
       {appointments.map((apt, i) => (
         <Reveal key={apt.id} index={i}>
           <div

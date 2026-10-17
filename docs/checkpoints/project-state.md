@@ -1,5 +1,9 @@
 # Estado do projeto
 
+## Atualização de produto — 2026-10-17
+
+Website responsivo, painel e catálogo P/M/G implementados: [registro](../changes/website-responsivo.md). Todos os valores do JSON aprovados pelo responsável e importados com backup. Publicação no GitHub/main autorizada. O snapshot operacional abaixo é histórico.
+
 > Snapshot após revisão de código e consulta **somente leitura** ao Railway/WAHA em 2026-10-17 17:19 UTC. Não houve deploy, pareamento ou mudança de infraestrutura. Para repetir a verificação, veja [operação Railway](../runbooks/deploy-railway.md) e [estado WAHA](../runbooks/verificar-waha.md).
 
 ## Onde estamos

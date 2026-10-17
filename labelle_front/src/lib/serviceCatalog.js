@@ -1,7 +1,13 @@
 export function activeVariants(variants, serviceId) {
-  return variants.filter(
-    (v) => v.service_id === serviceId && v.is_active !== false,
-  );
+  return variants
+    .filter((v) => v.service_id === serviceId && v.is_active !== false)
+    .sort((a, b) => {
+      const order = { P: 0, M: 1, G: 2 };
+      return (
+        (order[a.name] ?? 10) - (order[b.name] ?? 10) ||
+        String(a.name || "").localeCompare(String(b.name || ""), "pt-BR")
+      );
+    });
 }
 export function serviceOptions(service, variants) {
   const options = activeVariants(variants, service.id);

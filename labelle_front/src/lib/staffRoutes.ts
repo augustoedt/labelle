@@ -39,6 +39,7 @@ export function validateStaffSearch(search: Record<string, unknown>) {
     const value = search[key]
     if (typeof value === 'string' && value.length <= max && !/[<>\u0000-\u001f]/.test(value)) result[key] = value
   }
+  if (typeof search.time === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(search.time)) result.time = search.time
   add('date', 10); add('appointment', 100); add('q', 100)
   add('client', 100); add('product', 100); add('service', 100)
   add('professional', 100); add('promotion', 100)

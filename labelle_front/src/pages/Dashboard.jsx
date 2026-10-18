@@ -1,3 +1,4 @@
+import PhonePendingPanel from "@/components/clients/PhonePendingPanel";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AppointmentsApi, TransactionsApi, ProductsApi } from "@/server/api";
@@ -99,6 +100,7 @@ export default function Dashboard() {
           {format(now, "EEEE, d 'de' MMMM", { locale: ptBR })}
         </div>
       </div>
+      <PhonePendingPanel />
       {failed && (
         <p role="alert" className="mx-5 rounded-xl border p-4 text-sm">
           Alguns dados não puderam ser carregados.{" "}

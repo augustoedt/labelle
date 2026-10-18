@@ -1,5 +1,9 @@
 # Estado do projeto
 
+## Celular e agendamento rápido — 2026-10-18
+
+[Entrega](../changes/pendencias-celular-agendamento.md): pendências somente nas áreas logadas, preenchimento posterior autorizado por atendimento, clique em horário livre e busca de clientes/serviços. Sem bloqueio de agendamento manual sem celular e sem backfill automático por nome.
+
 ## Agenda — 2026-10-18
 
 Grade diária por profissional e visão de quatro semanas: [detalhes](../changes/agenda-profissionais.md). Navegação por data e preservação das ações de atendimento. Sem alterações de dados.

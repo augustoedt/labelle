@@ -1,3 +1,5 @@
+import { hasPhone } from "@/lib/phonePending";
+import { normalizeSearch } from "@/lib/serviceCatalog";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ProfessionalServicesApi, ServiceVariantsApi } from "@/server/api";
@@ -11,7 +13,7 @@ import { X } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { maskPhone } from "@/lib/phone";
 
-export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment, initialDate }) {
+export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment, initialDate, initialTime, initialProfessional }) {
   // Só profissionais vinculadas ao serviço escolhido aparecem na lista —
   // evita agendar um serviço com quem não sabe fazer.
   const professionalServicesQuery = useQuery({
@@ -24,6 +26,9 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
     queryFn: () => ServiceVariantsApi.list({ limit: 1000 }),
   });
   const variants = variantsQuery.data || [];
+  const [clientSuggestions,setClientSuggestions] = useState(false);
+  const [serviceSearch,setServiceSearch] = useState("");
+  const [serviceSuggestions,setServiceSuggestions] = useState(false);
   const [form, setForm] = useState({
     client_name: "",
     client_phone: "",
@@ -53,11 +58,13 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
       setForm({
         client_name: "", client_phone: "", client_id: "",
         service_id: "",
-    service_variant_id: null, professional_id: "",
-        date: initialDate || new Date().toISOString().split("T")[0], time: "09:00", notes: "",
+    service_variant_id: null, professional_id: initialProfessional || "",
+        date: initialDate || new Date().toISOString().split("T")[0], time: initialTime || "09:00", notes: "",
       });
     }
-  }, [appointment, open, initialDate]);
+    setClientSuggestions(false);setServiceSuggestions(false);
+    setServiceSearch(appointment ? services?.find(s=>s.id===appointment.service_id)?.name || "" : "");
+  }, [appointment, open, initialDate, initialTime, initialProfessional]);
 
   const selectedService = services?.find(s => s.id === form.service_id);
 
@@ -113,7 +120,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
   };
 
   const timeSlots = [];
-  for (let h = 7; h <= 21; h++) {
+  for (let h = 0; h <= 23; h++) {
     timeSlots.push(`${String(h).padStart(2, "0")}:00`);
     timeSlots.push(`${String(h).padStart(2, "0")}:30`);
   }
@@ -125,25 +132,15 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
           <SheetTitle className="font-heading">{appointment ? "Editar Agendamento" : "Novo Agendamento"}</SheetTitle>
         </SheetHeader>
         <div className="space-y-4 pb-8">
-          {clients?.length > 0 && (
-            <div>
-              <Label className="text-xs">Cliente Cadastrado</Label>
-              <Select value={form.client_id} onValueChange={handleClientSelect}>
-                <SelectTrigger><SelectValue placeholder="Selecionar cliente..." /></SelectTrigger>
-                <SelectContent>
-                  {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Nome</Label>
-              <Input value={form.client_name} onChange={e => setForm(prev => ({ ...prev, client_name: e.target.value }))} placeholder="Nome da cliente" />
+              <Input aria-label="Cliente" role="combobox" aria-expanded={clientSuggestions} aria-controls="booking-client-options" aria-autocomplete="list" autoComplete="off" value={form.client_name} onFocus={()=>setClientSuggestions(true)} onKeyDown={e=>{if(e.key==="Escape")setClientSuggestions(false);}} onChange={e => {setForm(prev => ({ ...prev, client_id:"", client_phone: prev.client_id ? "" : prev.client_phone, client_name: e.target.value }));setClientSuggestions(true);}} placeholder="Digite o nome da cliente" />
+              {clientSuggestions && <div id="booking-client-options" role="listbox" aria-label="Clientes com celular" className="booking-search-results">{clients?.filter(c=>hasPhone(c.phone) && c.is_active!==false && normalizeSearch(c.name).includes(normalizeSearch(form.client_name))).slice(0,30).map(c=><button type="button" role="option" aria-selected={form.client_id===c.id} key={c.id} onClick={()=>{handleClientSelect(c.id);setClientSuggestions(false);}}>{c.name}<small>{maskPhone(c.phone)}</small></button>)}<button type="button" onClick={()=>setClientSuggestions(false)}>Continuar com o nome digitado</button></div>}
             </div>
             <div>
-              <Label className="text-xs">WhatsApp</Label>
-              <Input value={form.client_phone} onChange={e => setForm(prev => ({ ...prev, client_phone: maskPhone(e.target.value) }))} placeholder="(00) 00000-0000" />
+              <Label className="text-xs">WhatsApp (opcional)</Label>
+              <Input value={form.client_phone} onChange={e => setForm(prev => ({ ...prev, client_phone: maskPhone(e.target.value) }))} placeholder="(00) 00000-0000" /><p className="text-xs text-muted-foreground mt-1">Pode agendar sem celular e preencher depois em Clientes.</p>
             </div>
           </div>
           {variantsQuery.isError && (
@@ -164,14 +161,9 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
           )}
           <div>
             <Label className="text-xs">Serviço</Label>
-            <Select value={form.service_id} onValueChange={v => setForm(prev => ({ ...prev, service_id: v, service_variant_id: null }))}>
-              <SelectTrigger disabled={!variantsQuery.isSuccess}><SelectValue placeholder={variantsQuery.isSuccess ? "Selecionar serviço..." : "Carregando opções..."} /></SelectTrigger>
-              <SelectContent>
-                {services?.filter(s => s.is_active !== false && (!variantsQuery.isSuccess || !hasOnlyInactiveVariants(s.id) || (appointment && s.id === appointment.service_id))).map(s => (
-                  <SelectItem key={s.id} value={s.id}>{s.name} - {formatBRL(s.price)} ({s.duration_minutes}min)</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input aria-label="Buscar serviço" role="combobox" aria-expanded={serviceSuggestions} aria-controls="booking-service-options" aria-autocomplete="list" autoComplete="off" disabled={!variantsQuery.isSuccess} value={serviceSearch} onFocus={()=>setServiceSuggestions(true)} onKeyDown={e=>{if(e.key==="Escape")setServiceSuggestions(false);}} onChange={e=>{setServiceSearch(e.target.value);setServiceSuggestions(true);setForm(prev=>({...prev,service_id:"",service_variant_id:null}));}} placeholder="Digite o serviço…" />
+            {serviceSuggestions && <div id="booking-service-options" role="listbox" aria-label="Serviços disponíveis" className="booking-search-results">{services?.filter(s=>s.is_active!==false && (!hasOnlyInactiveVariants(s.id) || (appointment && s.id===appointment.service_id)) && normalizeSearch(s.name).includes(normalizeSearch(serviceSearch))).map(s=><button type="button" role="option" aria-selected={form.service_id===s.id} key={s.id} onClick={()=>{setForm(prev=>({...prev,service_id:s.id,service_variant_id:null}));setServiceSearch(s.name);setServiceSuggestions(false);}}>{s.name}<small>{formatBRL(s.price)} · {s.duration_minutes} min</small></button>)}</div>}
+
           </div>
           <div>
             {serviceVariantRows.length > 0 && <div className="mb-4"><Label>Opção do serviço</Label><Select value={form.service_variant_id || ""} onValueChange={v => setForm(prev => ({ ...prev, service_variant_id: v }))}><SelectTrigger disabled={!variantsQuery.isSuccess}><SelectValue placeholder="Escolher opção..." /></SelectTrigger><SelectContent>{variantOptions.map(v => <SelectItem key={v.id} value={v.id}>{v.name} — {formatBRL(v.price)} ({v.duration_minutes}min)</SelectItem>)}</SelectContent></Select></div>}
@@ -179,10 +171,10 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             <Select
               value={form.professional_id}
               onValueChange={v => setForm(prev => ({ ...prev, professional_id: v }))}
-              disabled={!form.service_id}
+              disabled={!form.service_id && !form.professional_id}
             >
               <SelectTrigger>
-                <SelectValue placeholder={form.service_id ? "Selecionar profissional..." : "Escolha um serviço primeiro"} />
+                <SelectValue placeholder={form.service_id || form.professional_id ? "Selecionar profissional..." : "Escolha um serviço primeiro"} />
               </SelectTrigger>
               <SelectContent>
                 {qualifiedProfessionals?.filter(p => p.is_active !== false).map(p => (

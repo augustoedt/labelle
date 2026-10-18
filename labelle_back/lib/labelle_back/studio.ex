@@ -57,6 +57,7 @@ defmodule LabelleBack.Studio do
         patch :confirm, route: "/:id/confirm"
         patch :start, route: "/:id/start"
         patch :cancel, route: "/:id/cancel"
+        patch :complete_phone, route: "/:id/complete_phone"
         patch :send_reminder, route: "/:id/send_reminder"
         delete :destroy
       end

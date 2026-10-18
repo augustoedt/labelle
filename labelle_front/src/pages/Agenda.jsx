@@ -1,3 +1,5 @@
+import AppointmentActions from "@/components/agenda/AppointmentActions";
+import NextAppointmentSheet from "@/components/agenda/NextAppointmentSheet";
 import AppointmentPhoneSheet from "@/components/clients/AppointmentPhoneSheet";
 import PhonePendingBadge from "@/components/ui/PhonePendingBadge";
 import { hasPhone } from "@/lib/phonePending";
@@ -30,6 +32,7 @@ export default function Agenda() {
   const selectedDate = dateParam ? new Date(`${dateParam}T12:00:00`) : new Date();
   const [view, setView] = useState("day");
   const [phoneAppointment,setPhoneAppointment]=useState(null);
+  const [nextAppointment,setNextAppointment]=useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingApt, setEditingApt] = useState(null);
   const [finalizingApt, setFinalizingApt] = useState(null);
@@ -319,6 +322,7 @@ export default function Agenda() {
                     <span>{apt.professional_name}</span>
                     {apt.price > 0 && <span className="font-medium text-foreground tabular-nums">{formatBRL(apt.price)}</span>}
                   </div>
+                  <AppointmentActions appointment={apt}/>
                   <div className="flex gap-1.5 mt-3 flex-wrap">
                     {apt.status === "agendado" && (
                       <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={(e) => { e.stopPropagation(); handleStatusChange(apt, "confirmado"); }}>Confirmar</Button>
@@ -329,9 +333,7 @@ export default function Agenda() {
                     {apt.status === "em_atendimento" && (
                       <Button size="sm" className="h-7 text-xs rounded-lg" onClick={(e) => { e.stopPropagation(); updateSearch({ appointment: String(apt.id), view: "finalize" }, false); }}>Serviços / Finalizar</Button>
                     )}
-                    {apt.status !== "cancelado" && apt.status !== "concluido" && (
-                      <Button size="sm" variant="ghost" className="h-7 text-xs rounded-lg text-destructive" onClick={(e) => { e.stopPropagation(); handleStatusChange(apt, "cancelado"); }}>Cancelar</Button>
-                    )}
+
                     {apt.client_phone && apt.status !== "cancelado" && apt.status !== "concluido" && (
                       <Button
                         size="sm"
@@ -360,17 +362,20 @@ export default function Agenda() {
         professionals={professionals}
         clients={clients}
         appointment={editingApt}
+        footerActions={editingApt ? <AppointmentActions appointment={editingApt}/> : null}
         initialDate={dateStr}
         initialTime={typeof search.time === "string" ? search.time : undefined}
         initialProfessional={typeof search.professional === "string" ? search.professional : undefined}
       />
 
+      <NextAppointmentSheet appointment={nextAppointment} onClose={()=>setNextAppointment(null)}/>
       <FinalizeSheet
         open={!!finalizingApt}
         onClose={() => { setFinalizingApt(null); updateSearch({ appointment: undefined, view: undefined }); }}
         appointment={finalizingApt}
         services={services}
         canEditPrice
+        onBookNext={apt=>setNextAppointment(apt)}
         onFinalized={() => queryClient.invalidateQueries({ queryKey: ["appointments"] })}
       />
     </div>

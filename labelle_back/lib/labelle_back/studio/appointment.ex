@@ -121,6 +121,31 @@ defmodule LabelleBack.Studio.Appointment do
       change LabelleBack.Studio.Changes.SnapshotAppointmentFields
     end
 
+    create :book_return do
+      accept [
+        :client_id,
+        :client_name,
+        :client_phone,
+        :professional_id,
+        :service_id,
+        :service_variant_id,
+        :date,
+        :time,
+        :notes
+      ]
+
+      change set_attribute(:source, :manual)
+      change LabelleBack.Studio.Changes.SnapshotAppointmentFields
+      change LabelleBack.Studio.Changes.ValidateOnlineAvailability
+    end
+
+    update :reschedule do
+      require_atomic? false
+      accept [:date, :time]
+      validate attribute_in(:status, [:agendado, :confirmado])
+      change LabelleBack.Studio.Changes.ValidateOnlineAvailability
+    end
+
     update :complete_phone do
       require_atomic? false
       argument :same_client_appointment_ids, {:array, :uuid}, default: []
@@ -199,7 +224,7 @@ defmodule LabelleBack.Studio.Appointment do
     end
 
     # Criação manual: recepção (admin) ou a própria profissional.
-    policy action(:create) do
+    policy action([:create, :book_return]) do
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if LabelleBack.Studio.Checks.ActorIsAppointmentProfessional
     end
@@ -215,7 +240,15 @@ defmodule LabelleBack.Studio.Appointment do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    policy action([:finalize, :confirm, :start, :cancel, :send_reminder, :complete_phone]) do
+    policy action([
+             :finalize,
+             :confirm,
+             :start,
+             :cancel,
+             :send_reminder,
+             :complete_phone,
+             :reschedule
+           ]) do
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if expr(professional.user_id == ^actor(:id))
     end

@@ -1,3 +1,4 @@
+import AppointmentActions from "@/components/agenda/AppointmentActions";
 import {useState,useEffect} from "react";
 import {useQuery,useMutation,useQueryClient} from "@tanstack/react-query";
 import {AppointmentsApi,ClientsApi,completeAppointmentPhone} from "@/server/api";
@@ -25,5 +26,5 @@ export default function AppointmentPhoneSheet({appointment,onClose}) {
  {appointments.isError && <p role="alert">Não foi possível conferir outros atendimentos. Você pode salvar somente este celular.</p>}
  {save.isError && <p role="alert">Não foi possível salvar. Confira o celular e os atendimentos selecionados. Nenhum vínculo foi confirmado.</p>}
  <button className="brand-button" disabled={!hasPhone(phone) || save.isPending}>{save.isPending ? "Salvando…" : selected.length ? `Salvar e associar ${selected.length+1} atendimentos` : "Salvar celular e cadastrar cliente"}</button>
- </form></SheetContent></Sheet>;
+ </form><AppointmentActions appointment={appointment} onChanged={onClose}/></SheetContent></Sheet>;
 }

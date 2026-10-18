@@ -574,4 +574,108 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
     assert reused.id == client.id
     assert Ash.get!(Client, client.id, authorize?: false).name == client.name
   end
+
+  describe "reagendamento e próxima visita" do
+    test "profissional dona reagenda sem alterar cobrança; outra profissional não pode" do
+      owner = create_user!(:profissional)
+      pro = create_professional!(owner)
+      a = create_appointment!(pro, create_service!(%{}))
+      target = Date.add(Date.utc_today(), 14)
+
+      moved =
+        a
+        |> Ash.Changeset.for_update(:reschedule, %{date: target, time: ~T[10:30:00]},
+          actor: owner
+        )
+        |> Ash.update!()
+
+      assert moved.date == target
+      assert moved.time == ~T[10:30:00]
+      assert moved.price == a.price
+      assert moved.status == a.status
+      other = create_user!(:profissional)
+
+      assert {:error, _} =
+               moved
+               |> Ash.Changeset.for_update(
+                 :reschedule,
+                 %{date: Date.add(target, 1), time: ~T[10:30:00]},
+                 actor: other
+               )
+               |> Ash.update()
+
+      same =
+        moved
+        |> Ash.Changeset.for_update(:reschedule, %{date: target, time: ~T[10:30:00]},
+          actor: owner
+        )
+        |> Ash.update!()
+
+      assert same.id == a.id
+    end
+
+    test "reagendamento rejeita conflito e atendimento concluído" do
+      admin = create_user!(:admin)
+      pro = create_professional!(create_user!(:profissional))
+      service = create_service!(%{})
+      target = Date.add(Date.utc_today(), 14)
+      a = create_appointment!(pro, service)
+      create_appointment!(pro, service, %{date: target, time: ~T[10:00:00]})
+
+      assert {:error, _} =
+               a
+               |> Ash.Changeset.for_update(:reschedule, %{date: target, time: ~T[10:30:00]},
+                 actor: admin
+               )
+               |> Ash.update()
+
+      concluded =
+        a
+        |> Ash.Changeset.for_update(:confirm, %{}, authorize?: false)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(:start, %{}, authorize?: false)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(:finalize, %{payment_method: :pix}, authorize?: false)
+        |> Ash.update!()
+
+      assert {:error, _} =
+               concluded
+               |> Ash.Changeset.for_update(
+                 :reschedule,
+                 %{date: Date.add(target, 1), time: ~T[10:30:00]},
+                 actor: admin
+               )
+               |> Ash.update()
+    end
+
+    test "próxima visita cria novo atendimento sem celular e preserva anterior" do
+      owner = create_user!(:profissional)
+      pro = create_professional!(owner)
+      service = create_service!(%{})
+      previous = create_appointment!(pro, service, %{client_id: nil, client_phone: nil})
+
+      attrs = %{
+        client_name: previous.client_name,
+        professional_id: pro.id,
+        service_id: service.id,
+        date: Date.add(Date.utc_today(), 14),
+        time: ~T[10:30:00]
+      }
+
+      next =
+        Appointment
+        |> Ash.Changeset.for_create(:book_return, attrs, actor: owner)
+        |> Ash.create!()
+
+      assert next.id != previous.id
+      assert next.status == :agendado
+      assert is_nil(next.client_phone)
+      assert Ash.get!(Appointment, previous.id, authorize?: false).date == previous.date
+
+      assert {:error, _} =
+               Appointment
+               |> Ash.Changeset.for_create(:book_return, Map.put(attrs, :time, ~T[12:00:00]))
+               |> Ash.create()
+    end
+  end
 end

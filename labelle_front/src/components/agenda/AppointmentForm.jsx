@@ -13,7 +13,7 @@ import { X } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { maskPhone } from "@/lib/phone";
 
-export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment, initialDate, initialTime, initialProfessional }) {
+export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment, initialDate, initialTime, initialProfessional, initialBooking, title, submitError, isSaving = false, footerActions }) {
   const queryClient = useQueryClient();
   // Só profissionais vinculadas ao serviço escolhido aparecem na lista —
   // evita agendar um serviço com quem não sabe fazer.
@@ -59,15 +59,15 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
       });
     } else {
       setForm({
-        client_name: "", client_phone: "", client_id: "",
-        service_id: "",
-    service_variant_id: null, professional_id: initialProfessional || "",
+        client_name: initialBooking?.client_name || "", client_phone: initialBooking?.client_phone || "", client_id: initialBooking?.client_id || "",
+        service_id: initialBooking?.service_id || "",
+    service_variant_id: initialBooking?.service_variant_id || null, professional_id: initialProfessional || initialBooking?.professional_id || "",
         date: initialDate || new Date().toISOString().split("T")[0], time: initialTime || "09:00", notes: "",
       });
     }
     setClientSuggestions(false);setServiceSuggestions(false);setContactError("");
-    setServiceSearch(appointment ? services?.find(s=>s.id===appointment.service_id)?.name || "" : "");
-  }, [appointment, open, initialDate, initialTime, initialProfessional]);
+    setServiceSearch(appointment ? services?.find(s=>s.id===appointment.service_id)?.name || "" : services?.find(s=>s.id===initialBooking?.service_id)?.name || "");
+  }, [appointment, open, initialDate, initialTime, initialProfessional, initialBooking?.id]);
 
   const selectedService = services?.find(s => s.id === form.service_id);
 
@@ -144,7 +144,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent side="bottom" className="max-h-[90vh] rounded-t-3xl overflow-y-auto">
         <SheetHeader className="pb-4">
-          <SheetTitle className="font-heading">{appointment ? "Editar Agendamento" : "Novo Agendamento"}</SheetTitle>
+          <SheetTitle className="font-heading">{title || (appointment ? "Editar Agendamento" : "Novo Agendamento")}</SheetTitle>
         </SheetHeader>
         <div className="space-y-4 pb-8">
           <div className="grid grid-cols-2 gap-3">
@@ -176,7 +176,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
           )}
           <div>
             <Label className="text-xs">Serviço</Label>
-            <Input aria-label="Buscar serviço" role="combobox" aria-expanded={serviceSuggestions} aria-controls="booking-service-options" aria-autocomplete="list" autoComplete="off" disabled={!variantsQuery.isSuccess} value={serviceSearch} onFocus={()=>setServiceSuggestions(true)} onKeyDown={e=>{if(e.key==="Escape")setServiceSuggestions(false);}} onChange={e=>{setServiceSearch(e.target.value);setServiceSuggestions(true);setForm(prev=>({...prev,service_id:"",service_variant_id:null}));}} placeholder="Digite o serviço…" />
+            <Input aria-label="Buscar serviço" role="combobox" aria-expanded={serviceSuggestions} aria-controls="booking-service-options" aria-autocomplete="list" autoComplete="off" disabled={!variantsQuery.isSuccess} value={serviceSearch || (!serviceSuggestions ? selectedService?.name || "" : "")} onFocus={()=>setServiceSuggestions(true)} onKeyDown={e=>{if(e.key==="Escape")setServiceSuggestions(false);}} onChange={e=>{setServiceSearch(e.target.value);setServiceSuggestions(true);setForm(prev=>({...prev,service_id:"",service_variant_id:null}));}} placeholder="Digite o serviço…" />
             {serviceSuggestions && <div id="booking-service-options" role="listbox" aria-label="Serviços disponíveis" className="booking-search-results">{services?.filter(s=>s.is_active!==false && (!hasOnlyInactiveVariants(s.id) || (appointment && s.id===appointment.service_id)) && normalizeSearch(s.name).includes(normalizeSearch(serviceSearch))).map(s=><button type="button" role="option" aria-selected={form.service_id===s.id} key={s.id} onClick={()=>{setForm(prev=>({...prev,service_id:s.id,service_variant_id:null}));setServiceSearch(s.name);setServiceSuggestions(false);}}>{s.name}<small>{formatBRL(s.price)} · {s.duration_minutes} min</small></button>)}</div>}
 
           </div>
@@ -228,10 +228,12 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             <Label className="text-xs">Observações</Label>
             <Textarea value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Observações..." rows={2} />
           </div>
+          {submitError && <p role="alert" className="text-sm text-destructive">{submitError}</p>}
           {contactError && <p role="alert" className="text-sm text-destructive">{contactError}</p>}
-          <Button disabled={savingContact || !variantsQuery.isSuccess || !professionalServicesQuery.isSuccess || !form.client_name.trim() || !form.service_id || !form.professional_id || (serviceVariantRows.length > 0 && !form.service_variant_id)} onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
-            {appointment ? "Atualizar" : "Agendar"}
+          <Button disabled={isSaving || savingContact || !form.date || !form.time || !variantsQuery.isSuccess || !professionalServicesQuery.isSuccess || !form.client_name.trim() || !form.service_id || !form.professional_id || (serviceVariantRows.length > 0 && !form.service_variant_id)} onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
+            {isSaving ? "Salvando…" : appointment ? "Atualizar" : "Agendar"}
           </Button>
+          {footerActions}
         </div>
       </SheetContent>
     </Sheet>

@@ -51,12 +51,14 @@ defmodule LabelleBack.Studio do
         get :read
         index :read
         post :create
+        post :book_return, route: "/book_return"
         post :book_online, route: "/book_online"
         patch :update
         patch :finalize, route: "/:id/finalize"
         patch :confirm, route: "/:id/confirm"
         patch :start, route: "/:id/start"
         patch :cancel, route: "/:id/cancel"
+        patch :reschedule, route: "/:id/reschedule"
         patch :complete_phone, route: "/:id/complete_phone"
         patch :send_reminder, route: "/:id/send_reminder"
         delete :destroy

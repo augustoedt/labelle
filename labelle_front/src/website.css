@@ -1491,3 +1491,6 @@ button.schedule-slot:hover,button.schedule-slot:focus-visible { background:#e9d3
 .same-client-option input { width:18px;height:18px;flex-shrink:0; }
 .phone-completion-sheet p { color:#796960; }
 .phone-completion-sheet [role=alert] { color:#b42323; }
+
+.appointment-actions { display:flex;gap:8px;flex-wrap:wrap;margin-top:12px; }
+.phone-completion-sheet input[type=date],.phone-completion-sheet input[type=time] { display:block;border:1px solid #c8b4ab;border-radius:8px;padding:10px;margin-top:6px; }

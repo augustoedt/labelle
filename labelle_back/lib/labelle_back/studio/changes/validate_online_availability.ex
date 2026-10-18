@@ -26,7 +26,7 @@ defmodule LabelleBack.Studio.Changes.ValidateOnlineAvailability do
     with {:ok, %Professional{is_active: true} = professional} <-
            Ash.get(Professional, professional_id, authorize?: false),
          true <- valid_time?(professional, date, time, duration),
-         false <- conflict?(professional_id, date, time, duration),
+         false <- conflict?(professional_id, date, time, duration, changeset.data.id),
          true <- qualified?(changeset, professional_id) do
       changeset
     else
@@ -52,7 +52,7 @@ defmodule LabelleBack.Studio.Changes.ValidateOnlineAvailability do
       minutes(time) >= minutes(work_start) and minutes(time) + duration <= minutes(work_end)
   end
 
-  defp conflict?(professional_id, date, time, duration) do
+  defp conflict?(professional_id, date, time, duration, exclude_id) do
     start = minutes(time)
 
     Appointment
@@ -62,7 +62,9 @@ defmodule LabelleBack.Studio.Changes.ValidateOnlineAvailability do
     |> Ash.read!(authorize?: false)
     |> Enum.any?(fn appointment ->
       existing = minutes(appointment.time)
-      start < existing + (appointment.duration_minutes || 60) and start + duration > existing
+
+      appointment.id != exclude_id and start < existing + (appointment.duration_minutes || 60) and
+        start + duration > existing
     end)
   end
 

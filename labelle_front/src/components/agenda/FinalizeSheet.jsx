@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ServiceVariantsApi,
@@ -41,9 +41,12 @@ export default function FinalizeSheet({
   appointment,
   services,
   onFinalized,
+  onBookNext,
   canEditPrice = false,
 }) {
   const queryClient = useQueryClient();
+  const [bookNext,setBookNext]=useState(false);
+  useEffect(()=>setBookNext(false),[appointment?.id,open]);
   const [addingServiceId, setAddingServiceId] = useState("");
   const [addingVariantId, setAddingVariantId] = useState("");
   const variantsQuery = useQuery({
@@ -112,6 +115,7 @@ export default function FinalizeSheet({
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       onFinalized?.();
       onClose();
+      if(bookNext) onBookNext?.(appointment);
     },
   });
 
@@ -282,6 +286,7 @@ export default function FinalizeSheet({
             </p>
           )}
 
+          {onBookNext && <label className="same-client-option"><input type="checkbox" checked={bookNext} onChange={e=>setBookNext(e.target.checked)}/><span>Agendar a próxima visita após concluir este atendimento</span></label>}
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -297,7 +302,7 @@ export default function FinalizeSheet({
             >
               {finalizeMutation.isPending
                 ? "Finalizando..."
-                : "Finalizar e cobrar"}
+                : bookNext ? "Concluir e agendar próxima" : "Finalizar e cobrar"}
             </Button>
           </div>
         </div>

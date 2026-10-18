@@ -1,3 +1,5 @@
+import AppointmentActions from "@/components/agenda/AppointmentActions";
+import NextAppointmentSheet from "@/components/agenda/NextAppointmentSheet";
 import PhonePendingBadge from "@/components/ui/PhonePendingBadge";
 import { hasPhone } from "@/lib/phonePending";
 import { useState, useRef, useEffect } from "react";
@@ -27,6 +29,7 @@ export default function MinhaAgenda() {
   const route = "/profissional/agenda";
   const dateParam = typeof search.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.date) && !Number.isNaN(new Date(`${search.date}T12:00:00`).getTime()) && format(new Date(`${search.date}T12:00:00`), "yyyy-MM-dd") === search.date ? search.date : null;
   const selectedDate = dateParam ? new Date(`${dateParam}T12:00:00`) : new Date();
+  const [nextAppointment,setNextAppointment]=useState(null);
   const [showForm, setShowForm] = useState(false);
   const [finalizingApt, setFinalizingApt] = useState(null);
   const queryClient = useQueryClient();
@@ -304,6 +307,7 @@ export default function MinhaAgenda() {
                     <span>{apt.time} • {apt.duration_minutes}min</span>
                     {apt.price > 0 && <span className="font-medium text-foreground tabular-nums">{formatBRL(apt.price)}</span>}
                   </div>
+                  <AppointmentActions appointment={apt}/>
                   <div className="flex gap-1.5 mt-3 flex-wrap">
                     {apt.status === "agendado" && (
                       <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => handleStatusChange(apt, "confirmado")}>Confirmar</Button>
@@ -339,11 +343,13 @@ export default function MinhaAgenda() {
         appointment={null}
       />
 
+      <NextAppointmentSheet appointment={nextAppointment} onClose={()=>setNextAppointment(null)}/>
       <FinalizeSheet
         open={!!finalizingApt}
         onClose={() => { setFinalizingApt(null); updateSearch({ appointment: undefined, view: undefined }); }}
         appointment={finalizingApt}
         services={services}
+        onBookNext={apt=>setNextAppointment(apt)}
         onFinalized={() => queryClient.invalidateQueries({ queryKey: ["professional-appointments"] })}
       />
     </div>

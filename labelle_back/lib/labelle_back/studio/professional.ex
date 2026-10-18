@@ -15,6 +15,20 @@ defmodule LabelleBack.Studio.Professional do
     type "professional"
   end
 
+  # O catálogo público pode ler profissionais ativos, mas não dados pessoais
+  # ou condições comerciais. A administração e a própria profissional mantêm
+  # acesso aos seus dados internos.
+  field_policies do
+    field_policy [:phone, :email, :type, :commission_percent, :rent_value, :user_id] do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if expr(user_id == ^actor(:id))
+    end
+
+    field_policy :* do
+      authorize_if always()
+    end
+  end
+
   actions do
     defaults [:read, :destroy]
 

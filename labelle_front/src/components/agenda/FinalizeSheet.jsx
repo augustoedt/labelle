@@ -41,6 +41,7 @@ export default function FinalizeSheet({
   appointment,
   services,
   onFinalized,
+  canEditPrice = false,
 }) {
   const queryClient = useQueryClient();
   const [addingServiceId, setAddingServiceId] = useState("");
@@ -166,18 +167,22 @@ export default function FinalizeSheet({
                     </Badge>
                   )}
                 </div>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  className="w-24 h-8 text-right"
-                  defaultValue={item.price ?? 0}
-                  onBlur={(e) => {
-                    const price = parseFloat(e.target.value);
-                    if (!Number.isNaN(price) && price !== item.price) {
-                      updateMutation.mutate({ id: item.id, price });
-                    }
-                  }}
-                />
+                {canEditPrice ? (
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    className="w-24 h-8 text-right"
+                    defaultValue={item.price ?? 0}
+                    onBlur={(e) => {
+                      const price = parseFloat(e.target.value);
+                      if (!Number.isNaN(price) && price !== item.price) {
+                        updateMutation.mutate({ id: item.id, price });
+                      }
+                    }}
+                  />
+                ) : (
+                  <span className="font-medium tabular-nums">{formatBRL(item.price, { decimals: 2 })}</span>
+                )}
                 <Button
                   size="icon"
                   variant="ghost"

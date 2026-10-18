@@ -363,6 +363,7 @@ export default function Agenda() {
         onClose={() => { setFinalizingApt(null); updateSearch({ appointment: undefined, view: undefined }); }}
         appointment={finalizingApt}
         services={services}
+        canEditPrice
         onFinalized={() => queryClient.invalidateQueries({ queryKey: ["appointments"] })}
       />
     </div>

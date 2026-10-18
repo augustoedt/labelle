@@ -65,6 +65,9 @@ defmodule LabelleBack.Studio.Appointment do
         :source
       ]
 
+      validate {LabelleBack.Studio.Validations.AdminOnlyFinancialInputs,
+                fields: [:price, :duration_minutes, :payment_method]}
+
       change LabelleBack.Studio.Changes.SnapshotAppointmentFields
 
       # Agendamento feito pela cliente no app público: o estúdio manda a
@@ -193,7 +196,18 @@ defmodule LabelleBack.Studio.Appointment do
       authorize_if LabelleBack.Studio.Checks.ActorIsAppointmentProfessional
     end
 
-    policy action_type([:read, :update]) do
+    policy action_type(:read) do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if expr(professional.user_id == ^actor(:id))
+    end
+
+    # Reatribuição, preço e duração são alteráveis somente pela recepção.
+    # Profissionais continuam com as transições de atendimento próprias.
+    policy action(:update) do
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
+
+    policy action([:finalize, :confirm, :start, :cancel, :send_reminder]) do
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if expr(professional.user_id == ^actor(:id))
     end

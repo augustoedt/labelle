@@ -45,6 +45,9 @@ defmodule LabelleBack.Studio.AppointmentService do
         :unplanned
       ]
 
+      validate {LabelleBack.Studio.Validations.AdminOnlyFinancialInputs,
+                fields: [:price, :duration_minutes]}
+
       change LabelleBack.Studio.Changes.SnapshotServiceItemFields
     end
 
@@ -65,9 +68,14 @@ defmodule LabelleBack.Studio.AppointmentService do
       authorize_if LabelleBack.Studio.Checks.ActorIsServiceItemProfessional
     end
 
-    policy action_type([:read, :update, :destroy]) do
+    policy action_type([:read, :destroy]) do
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if expr(appointment.professional.user_id == ^actor(:id))
+    end
+
+    # Preços dos itens entram diretamente na cobrança do atendimento.
+    policy action(:update) do
+      authorize_if actor_attribute_equals(:role, :admin)
     end
   end
 

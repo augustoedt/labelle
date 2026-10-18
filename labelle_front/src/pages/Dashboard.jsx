@@ -100,7 +100,6 @@ export default function Dashboard() {
           {format(now, "EEEE, d 'de' MMMM", { locale: ptBR })}
         </div>
       </div>
-      <PhonePendingPanel />
       {failed && (
         <p role="alert" className="mx-5 rounded-xl border p-4 text-sm">
           Alguns dados não puderam ser carregados.{" "}
@@ -235,6 +234,7 @@ export default function Dashboard() {
           </section>
         </div>
       </div>
+      <PhonePendingPanel />
     </div>
   );
 }

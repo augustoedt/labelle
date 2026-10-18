@@ -1,56 +1,22 @@
-import { Clock, User } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import Reveal from "@/components/ui/Reveal";
-import { statusColors, statusLabels } from "@/lib/appointmentStatus";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ProfessionalsApi } from "@/server/api";
+import { addDays, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import DaySchedule from "@/components/agenda/DaySchedule";
 
-
-export default function TodayAgenda({ appointments, isLoading }) {
-  if (isLoading) {
-    return (
-      <div className="today-agenda px-5 space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-20 rounded-xl" />
-        ))}
-      </div>
-    );
-  }
-
-  if (!appointments || appointments.length === 0) {
-    return (
-      <div className="px-5 py-8 text-center text-muted-foreground text-sm">
-        Nenhum agendamento para hoje
-      </div>
-    );
-  }
-
-  return (
-    <div className="today-agenda px-5 space-y-3">
-      {appointments.map((apt, i) => (
-        <Reveal key={apt.id} index={i}>
-          <div
-            className="flex items-center gap-3 p-3 bg-card/90 rounded-2xl border border-border/60 shadow-[0_8px_20px_-18px_hsl(var(--foreground)/0.4)]"
-          >
-          <div className="text-center min-w-[50px]">
-            <p className="text-sm font-bold text-foreground">{apt.time}</p>
-            <p className="text-xs text-muted-foreground">{apt.duration_minutes}min</p>
-          </div>
-          <div className="w-px h-10 bg-primary/30 rounded-full" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate">{apt.client_name}</p>
-            <p className="text-xs text-muted-foreground truncate">{apt.service_name}</p>
-            <div className="flex items-center gap-1.5 mt-1">
-              <User className="w-3 h-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{apt.professional_name}</span>
-            </div>
-          </div>
-          <Badge className={cn("text-xs border-0 font-medium", statusColors[apt.status])}>
-            {statusLabels[apt.status]}
-          </Badge>
-          </div>
-        </Reveal>
-      ))}
+export default function TodayAgenda({ appointments = [], isLoading }) {
+  const [date,setDate] = useState(new Date());
+  const query = useQuery({queryKey:["professionals"],queryFn:()=>ProfessionalsApi.list()});
+  return <div className="today-agenda">
+    <div className="schedule-date-nav">
+      <button aria-label="Dia anterior" onClick={()=>setDate(d=>addDays(d,-1))}><ChevronLeft size={18}/></button>
+      <label><span>{format(date,"EEEE, d 'de' MMMM",{locale:ptBR})}</span><input aria-label="Data da agenda" type="date" value={format(date,"yyyy-MM-dd")} onChange={e=>{if(e.target.value) setDate(new Date(e.target.value+"T12:00:00"));}} /></label>
+      <button aria-label="Próximo dia" onClick={()=>setDate(d=>addDays(d,1))}><ChevronRight size={18}/></button>
+      <button onClick={()=>setDate(new Date())}>Hoje</button>
     </div>
-  );
+    {query.isError ? <p role="alert">Não foi possível carregar as profissionais.</p> : <DaySchedule date={date} professionals={query.data || []} appointments={appointments} isLoading={isLoading || query.isPending} />}
+    <p className="schedule-note">Áreas sombreadas indicam horários fora do expediente cadastrado.</p>
+  </div>;
 }

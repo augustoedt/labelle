@@ -6,10 +6,11 @@ import { Plus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format, addDays, subDays } from "date-fns";
+import { format, addDays, subDays, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
+import DaySchedule from "@/components/agenda/DaySchedule";
 import AppointmentForm from "@/components/agenda/AppointmentForm";
 import FinalizeSheet from "@/components/agenda/FinalizeSheet";
 import { toast } from "@/components/ui/use-toast";
@@ -24,6 +25,7 @@ export default function Agenda() {
   const route = "/admin/agenda";
   const dateParam = typeof search.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.date) && !Number.isNaN(new Date(`${search.date}T12:00:00`).getTime()) && format(new Date(`${search.date}T12:00:00`), "yyyy-MM-dd") === search.date ? search.date : null;
   const selectedDate = dateParam ? new Date(`${dateParam}T12:00:00`) : new Date();
+  const [view, setView] = useState("day");
   const [showForm, setShowForm] = useState(false);
   const [editingApt, setEditingApt] = useState(null);
   const [finalizingApt, setFinalizingApt] = useState(null);
@@ -33,7 +35,7 @@ export default function Agenda() {
   const navigateDate = (date) => { if (date !== dateStr) updateSearch({ date }, false); };
   const weekRowRef = useRef(null);
 
-  const { data: appointments = [], isLoading } = useQuery({
+  const { data: appointments = [], isLoading, isError } = useQuery({
     queryKey: ["appointments"],
     queryFn: () => AppointmentsApi.list({ sort: "-date", limit: 500 }),
   });
@@ -66,7 +68,7 @@ export default function Agenda() {
     queryFn: () => ServicesApi.list(),
   });
 
-  const { data: professionals = [] } = useQuery({
+  const { data: professionals = [], isLoading: loadingProfessionals } = useQuery({
     queryKey: ["professionals"],
     queryFn: () => ProfessionalsApi.list(),
   });
@@ -189,6 +191,9 @@ export default function Agenda() {
     return d;
   });
 
+  const calendarStart = startOfWeek(selectedDate, {weekStartsOn: 1});
+  const calendarDays = Array.from({length:28}, (_,i)=>addDays(calendarStart,i));
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -201,20 +206,26 @@ export default function Agenda() {
         }
       />
 
+      <div className="agenda-view-toggle px-5" role="group" aria-label="Visualização da agenda">
+        <Button variant={view === "day" ? "default" : "outline"} onClick={()=>setView("day")}>Dia</Button>
+        <Button variant={view === "fourWeeks" ? "default" : "outline"} onClick={()=>setView("fourWeeks")}>4 semanas</Button>
+        <label>Data <input type="date" aria-label="Selecionar data" value={dateStr} onChange={e=>{if(e.target.value) navigateDate(e.target.value);}} /></label>
+      </div>
+      {isError && <p role="alert" className="px-5 text-destructive">Não foi possível carregar os agendamentos. Atualize a página para tentar novamente.</p>}
       {/* Date navigation */}
       <div className="px-5">
         <div className="flex items-center justify-between mb-3">
-          <Button variant="ghost" size="icon" onClick={() => navigateDate(format(subDays(selectedDate, 7), "yyyy-MM-dd"))} className="h-8 w-8">
-            <ChevronLeft className="w-4 h-4" />
+          <Button variant="ghost" size="icon" onClick={() => navigateDate(format(subDays(selectedDate, view === "fourWeeks" ? 28 : 1), "yyyy-MM-dd"))} className="h-8 w-8">
+            <ChevronLeft className="w-4 h-4" /><span className="sr-only">Período anterior</span>
           </Button>
           <Button variant="ghost" size="sm" onClick={() => navigateDate(format(new Date(), "yyyy-MM-dd"))} className="text-xs text-primary">
             Hoje
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => navigateDate(format(addDays(selectedDate, 7), "yyyy-MM-dd"))} className="h-8 w-8">
-            <ChevronRight className="w-4 h-4" />
+          <Button variant="ghost" size="icon" onClick={() => navigateDate(format(addDays(selectedDate, view === "fourWeeks" ? 28 : 1), "yyyy-MM-dd"))} className="h-8 w-8">
+            <ChevronRight className="w-4 h-4" /><span className="sr-only">Próximo período</span>
           </Button>
         </div>
-        <div ref={weekRowRef} className="flex gap-1 overflow-x-auto -mx-5 px-5 pb-1">
+        {view === "day" && <div ref={weekRowRef} className="flex gap-1 overflow-x-auto -mx-5 px-5 pb-1">
           {isLoading ? (
             Array.from({ length: 7 }).map((_, i) => (
               <Skeleton key={i} className="h-14 flex-1 rounded-xl" />
@@ -248,11 +259,27 @@ export default function Agenda() {
             );
           })
           )}
-        </div>
+        </div>}
       </div>
 
-      {/* Appointments list */}
-      <div className="px-5 space-y-3">
+      {view === "fourWeeks" ? <div className="px-5">
+        <p className="mb-3 text-sm font-medium">{format(calendarStart,"dd/MM")} – {format(addDays(calendarStart,27),"dd/MM/yyyy")}</p>
+        <div className="four-week-scroll"><div className="four-week-calendar">
+          {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map(day=><div className="four-week-heading" key={day}>{day}</div>)}
+          {calendarDays.map(day=>{
+            const key=format(day,"yyyy-MM-dd"), daily=appointments.filter(a=>a.date===key);
+            return <button key={key} className={`four-week-day ${key === format(new Date(),"yyyy-MM-dd") ? "is-today" : ""}`} onClick={()=>{navigateDate(format(day,"yyyy-MM-dd"));setView("day");}} aria-label={`${format(day,"dd/MM/yyyy")}, ${daily.length} agendamentos`}>
+              <strong>{format(day,"d MMM",{locale:ptBR})}</strong>
+              <span className="four-week-count">{daily.length ? `${daily.length} agendamento${daily.length>1 ? "s" : ""}` : "Sem agendamentos"}</span>
+              {daily.slice().sort((a,b)=>(a.time || "").localeCompare(b.time || "")).slice(0,3).map(a=><span className={`four-week-event ${a.status === "cancelado" ? "is-cancelled" : ""}`} key={a.id}>{a.time?.slice(0,5)} {a.client_name}<small>{a.professional_name}</small></span>)}
+              {daily.length>3 && <small>+{daily.length-3} · ver dia</small>}
+            </button>;
+          })}
+        </div></div>
+      </div> : <div className="px-5"><DaySchedule date={selectedDate} professionals={professionals} appointments={appointments} isLoading={isLoading || loadingProfessionals} onAppointment={apt=>updateSearch({appointment:apt.id,view:"edit"},false)} /></div>}
+
+      {/* Appointments list and existing status actions */}
+      {view === "day" && <div className="px-5 space-y-3">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-28 rounded-2xl" />
@@ -318,7 +345,7 @@ export default function Agenda() {
             </div>
           ))
         )}
-      </div>
+      </div>}
 
       <AppointmentForm
         open={showForm}
@@ -328,6 +355,7 @@ export default function Agenda() {
         professionals={professionals}
         clients={clients}
         appointment={editingApt}
+        initialDate={dateStr}
       />
 
       <FinalizeSheet

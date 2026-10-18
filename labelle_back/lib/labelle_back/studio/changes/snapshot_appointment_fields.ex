@@ -9,6 +9,10 @@ defmodule LabelleBack.Studio.Changes.SnapshotAppointmentFields do
     |> Ash.Changeset.before_action(&snapshot_service/1)
   end
 
+  # O agendamento público resolve a cliente apenas pelo telefone informado;
+  # nunca copiar dados de um client_id que tenha chegado antes dessa validação.
+  defp snapshot_client(%{action: %{name: :book_online}} = changeset), do: changeset
+
   defp snapshot_client(changeset) do
     with client_id when not is_nil(client_id) <-
            Ash.Changeset.get_attribute(changeset, :client_id),

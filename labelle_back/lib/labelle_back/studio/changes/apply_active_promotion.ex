@@ -1,8 +1,7 @@
 defmodule LabelleBack.Studio.Changes.ApplyActivePromotion do
   @moduledoc """
-  Aplica sobre o preço do agendamento o desconto da promoção ativa do
-  serviço — espelha o cálculo que o app da cliente exibe antes de
-  confirmar (primeira promoção com `is_active == true` para o serviço).
+  Aplica sobre o preço do agendamento a promoção elegível do serviço,
+  considerando a data do salão (UTC-3) e escolhendo o menor UUID.
 
   Deve rodar DEPOIS do `SnapshotAppointmentFields`, que define o preço
   cheio do serviço. Usada apenas no agendamento online (`book_online`),
@@ -30,8 +29,15 @@ defmodule LabelleBack.Studio.Changes.ApplyActivePromotion do
   end
 
   defp active_promotion_for(service_id) do
+    today = DateTime.utc_now() |> DateTime.add(-3 * 60 * 60, :second) |> DateTime.to_date()
+
     Promotion
-    |> Ash.Query.filter(is_active == true and service_id == ^service_id)
+    |> Ash.Query.filter(
+      is_active == true and service_id == ^service_id and
+        (is_nil(start_date) or start_date <= ^today) and
+        (is_nil(end_date) or end_date >= ^today)
+    )
+    |> Ash.Query.sort(id: :asc)
     |> Ash.Query.limit(1)
     |> Ash.read_one!(authorize?: false)
   end

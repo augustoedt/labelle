@@ -113,6 +113,24 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
     }
   end
 
+  defp create_promotion!(service, attrs) do
+    defaults = %{
+      name: "Promo teste",
+      discount_type: :value,
+      discount_value: Decimal.new("10"),
+      service_id: service.id,
+      is_active: true
+    }
+
+    Promotion
+    |> Ash.Changeset.for_create(:create, Map.merge(defaults, attrs), authorize?: false)
+    |> Ash.create!()
+  end
+
+  defp salon_today do
+    DateTime.utc_now() |> DateTime.add(-3 * 60 * 60, :second) |> DateTime.to_date()
+  end
+
   describe "book_online (app público, sem login)" do
     test "cria com status/origem/preço travados pelo servidor" do
       professional = create_professional!(create_user!(:profissional))
@@ -181,6 +199,73 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
 
       assert Decimal.equal?(percent_booking.price, Decimal.new("90.00"))
       assert Decimal.equal?(value_booking.price, Decimal.new("70"))
+    end
+
+    test "ignora promoções futuras e expiradas" do
+      professional = create_professional!(create_user!(:profissional))
+      service = create_service!(%{price: Decimal.new("100")})
+      today = salon_today()
+
+      create_promotion!(service, %{name: "Futura", start_date: Date.add(today, 1)})
+      create_promotion!(service, %{name: "Expirada", end_date: Date.add(today, -1)})
+
+      booking =
+        Appointment
+        |> Ash.Changeset.for_create(:book_online, book_online_attrs(professional, service))
+        |> Ash.create!()
+
+      assert Decimal.equal?(booking.price, Decimal.new("100"))
+    end
+
+    test "escolhe a promoção elegível pelo menor UUID" do
+      professional = create_professional!(create_user!(:profissional))
+      service = create_service!(%{price: Decimal.new("100")})
+
+      first =
+        create_promotion!(service, %{name: "Desconto 10", discount_value: Decimal.new("10")})
+
+      second =
+        create_promotion!(service, %{name: "Desconto 30", discount_value: Decimal.new("30")})
+
+      selected = Enum.min_by([first, second], & &1.id)
+      expected_price = Decimal.sub(Decimal.new("100"), selected.discount_value)
+
+      booking =
+        Appointment
+        |> Ash.Changeset.for_create(:book_online, book_online_attrs(professional, service))
+        |> Ash.create!()
+
+      assert Decimal.equal?(booking.price, expected_price)
+    end
+
+    test "client_id forjado não permite copiar o telefone da cliente" do
+      professional = create_professional!(create_user!(:profissional))
+      service = create_service!(%{})
+      victim = create_client!()
+
+      attrs =
+        book_online_attrs(professional, service)
+        |> Map.delete(:client_phone)
+        |> Map.put(:client_id, victim.id)
+
+      assert {:error, error} =
+               Appointment
+               |> Ash.Changeset.for_create(:book_online, attrs)
+               |> Ash.create()
+
+      assert inspect(error) =~ "client_phone"
+      refute inspect(error) =~ victim.phone
+
+      # Defesa em profundidade: mesmo um changeset que force o ID não pode
+      # usar esse registro para preencher o telefone antes da validação.
+      assert {:error, forced_error} =
+               Appointment
+               |> Ash.Changeset.for_create(:book_online, Map.delete(attrs, :client_id))
+               |> Ash.Changeset.force_change_attribute(:client_id, victim.id)
+               |> Ash.create()
+
+      assert inspect(forced_error) =~ "client_phone"
+      refute inspect(forced_error) =~ victim.phone
     end
   end
 

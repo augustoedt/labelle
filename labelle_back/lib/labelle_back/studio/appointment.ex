@@ -86,7 +86,6 @@ defmodule LabelleBack.Studio.Appointment do
     # nem com preço arbitrário.
     create :book_online do
       accept [
-        :client_id,
         :client_name,
         :client_phone,
         :professional_id,

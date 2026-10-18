@@ -163,7 +163,12 @@ defmodule LabelleBack.Studio.Appointment do
     update :finalize do
       require_atomic? false
 
-      accept [:payment_method]
+      accept [:payment_method, :tip_mode, :tip_input, :professional_referral]
+
+      validate {LabelleBack.Studio.Validations.AdminOnlyFinancialInputs,
+                fields: [:professional_referral]}
+
+      change LabelleBack.Studio.Changes.CalculateCompletionExtras
 
       validate present(:payment_method) do
         message "informe a forma de pagamento para finalizar o atendimento"
@@ -279,6 +284,23 @@ defmodule LabelleBack.Studio.Appointment do
     attribute :professional_name, :string, public?: true
     attribute :service_name, :string, public?: true
     attribute :variant_name, :string, public?: true
+
+    attribute :tip_mode, :atom,
+      public?: true,
+      allow_nil?: false,
+      default: :amount,
+      constraints: [one_of: [:amount, :percent]]
+
+    attribute :tip_input, :decimal,
+      public?: true,
+      allow_nil?: false,
+      default: 0,
+      constraints: [min: 0]
+
+    attribute :tip_amount, :decimal, public?: true, allow_nil?: false, default: 0
+    attribute :professional_referral, :boolean, public?: true, allow_nil?: false, default: false
+    attribute :referral_bonus_percent, :decimal, public?: true, allow_nil?: false, default: 0
+
     attribute :commission_percent, :decimal, public?: true, constraints: [min: 0, max: 100]
     attribute :date, :date, allow_nil?: false, public?: true
     attribute :time, :time, allow_nil?: false, public?: true

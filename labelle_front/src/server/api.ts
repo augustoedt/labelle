@@ -258,10 +258,13 @@ export const completeAppointmentPhone = createServerFn({ method: 'POST' })
   .validator((data: { id: string; phone: string; sameClientAppointmentIds?: string[] }) => data)
   .handler(({ data }) => jsonApiAction('appointments', 'appointment', data.id, 'complete_phone', { client_phone: data.phone, same_client_appointment_ids: data.sameClientAppointmentIds || [] }))
 export const finalizeAppointment = createServerFn({ method: 'POST' })
-  .validator((data: { id: string; payment_method: string }) => data)
+  .validator((data: { id: string; payment_method: string; tip_mode?: string; tip_input?: number; professional_referral?: boolean }) => data)
   .handler(({ data }) =>
     jsonApiAction('appointments', 'appointment', data.id, 'finalize', {
       payment_method: data.payment_method,
+      ...(data.tip_mode !== undefined ? {tip_mode:data.tip_mode} : {}),
+      ...(data.tip_input !== undefined ? {tip_input:data.tip_input} : {}),
+      ...(data.professional_referral !== undefined ? {professional_referral:data.professional_referral} : {}),
     }),
   )
 // Confirmar e enviar lembrete a partir da visão da profissional passam pelo

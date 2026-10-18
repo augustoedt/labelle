@@ -817,4 +817,105 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
                Decimal.new("40")
     end
   end
+
+  describe "gorjetas e indicação" do
+    test "gorjeta é cobrada separadamente e bônus depende somente do pagamento" do
+      admin = create_user!(:admin)
+      pro = create_professional!(create_user!(:profissional))
+      service = create_service!(%{commission_percent: Decimal.new("40")})
+
+      for {payment, mode, input, tip, bonus} <- [
+            {:pix, :amount, 12, "12", "15"},
+            {:dinheiro, :percent, 10, "20", "15"},
+            {:debito, :percent, 5, "10", "10"},
+            {:credito, :amount, 8, "8", "10"}
+          ] do
+        a = create_appointment!(pro, service)
+
+        AppointmentService
+        |> Ash.Changeset.for_create(:create, %{appointment_id: a.id, service_id: service.id},
+          authorize?: false
+        )
+        |> Ash.create!()
+
+        done =
+          a
+          |> Ash.Changeset.for_update(:confirm, %{}, authorize?: false)
+          |> Ash.update!()
+          |> Ash.Changeset.for_update(:start, %{}, authorize?: false)
+          |> Ash.update!()
+          |> Ash.Changeset.for_update(
+            :finalize,
+            %{
+              payment_method: payment,
+              tip_mode: mode,
+              tip_input: input,
+              professional_referral: true
+            },
+            actor: admin
+          )
+          |> Ash.update!()
+
+        assert Decimal.equal?(done.commission_percent, Decimal.new("40"))
+        assert Decimal.equal?(done.tip_amount, Decimal.new(tip))
+        assert Decimal.equal?(done.referral_bonus_percent, Decimal.new(bonus))
+
+        [[charged]] =
+          LabelleBack.Repo.query!("SELECT amount FROM transactions WHERE appointment_id = $1", [
+            Ecto.UUID.dump!(a.id)
+          ]).rows
+
+        assert Decimal.equal?(charged, Decimal.add(Decimal.new(200), Decimal.new(tip)))
+      end
+    end
+
+    test "profissional não pode marcar indicação nem alterar taxa, mas registra gorjeta" do
+      user = create_user!(:profissional)
+      pro = create_professional!(user)
+      service = create_service!(%{commission_percent: Decimal.new("30")})
+
+      a =
+        create_appointment!(pro, service)
+        |> Ash.Changeset.for_update(:confirm, %{}, authorize?: false)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(:start, %{}, authorize?: false)
+        |> Ash.update!()
+
+      assert {:error, _} =
+               a
+               |> Ash.Changeset.for_update(
+                 :finalize,
+                 %{payment_method: :pix, professional_referral: true},
+                 actor: user
+               )
+               |> Ash.update()
+
+      assert {:error, _} =
+               a
+               |> Ash.Changeset.for_update(:finalize, %{payment_method: :pix, tip_input: -1},
+                 actor: user
+               )
+               |> Ash.update()
+
+      done =
+        a
+        |> Ash.Changeset.for_update(
+          :finalize,
+          %{payment_method: :credito, tip_mode: :percent, tip_input: 10},
+          actor: user
+        )
+        |> Ash.update!()
+
+      assert Decimal.equal?(done.commission_percent, Decimal.new(30))
+      assert Decimal.equal?(done.referral_bonus_percent, Decimal.new(0))
+      assert Decimal.equal?(done.tip_amount, Decimal.new(10))
+
+      assert {:error, _} =
+               done
+               |> Ash.Changeset.for_update(:finalize, %{payment_method: :pix, tip_input: 50},
+                 actor: user
+               )
+               |> Ash.update()
+    end
+  end
 end

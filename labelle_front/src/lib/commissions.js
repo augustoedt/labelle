@@ -7,5 +7,8 @@ export function commissionLine(record) {
 }
 export function appointmentCommission(appointment,items=[]) {
  const lines=[appointment,...items.filter(i=>i.appointment_id===appointment.id)].map(commissionLine);
- return {revenue:roundMoney(lines.reduce((s,l)=>s+l.price,0)),amount:roundMoney(lines.reduce((s,l)=>s+(l.amount || 0),0)),missing:lines.some(l=>l.missing)};
+ const servicesRevenue=roundMoney(lines.reduce((s,l)=>s+l.price,0));
+ const tip=Number(appointment.tip_amount || 0);
+ const referralBonus=roundMoney(servicesRevenue*Number(appointment.referral_bonus_percent || 0)/100);
+ return {servicesRevenue,tip,referralBonus,revenue:roundMoney(servicesRevenue+tip),amount:roundMoney(lines.reduce((s,l)=>s+(l.amount || 0),0)+referralBonus+tip),missing:lines.some(l=>l.missing)};
 }

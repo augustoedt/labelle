@@ -67,6 +67,8 @@ export default function MinhasComissoes() {
   const undefinedCommissions = myDone.filter(a=>appointmentCommission(a,extraItems).missing).length;
 
   const totalRevenue = myDone.reduce((s, a) => s + revenueFor(a), 0);
+  const totalTips = myDone.reduce((s,a)=>s+Number(a.tip_amount || 0),0);
+  const totalReferralBonus = myDone.reduce((s,a)=>s+appointmentCommission(a,extraItems).referralBonus,0);
   const myCommission = myDone.reduce((s, a) => s + commissionFor(a), 0);
 
   if (isLoadingProfessionals) {
@@ -96,6 +98,7 @@ export default function MinhasComissoes() {
   return (
     <div className="space-y-4">
       {undefinedCommissions>0 && <p className="mx-5 text-sm text-amber-700">{undefinedCommissions} atendimento(s) aguardam definição de comissão pela administração. O total considera somente comissões registradas.</p>}
+      <p className="mx-5 text-sm text-muted-foreground">Inclui {formatBRL(totalTips,{decimals:2})} em gorjetas e {formatBRL(totalReferralBonus,{decimals:2})} em bônus por indicação. Comissão base calculada por serviço.</p>
       <PageHeader
         title="Minhas Comissões"
         subtitle={format(selectedMonth, "MMMM yyyy", { locale: ptBR })}

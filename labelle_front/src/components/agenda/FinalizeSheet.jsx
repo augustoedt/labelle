@@ -1,3 +1,4 @@
+import {appointmentCommission,roundMoney} from "@/lib/commissions";
 import CommissionEditor from "@/components/agenda/CommissionEditor";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -59,6 +60,10 @@ export default function FinalizeSheet({
     (v) => v.service_id === addingServiceId && v.is_active !== false,
   );
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [tipMode,setTipMode]=useState("amount");
+  const [tipInput,setTipInput]=useState("");
+  const [referral,setReferral]=useState(false);
+  useEffect(()=>{setTipMode("amount");setTipInput("");setReferral(Boolean(appointment?.professional_referral));setPaymentMethod("");},[appointment?.id,open]);
 
   const { data: items = [] } = useQuery({
     queryKey: ["appointment-services", appointment?.id],
@@ -107,6 +112,9 @@ export default function FinalizeSheet({
       AppointmentsApi.finalize({
         id: appointment.id,
         payment_method: paymentMethod,
+        tip_mode: tipMode,
+        tip_input: Number(tipInput || 0),
+        ...(canEditPrice ? {professional_referral:referral} : {}),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
@@ -114,6 +122,8 @@ export default function FinalizeSheet({
         queryKey: ["professional-appointments"],
       });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["commission-appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["commission-items"] });
       onFinalized?.();
       onClose();
       if(bookNext) onBookNext?.(appointment);
@@ -124,6 +134,8 @@ export default function FinalizeSheet({
 
   const total =
     (appointment.price || 0) + items.reduce((s, i) => s + (i.price || 0), 0);
+  const tipAmount=roundMoney(tipMode === "percent" ? total*Number(tipInput || 0)/100 : Number(tipInput || 0));
+  const commissionPreview=appointmentCommission({...appointment,tip_amount:tipAmount,referral_bonus_percent:referral ? (["debito","credito"].includes(paymentMethod) ? 10 : 15) : 0},items);
   const availableServices = (services || []).filter((s) => {
     if (s.is_active === false || !variantsQuery.isSuccess) return false;
     const serviceVariants = (variantsQuery.data || []).filter(
@@ -258,11 +270,20 @@ export default function FinalizeSheet({
               novamente.
             </p>
           )}
+          <div className="space-y-2 rounded-xl border p-3">
+            <Label>Gorjeta — repassada integralmente à profissional</Label>
+            <Select value={tipMode} onValueChange={setTipMode}><SelectTrigger aria-label="Tipo de gorjeta"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="amount">Valor em R$</SelectItem><SelectItem value="percent">Percentual dos serviços</SelectItem></SelectContent></Select>
+            <Input aria-label="Gorjeta" type="number" min="0" step="0.01" value={tipInput} onChange={e=>setTipInput(e.target.value)} placeholder="0" />
+            {canEditPrice && <label className="flex gap-2 text-sm"><input type="checkbox" checked={referral} onChange={e=>setReferral(e.target.checked)} />Cliente indicada por esta profissional neste atendimento (admin)</label>}
+            {referral && <p className="text-sm">Bônus de indicação: +{["debito","credito"].includes(paymentMethod) ? 10 : 15} pontos percentuais sobre os serviços. No cartão, a diferença de 5 pontos cobre a máquina; sem desconto adicional.</p>}
+            <p className="text-sm">Gorjeta: {formatBRL(tipAmount,{decimals:2})} · Bônus: {formatBRL(commissionPreview.referralBonus,{decimals:2})} · Total da profissional: {formatBRL(commissionPreview.amount,{decimals:2})}{commissionPreview.missing ? " + comissão base pendente" : ""}</p>
+            <p className="text-xs text-muted-foreground">A comissão base vem de cada serviço ou opção P/M/G. A gorjeta é somada à cobrança.</p>
+          </div>
           {/* Total */}
           <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl p-3">
             <span className="text-sm font-medium">Total a cobrar</span>
             <span className="text-lg font-heading font-bold tracking-tight text-primary tabular-nums">
-              {formatBRL(total, { decimals: 2 })}
+              {formatBRL(total + tipAmount, { decimals: 2 })}
             </span>
           </div>
 
@@ -300,7 +321,7 @@ export default function FinalizeSheet({
             </Button>
             <Button
               className="rounded-xl h-12 flex-1 font-semibold"
-              disabled={!paymentMethod || finalizeMutation.isPending}
+              disabled={!paymentMethod || !Number.isFinite(Number(tipInput)) || Number(tipInput)<0 || finalizeMutation.isPending}
               onClick={() => finalizeMutation.mutate()}
             >
               {finalizeMutation.isPending

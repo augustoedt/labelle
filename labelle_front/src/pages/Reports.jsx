@@ -75,6 +75,8 @@ export default function Reports() {
       "Profissional": a.professional_name,
       "Valor (R$)": a.price || 0,
       "Comissão registrada (R$)": appointmentCommission(a,commissionItems).amount,
+      "Gorjeta (R$)": appointmentCommission(a,commissionItems).tip,
+      "Bônus indicação (R$)": appointmentCommission(a,commissionItems).referralBonus,
       "Comissão pendente": appointmentCommission(a,commissionItems).missing ? "Sim" : "Não",
       "Status": a.status,
       "Pagamento": a.payment_method || "",
@@ -111,7 +113,7 @@ export default function Reports() {
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(svcData), "Serviços");
 
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(appointments.filter(a=>a.status==="concluido").map(a=>({Data:a.date,Cliente:a.client_name,Profissional:a.professional_name,Receita:appointmentCommission(a,commissionItems).revenue,"Comissão registrada":appointmentCommission(a,commissionItems).amount,"Percentual pendente":appointmentCommission(a,commissionItems).missing ? "Sim" : "Não"}))), "Comissões");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(appointments.filter(a=>a.status==="concluido").map(a=>({Data:a.date,Cliente:a.client_name,Profissional:a.professional_name,Receita:appointmentCommission(a,commissionItems).revenue,"Comissão registrada":appointmentCommission(a,commissionItems).amount,"Gorjeta":appointmentCommission(a,commissionItems).tip,"Bônus indicação":appointmentCommission(a,commissionItems).referralBonus,"Percentual pendente":appointmentCommission(a,commissionItems).missing ? "Sim" : "Não"}))), "Comissões");
     XLSX.writeFile(wb, `relatorio-la-belle-${format(new Date(), "yyyy-MM")}.xlsx`);
   };
 

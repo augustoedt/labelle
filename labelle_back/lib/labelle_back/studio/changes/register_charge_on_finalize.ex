@@ -31,6 +31,8 @@ defmodule LabelleBack.Studio.Changes.RegisterChargeOnFinalize do
         Decimal.add(acc, item.price || Decimal.new(0))
       end)
 
+    total = Decimal.add(total, appointment.tip_amount || Decimal.new(0))
+
     service_names =
       [appointment.service_name | Enum.map(items, & &1.service_name)]
       |> Enum.reject(&is_nil/1)

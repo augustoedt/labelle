@@ -1481,3 +1481,13 @@ button.schedule-slot:hover,button.schedule-slot:focus-visible { background:#e9d3
 .booking-search-results small { display:block;color:#796960;font-size:11px; }
 
 @media(min-width:1024px) { .dashboard-stats { grid-template-columns:repeat(5,minmax(0,1fr)); } }
+
+.phone-completion-sheet { display:flex;flex-direction:column;gap:14px;padding:18px 0;font-size:13px; }
+.phone-completion-sheet>label { font-weight:600; }
+.phone-completion-sheet input[type=tel] { display:block;width:100%;border:1px solid #c8b4ab;border-radius:8px;padding:12px;margin-top:8px; }
+.phone-completion-sheet fieldset { border:1px solid #dcc6be;border-radius:10px;padding:12px; }
+.phone-completion-sheet legend { font-weight:600; }
+.same-client-option { display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #f0e1db; }
+.same-client-option input { width:18px;height:18px;flex-shrink:0; }
+.phone-completion-sheet p { color:#796960; }
+.phone-completion-sheet [role=alert] { color:#b42323; }

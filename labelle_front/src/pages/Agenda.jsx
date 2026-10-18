@@ -1,3 +1,4 @@
+import AppointmentPhoneSheet from "@/components/clients/AppointmentPhoneSheet";
 import PhonePendingBadge from "@/components/ui/PhonePendingBadge";
 import { hasPhone } from "@/lib/phonePending";
 import { useState, useRef, useEffect } from "react";
@@ -28,6 +29,7 @@ export default function Agenda() {
   const dateParam = typeof search.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.date) && !Number.isNaN(new Date(`${search.date}T12:00:00`).getTime()) && format(new Date(`${search.date}T12:00:00`), "yyyy-MM-dd") === search.date ? search.date : null;
   const selectedDate = dateParam ? new Date(`${dateParam}T12:00:00`) : new Date();
   const [view, setView] = useState("day");
+  const [phoneAppointment,setPhoneAppointment]=useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingApt, setEditingApt] = useState(null);
   const [finalizingApt, setFinalizingApt] = useState(null);
@@ -278,7 +280,7 @@ export default function Agenda() {
             </button>;
           })}
         </div></div>
-      </div> : <div className="px-5"><DaySchedule date={selectedDate} professionals={professionals} appointments={appointments} isLoading={isLoading || loadingProfessionals} onAppointment={apt=>updateSearch({appointment:apt.id,view:"edit"},false)} onSlot={slot=>updateSearch({date:slot.date,time:slot.time,professional:slot.professional_id,view:"new",appointment:undefined},false)} /></div>}
+      </div> : <div className="px-5"><DaySchedule date={selectedDate} professionals={professionals} appointments={appointments} isLoading={isLoading || loadingProfessionals} onAppointment={apt=>hasPhone(apt.client_phone) ? updateSearch({appointment:apt.id,view:"edit"},false) : setPhoneAppointment(apt)} onSlot={slot=>updateSearch({date:slot.date,time:slot.time,professional:slot.professional_id,view:"new",appointment:undefined},false)} /></div>}
 
       {/* Appointments list and existing status actions */}
       {view === "day" && <div className="px-5 space-y-3">
@@ -349,6 +351,7 @@ export default function Agenda() {
         )}
       </div>}
 
+      <AppointmentPhoneSheet appointment={phoneAppointment} onClose={()=>setPhoneAppointment(null)}/>
       <AppointmentForm
         open={showForm}
         onClose={() => { setShowForm(false); setEditingApt(null); updateSearch({ appointment: undefined, view: undefined }); }}

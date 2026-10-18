@@ -468,4 +468,110 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
       assert updated.client_id
     end
   end
+
+  describe "associação confirmada por celular" do
+    test "número existente reutiliza cliente sem alterar seu nome e associa somente ids confirmados" do
+      admin = create_user!(:admin)
+      pro = create_professional!(create_user!(:profissional))
+      service = create_service!(%{})
+      client = create_client!()
+
+      a =
+        create_appointment!(pro, service, %{client_id: nil, client_phone: nil, client_name: "Ana"})
+
+      b =
+        create_appointment!(pro, service, %{
+          client_id: nil,
+          client_phone: nil,
+          client_name: " ana "
+        })
+
+      c =
+        create_appointment!(pro, service, %{client_id: nil, client_phone: nil, client_name: "Ana"})
+
+      updated =
+        a
+        |> Ash.Changeset.for_update(
+          :complete_phone,
+          %{client_phone: client.phone, same_client_appointment_ids: [b.id]},
+          actor: admin
+        )
+        |> Ash.update!()
+
+      assert updated.client_id == client.id
+      assert Ash.get!(Appointment, b.id, authorize?: false).client_id == client.id
+      assert is_nil(Ash.get!(Appointment, c.id, authorize?: false).client_id)
+      assert Ash.get!(Client, client.id, authorize?: false).name == client.name
+    end
+
+    test "grupo com nome diferente é rejeitado e reverte telefone e vínculo do principal" do
+      admin = create_user!(:admin)
+      pro = create_professional!(create_user!(:profissional))
+      service = create_service!(%{})
+
+      a =
+        create_appointment!(pro, service, %{client_id: nil, client_phone: nil, client_name: "Ana"})
+
+      b =
+        create_appointment!(pro, service, %{
+          client_id: nil,
+          client_phone: nil,
+          client_name: "Outra pessoa"
+        })
+
+      assert {:error, _} =
+               a
+               |> Ash.Changeset.for_update(
+                 :complete_phone,
+                 %{client_phone: "11988771234", same_client_appointment_ids: [b.id]},
+                 actor: admin
+               )
+               |> Ash.update()
+
+      assert is_nil(Ash.get!(Appointment, a.id, authorize?: false).client_id)
+      assert is_nil(Ash.get!(Appointment, a.id, authorize?: false).client_phone)
+    end
+
+    test "profissional não associa atendimento de outra profissional e operação é revertida" do
+      owner = create_user!(:profissional)
+      pro = create_professional!(owner)
+      other = create_professional!(create_user!(:profissional))
+      service = create_service!(%{})
+
+      a =
+        create_appointment!(pro, service, %{client_id: nil, client_phone: nil, client_name: "Ana"})
+
+      b =
+        create_appointment!(other, service, %{
+          client_id: nil,
+          client_phone: nil,
+          client_name: "Ana"
+        })
+
+      assert {:error, _} =
+               a
+               |> Ash.Changeset.for_update(
+                 :complete_phone,
+                 %{client_phone: "11988771234", same_client_appointment_ids: [b.id]},
+                 actor: owner
+               )
+               |> Ash.update()
+
+      assert is_nil(Ash.get!(Appointment, a.id, authorize?: false).client_id)
+    end
+  end
+
+  test "upsert pelo celular normalizado não duplica nem sobrescreve cliente existente" do
+    client = create_client!()
+
+    reused =
+      Client
+      |> Ash.Changeset.for_create(:create, %{name: "Não sobrescrever", phone: client.phone},
+        authorize?: false
+      )
+      |> Ash.create!(upsert?: true, upsert_identity: :unique_phone_normalized, upsert_fields: [])
+
+    assert reused.id == client.id
+    assert Ash.get!(Client, client.id, authorize?: false).name == client.name
+  end
 end

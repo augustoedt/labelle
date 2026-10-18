@@ -123,9 +123,11 @@ defmodule LabelleBack.Studio.Appointment do
 
     update :complete_phone do
       require_atomic? false
+      argument :same_client_appointment_ids, {:array, :uuid}, default: []
       accept [:client_phone]
       validate present(:client_phone)
       change LabelleBack.Studio.Changes.ResolveBookingClient
+      change LabelleBack.Studio.Changes.LinkConfirmedClientAppointments
     end
 
     update :finalize do

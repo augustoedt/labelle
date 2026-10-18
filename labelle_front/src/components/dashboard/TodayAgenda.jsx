@@ -1,3 +1,5 @@
+import AppointmentPhoneSheet from "@/components/clients/AppointmentPhoneSheet";
+import { hasPhone } from "@/lib/phonePending";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -9,6 +11,7 @@ import DaySchedule from "@/components/agenda/DaySchedule";
 
 export default function TodayAgenda({ appointments = [], isLoading }) {
   const navigate = useNavigate();
+  const [phoneAppointment,setPhoneAppointment]=useState(null);
   const [date,setDate] = useState(new Date());
   const query = useQuery({queryKey:["professionals"],queryFn:()=>ProfessionalsApi.list()});
   return <div className="today-agenda">
@@ -18,7 +21,8 @@ export default function TodayAgenda({ appointments = [], isLoading }) {
       <button aria-label="Próximo dia" onClick={()=>setDate(d=>addDays(d,1))}><ChevronRight size={18}/></button>
       <button onClick={()=>setDate(new Date())}>Hoje</button>
     </div>
-    {query.isError ? <p role="alert">Não foi possível carregar as profissionais.</p> : <DaySchedule date={date} professionals={query.data || []} appointments={appointments} isLoading={isLoading || query.isPending} onSlot={slot=>navigate({to:"/admin/agenda",search:{date:slot.date,time:slot.time,professional:slot.professional_id,view:"new"}})} />}
+    {query.isError ? <p role="alert">Não foi possível carregar as profissionais.</p> : <DaySchedule date={date} professionals={query.data || []} appointments={appointments} isLoading={isLoading || query.isPending} onAppointment={apt=>hasPhone(apt.client_phone) ? navigate({to:"/admin/agenda",search:{date:apt.date,appointment:apt.id,view:"edit"}}) : setPhoneAppointment(apt)} onSlot={slot=>navigate({to:"/admin/agenda",search:{date:slot.date,time:slot.time,professional:slot.professional_id,view:"new"}})} />}
+    <AppointmentPhoneSheet appointment={phoneAppointment} onClose={()=>setPhoneAppointment(null)}/>
     <p className="schedule-note">Áreas sombreadas indicam horários fora do expediente cadastrado.</p>
   </div>;
 }

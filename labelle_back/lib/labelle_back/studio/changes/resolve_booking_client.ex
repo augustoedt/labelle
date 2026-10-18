@@ -37,7 +37,7 @@ defmodule LabelleBack.Studio.Changes.ResolveBookingClient do
       %{name: String.trim(name), phone: phone, source: :app_cliente, is_active: true},
       authorize?: false
     )
-    |> Ash.create()
+    |> Ash.create(upsert?: true, upsert_identity: :unique_phone_normalized, upsert_fields: [])
   end
 
   defp create_if_missing(client, _name, _phone), do: {:ok, client}

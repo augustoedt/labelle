@@ -123,12 +123,12 @@ export default function ClientHome({ clientName, onNavigate, onCategory }) {
         </div>
         <div className="hero-image">
           <img
-            src="/images/salon-hero.webp"
-            alt="Ambiente de beleza em tons de bege e cobre, imagem ilustrativa"
+            src="/images/salao-banner-cafe.webp"
+            alt="Banner La Belle Studio com ambiente do salão e cantinho do café"
             fetchPriority="high"
           />
           <span className="hero-image-note">
-            Inspiração La Belle · imagem ilustrativa
+            La Belle Studio · arte baseada no salão
           </span>
         </div>
         <div className="mobile-hero-bottom">

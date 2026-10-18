@@ -241,7 +241,9 @@ h2 em {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 62% 50%;
+  object-position: right center;
+  opacity: 0.88;
+  filter: saturate(0.72);
 }
 .hero-image:before {
   content: "";
@@ -1120,7 +1122,7 @@ h2 em {
     inset: 0 0 0 23%;
   }
   .hero-image > img {
-    object-position: 57% center;
+    object-position: right center;
   }
   .hero-image:before {
     background: linear-gradient(

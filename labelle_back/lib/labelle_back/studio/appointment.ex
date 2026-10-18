@@ -146,6 +146,11 @@ defmodule LabelleBack.Studio.Appointment do
       change LabelleBack.Studio.Changes.ValidateOnlineAvailability
     end
 
+    update :set_commission do
+      accept [:commission_percent]
+      validate present(:commission_percent)
+    end
+
     update :complete_phone do
       require_atomic? false
       argument :same_client_appointment_ids, {:array, :uuid}, default: []
@@ -218,6 +223,10 @@ defmodule LabelleBack.Studio.Appointment do
   end
 
   policies do
+    policy action(:set_commission) do
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
+
     # Única porta de entrada anônima: a action pública de accept mínimo.
     policy action(:book_online) do
       authorize_if always()
@@ -270,7 +279,7 @@ defmodule LabelleBack.Studio.Appointment do
     attribute :professional_name, :string, public?: true
     attribute :service_name, :string, public?: true
     attribute :variant_name, :string, public?: true
-    attribute :commission_percent, :decimal, public?: true
+    attribute :commission_percent, :decimal, public?: true, constraints: [min: 0, max: 100]
     attribute :date, :date, allow_nil?: false, public?: true
     attribute :time, :time, allow_nil?: false, public?: true
     attribute :duration_minutes, :integer, public?: true

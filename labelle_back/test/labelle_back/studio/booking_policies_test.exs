@@ -678,4 +678,143 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
                |> Ash.create()
     end
   end
+
+  describe "edição administrativa de comissão" do
+    test "admin altera principal e adicional concluídos sem alterar cobrança ou catálogo" do
+      admin = create_user!(:admin)
+      pro = create_professional!(create_user!(:profissional))
+      service = create_service!(%{commission_percent: Decimal.new("40")})
+      a = create_appointment!(pro, service)
+
+      item =
+        AppointmentService
+        |> Ash.Changeset.for_create(:create, %{appointment_id: a.id, service_id: service.id},
+          authorize?: false
+        )
+        |> Ash.create!()
+
+      done =
+        a
+        |> Ash.Changeset.for_update(:confirm, %{}, authorize?: false)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(:start, %{}, authorize?: false)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(:finalize, %{payment_method: :pix}, authorize?: false)
+        |> Ash.update!()
+
+      before_amounts =
+        LabelleBack.Repo.query!("SELECT amount FROM transactions WHERE appointment_id = $1", [
+          Ecto.UUID.dump!(a.id)
+        ]).rows
+
+      changed =
+        done
+        |> Ash.Changeset.for_update(:set_commission, %{commission_percent: Decimal.new("35")},
+          actor: admin
+        )
+        |> Ash.update!()
+
+      changed_item =
+        item
+        |> Ash.Changeset.for_update(:set_commission, %{commission_percent: Decimal.new("25")},
+          actor: admin
+        )
+        |> Ash.update!()
+
+      assert changed.commission_percent == Decimal.new("35")
+      assert changed_item.commission_percent == Decimal.new("25")
+      assert changed.status == :concluido
+      assert changed.price == done.price
+
+      assert Ash.get!(Service, service.id, authorize?: false).commission_percent ==
+               Decimal.new("40")
+
+      service
+      |> Ash.Changeset.for_update(:update, %{commission_percent: 70}, actor: admin)
+      |> Ash.update!()
+
+      assert Ash.get!(Appointment, a.id, authorize?: false).commission_percent ==
+               Decimal.new("35")
+
+      assert Ash.get!(AppointmentService, item.id, authorize?: false).commission_percent ==
+               Decimal.new("25")
+
+      assert LabelleBack.Repo.query!(
+               "SELECT amount FROM transactions WHERE appointment_id = $1",
+               [Ecto.UUID.dump!(a.id)]
+             ).rows == before_amounts
+
+      assert {:error, _} =
+               changed
+               |> Ash.Changeset.for_update(:set_commission, %{commission_percent: 101},
+                 actor: admin
+               )
+               |> Ash.update()
+
+      assert {:error, _} =
+               changed_item
+               |> Ash.Changeset.for_update(:set_commission, %{commission_percent: -1},
+                 actor: admin
+               )
+               |> Ash.update()
+    end
+
+    test "profissional dona e anônimo não alteram comissão em principal, adicional, serviço ou variação" do
+      owner = create_user!(:profissional)
+      pro = create_professional!(owner)
+      service = create_service!(%{commission_percent: Decimal.new("40")})
+      a = create_appointment!(pro, service)
+
+      item =
+        AppointmentService
+        |> Ash.Changeset.for_create(:create, %{appointment_id: a.id, service_id: service.id},
+          authorize?: false
+        )
+        |> Ash.create!()
+
+      variant =
+        LabelleBack.Studio.ServiceVariant
+        |> Ash.Changeset.for_create(
+          :create,
+          %{
+            service_id: service.id,
+            name: "P",
+            price: 100,
+            duration_minutes: 60,
+            commission_percent: 40
+          },
+          authorize?: false
+        )
+        |> Ash.create!()
+
+      for actor <- [owner, nil] do
+        assert {:error, _} =
+                 a
+                 |> Ash.Changeset.for_update(:set_commission, %{commission_percent: 90},
+                   actor: actor
+                 )
+                 |> Ash.update()
+
+        assert {:error, _} =
+                 item
+                 |> Ash.Changeset.for_update(:set_commission, %{commission_percent: 90},
+                   actor: actor
+                 )
+                 |> Ash.update()
+
+        assert {:error, _} =
+                 service
+                 |> Ash.Changeset.for_update(:update, %{commission_percent: 90}, actor: actor)
+                 |> Ash.update()
+
+        assert {:error, _} =
+                 variant
+                 |> Ash.Changeset.for_update(:update, %{commission_percent: 90}, actor: actor)
+                 |> Ash.update()
+      end
+
+      assert Ash.get!(Appointment, a.id, authorize?: false).commission_percent ==
+               Decimal.new("40")
+    end
+  end
 end

@@ -328,7 +328,7 @@ export default function Services() {
                             )
                             .map(
                               (v) =>
-                                `${v.name}: ${formatBRL(v.price)} · ${v.duration_minutes}min`,
+                                `${v.name}: ${formatBRL(v.price)} · ${v.duration_minutes}min${canEdit ? ` · comissão ${v.commission_percent ?? 0}% (${formatBRL(Number(v.price || 0)*Number(v.commission_percent || 0)/100,{decimals:2})})` : ""}`,
                             )
                             .join(" / ")}
                         </p>
@@ -337,8 +337,8 @@ export default function Services() {
                             <Clock className="w-3 h-3" />
                             {svc.duration_minutes}min
                           </span>
-                          {svc.commission_percent > 0 && (
-                            <span>{svc.commission_percent}% comissão</span>
+                          {(canEdit || svc.commission_percent > 0) && (
+                            <span>{svc.commission_percent == null ? "Comissão não definida" : `${svc.commission_percent}% comissão`}{canEdit && svc.commission_percent != null && ` · ${formatBRL(Number(svc.price || 0)*Number(svc.commission_percent)/100,{decimals:2})}`}</span>
                           )}
                         </div>
                       </div>

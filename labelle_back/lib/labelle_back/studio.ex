@@ -58,6 +58,7 @@ defmodule LabelleBack.Studio do
         patch :confirm, route: "/:id/confirm"
         patch :start, route: "/:id/start"
         patch :cancel, route: "/:id/cancel"
+        patch :set_commission, route: "/:id/set_commission"
         patch :reschedule, route: "/:id/reschedule"
         patch :complete_phone, route: "/:id/complete_phone"
         patch :send_reminder, route: "/:id/send_reminder"
@@ -68,6 +69,7 @@ defmodule LabelleBack.Studio do
         get :read
         index :read
         post :create
+        patch :set_commission, route: "/:id/set_commission"
         patch :update
         delete :destroy
       end

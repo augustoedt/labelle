@@ -1,6 +1,7 @@
+import {appointmentCommission} from "@/lib/commissions";
 import { useQuery } from "@tanstack/react-query";
 import { useRouteContext, useLocation, useNavigate } from "@tanstack/react-router";
-import { ProfessionalsApi, AppointmentsApi, AppointmentServicesApi, ServicesApi } from "@/server/api";
+import { ProfessionalsApi, AppointmentsApi, AppointmentServicesApi } from "@/server/api";
 import { addMonths, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PageHeader from "@/components/ui/PageHeader";
@@ -42,18 +43,7 @@ export default function MinhasComissoes() {
     enabled: !!myProfessional,
   });
 
-  // Comissão é calculada em cima do commission_percent cadastrado no Serviço
-  // (varia por categoria: química 30% / sem química 40% / manicure e
-  // pedicure 50%), não num percentual fixo do profissional.
-  const { data: services = [] } = useQuery({
-    queryKey: ["services"],
-    queryFn: () => ServicesApi.list(),
-    enabled: !!myProfessional,
-  });
-  const commissionRateByServiceId = Object.fromEntries(
-    services.map(s => [s.id, s.commission_percent || 0])
-  );
-
+  // Use os percentuais registrados no atendimento, preservando o histórico.
   // Serviços adicionais lançados durante o atendimento (a policy do backend
   // já limita a lista aos atendimentos do próprio profissional).
   const { data: extraItems = [] } = useQuery({
@@ -73,12 +63,8 @@ export default function MinhasComissoes() {
   const revenueFor = apt =>
     (apt.price || 0) + (itemsByAppointment[apt.id] || []).reduce((s, i) => s + (i.price || 0), 0);
 
-  const commissionFor = apt =>
-    (apt.price || 0) * ((apt.commission_percent ?? commissionRateByServiceId[apt.service_id] ?? 0) / 100) +
-    (itemsByAppointment[apt.id] || []).reduce(
-      (s, i) => s + (i.price || 0) * ((i.commission_percent ?? commissionRateByServiceId[i.service_id] ?? 0) / 100),
-      0
-    );
+  const commissionFor = apt => appointmentCommission(apt, extraItems).amount;
+  const undefinedCommissions = myDone.filter(a=>appointmentCommission(a,extraItems).missing).length;
 
   const totalRevenue = myDone.reduce((s, a) => s + revenueFor(a), 0);
   const myCommission = myDone.reduce((s, a) => s + commissionFor(a), 0);
@@ -109,6 +95,7 @@ export default function MinhasComissoes() {
 
   return (
     <div className="space-y-4">
+      {undefinedCommissions>0 && <p className="mx-5 text-sm text-amber-700">{undefinedCommissions} atendimento(s) aguardam definição de comissão pela administração. O total considera somente comissões registradas.</p>}
       <PageHeader
         title="Minhas Comissões"
         subtitle={format(selectedMonth, "MMMM yyyy", { locale: ptBR })}
@@ -172,7 +159,7 @@ export default function MinhasComissoes() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium tabular-nums">{formatBRL(revenueFor(apt))}</p>
-                    <p className="text-xs text-primary font-semibold tabular-nums">+ {formatBRL(commission)}</p>
+                    <p className="text-xs text-primary font-semibold tabular-nums">{appointmentCommission(apt,extraItems).missing ? "Comissão parcialmente pendente · " : "+ "}{formatBRL(commission)}</p>
                   </div>
                 </div>
               </div>

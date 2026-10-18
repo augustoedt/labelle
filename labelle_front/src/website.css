@@ -1494,3 +1494,23 @@ button.schedule-slot:hover,button.schedule-slot:focus-visible { background:#e9d3
 
 .appointment-actions { display:flex;gap:8px;flex-wrap:wrap;margin-top:12px; }
 .phone-completion-sheet input[type=date],.phone-completion-sheet input[type=time] { display:block;border:1px solid #c8b4ab;border-radius:8px;padding:10px;margin-top:6px; }
+
+.commission-panel { margin:0 22px 20px;border:1px solid #ddcbc2;border-radius:14px;background:white;padding:20px; }
+.commission-heading { display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap; }
+.commission-heading h2 { font-size:17px;font-weight:600;margin-bottom:8px; }
+.commission-heading>div>strong { font-size:24px;color:#88564f; }
+.commission-heading p { font-size:12px;color:#796960;margin-top:8px; }
+.commission-heading input { display:block;border:1px solid #ddcbc2;border-radius:7px;padding:7px; }
+.commission-warning { color:#975600;background:#fff6e5;padding:10px;border-radius:8px;font-size:12px;margin:14px 0; }
+.commission-professionals { display:flex;gap:15px;flex-wrap:wrap;font-size:12px;margin:15px 0; }
+.commission-history { max-height:460px;overflow:auto; }
+.commission-history details { padding:12px 0;border-top:1px solid #eee2dc;font-size:12px; }
+.commission-history summary { cursor:pointer; }
+.commission-history summary>strong { float:right;margin-left:12px; }
+.commission-history details>div { padding:14px;background:#fcf7f3; }
+.commission-editor { display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:12px;margin:8px 0;color:#88564f; }
+.commission-editor button { border:1px solid #cfafa4;border-radius:6px;padding:5px 8px;background:white; }
+.commission-edit-fields { display:flex;gap:8px;flex-wrap:wrap;align-items:end; }
+.commission-edit-fields input { display:block;width:125px;padding:7px;border:1px solid #cfafa4;border-radius:6px;background:white; }
+.commission-edit-fields [role=alert] { color:#b42323; }
+@media(max-width:600px) { .commission-panel { margin:0 16px 16px;padding:14px; } }

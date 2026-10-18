@@ -88,7 +88,7 @@ defmodule LabelleBack.Studio.Service do
 
     attribute :price, :decimal, allow_nil?: false, public?: true
     attribute :duration_minutes, :integer, allow_nil?: false, public?: true
-    attribute :commission_percent, :decimal, public?: true
+    attribute :commission_percent, :decimal, public?: true, constraints: [min: 0, max: 100]
     attribute :recurrence_days, :integer, public?: true
     attribute :description, :string, public?: true
     attribute :is_active, :boolean, default: true, public?: true

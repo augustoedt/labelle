@@ -1,3 +1,4 @@
+import CommissionEditor from "@/components/agenda/CommissionEditor";
 import AppointmentActions from "@/components/agenda/AppointmentActions";
 import NextAppointmentSheet from "@/components/agenda/NextAppointmentSheet";
 import AppointmentPhoneSheet from "@/components/clients/AppointmentPhoneSheet";
@@ -322,6 +323,7 @@ export default function Agenda() {
                     <span>{apt.professional_name}</span>
                     {apt.price > 0 && <span className="font-medium text-foreground tabular-nums">{formatBRL(apt.price)}</span>}
                   </div>
+                  <CommissionEditor record={apt}/>
                   <AppointmentActions appointment={apt}/>
                   <div className="flex gap-1.5 mt-3 flex-wrap">
                     {apt.status === "agendado" && (

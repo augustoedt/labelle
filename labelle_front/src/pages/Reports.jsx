@@ -1,5 +1,7 @@
+import CommissionPanel from "@/components/finance/CommissionPanel";
+import { appointmentCommission } from "@/lib/commissions";
 import { useQuery } from "@tanstack/react-query";
-import { AppointmentsApi, TransactionsApi, ProfessionalsApi } from "@/server/api";
+import { AppointmentsApi, TransactionsApi, ProfessionalsApi, AppointmentServicesApi } from "@/server/api";
 import { ArrowLeft, TrendingUp, Users, Scissors, DollarSign, FileDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -47,12 +49,18 @@ export default function Reports() {
   });
   const topServices = Object.entries(serviceCounts).sort(([, a], [, b]) => b - a).slice(0, 5);
 
+  const {data: commissionItems = []} = useQuery({queryKey:["commission-items"],queryFn:()=>AppointmentServicesApi.list({limit:10000})});
+
   // Professional performance
   const profPerformance = professionals.map(p => {
     const completed = appointments.filter(a => a.professional_id === p.id && a.status === "concluido");
-    const revenue = completed.reduce((s, a) => s + (a.price || 0), 0);
-    return { name: p.name, count: completed.length, revenue };
+    const revenue = completed.reduce((s, a) => s + appointmentCommission(a,commissionItems).revenue, 0);
+    const commission = completed.reduce((s,a)=>s+appointmentCommission(a,commissionItems).amount,0);
+    const missing = completed.filter(a=>appointmentCommission(a,commissionItems).missing).length;
+    return { name: p.name, count: completed.length, revenue, commission, missing };
   }).sort((a, b) => b.revenue - a.revenue);
+
+
 
   const exportToExcel = () => {
     const wb = XLSX.utils.book_new();
@@ -66,6 +74,8 @@ export default function Reports() {
       "Serviço": a.service_name,
       "Profissional": a.professional_name,
       "Valor (R$)": a.price || 0,
+      "Comissão registrada (R$)": appointmentCommission(a,commissionItems).amount,
+      "Comissão pendente": appointmentCommission(a,commissionItems).missing ? "Sim" : "Não",
       "Status": a.status,
       "Pagamento": a.payment_method || "",
     }));
@@ -88,6 +98,8 @@ export default function Reports() {
       "Profissional": p.name,
       "Atendimentos": p.count,
       "Faturamento (R$)": p.revenue,
+      "Comissão registrada (R$)": p.commission,
+      "Atendimentos com comissão pendente": p.missing,
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(profData), "Profissionais");
 
@@ -99,6 +111,7 @@ export default function Reports() {
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(svcData), "Serviços");
 
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(appointments.filter(a=>a.status==="concluido").map(a=>({Data:a.date,Cliente:a.client_name,Profissional:a.professional_name,Receita:appointmentCommission(a,commissionItems).revenue,"Comissão registrada":appointmentCommission(a,commissionItems).amount,"Percentual pendente":appointmentCommission(a,commissionItems).missing ? "Sim" : "Não"}))), "Comissões");
     XLSX.writeFile(wb, `relatorio-la-belle-${format(new Date(), "yyyy-MM")}.xlsx`);
   };
 
@@ -123,6 +136,7 @@ export default function Reports() {
         }
       />
 
+      <CommissionPanel />
       {/* Monthly summary */}
       <div className="px-5 grid grid-cols-2 gap-3">
         {isLoading ? (
@@ -196,7 +210,7 @@ export default function Reports() {
               <span className="w-6 h-6 rounded-full bg-accent/20 text-accent text-xs font-bold flex items-center justify-center">{i + 1}</span>
               <div className="flex-1">
                 <p className="text-sm font-medium">{p.name}</p>
-                <p className="text-xs text-muted-foreground">{p.count} atendimentos</p>
+                <p className="text-xs text-muted-foreground">{p.count} atendimentos · comissão registrada {formatBRL(p.commission,{decimals:2})}{p.missing>0 ? ` · ${p.missing} pendente(s)` : ""}</p>
               </div>
               <p className="font-heading font-bold tracking-tight text-sm tabular-nums">{formatBRL(p.revenue)}</p>
             </div>

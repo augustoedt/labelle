@@ -242,6 +242,12 @@ export const updateAppointment = createServerFn({ method: 'POST' })
   .handler(({ data }) => jsonApiUpdate('appointments', 'appointment', data.id, data.attributes))
 // Finaliza o atendimento cobrando: o backend soma serviço principal + itens
 // adicionais e registra a transação financeira como paga (action :finalize).
+export const setRecordedCommission = createServerFn({ method: 'POST' })
+  .validator((data: { id: string; kind: 'appointment' | 'item'; percent: number }) => {
+    if (!['appointment','item'].includes(data.kind) || !Number.isFinite(data.percent) || data.percent < 0 || data.percent > 100) throw new Error('Comissão inválida')
+    return data
+  })
+  .handler(({ data }) => jsonApiAction(data.kind === 'item' ? 'appointment_services' : 'appointments', data.kind === 'item' ? 'appointment_service' : 'appointment', data.id, 'set_commission', {commission_percent: data.percent}))
 export const rescheduleAppointment = createServerFn({ method: 'POST' })
   .validator((data: { id: string; date: string; time: string }) => data)
   .handler(({ data }) => jsonApiAction('appointments', 'appointment', data.id, 'reschedule', {date: data.date,time: data.time}))

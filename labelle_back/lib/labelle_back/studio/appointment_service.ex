@@ -51,6 +51,11 @@ defmodule LabelleBack.Studio.AppointmentService do
       change LabelleBack.Studio.Changes.SnapshotServiceItemFields
     end
 
+    update :set_commission do
+      accept [:commission_percent]
+      validate present(:commission_percent)
+    end
+
     update :update do
       require_atomic? false
 
@@ -61,6 +66,10 @@ defmodule LabelleBack.Studio.AppointmentService do
   end
 
   policies do
+    policy action(:set_commission) do
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
+
     # Fechado: o preço do item entra no total cobrado no finalize, então
     # criar item é restrito a admin ou à profissional dona do atendimento.
     policy action_type(:create) do
@@ -84,7 +93,7 @@ defmodule LabelleBack.Studio.AppointmentService do
 
     attribute :service_name, :string, public?: true
     attribute :variant_name, :string, public?: true
-    attribute :commission_percent, :decimal, public?: true
+    attribute :commission_percent, :decimal, public?: true, constraints: [min: 0, max: 100]
     attribute :price, :decimal, public?: true
     attribute :duration_minutes, :integer, public?: true
 

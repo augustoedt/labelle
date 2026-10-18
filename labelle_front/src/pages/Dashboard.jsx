@@ -1,3 +1,4 @@
+import CommissionPanel from "@/components/finance/CommissionPanel";
 import PhonePendingPanel from "@/components/clients/PhonePendingPanel";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -235,6 +236,7 @@ export default function Dashboard() {
           </section>
         </div>
       </div>
+      <CommissionPanel />
       <PhonePendingPanel />
     </div>
   );

@@ -1,3 +1,4 @@
+import CommissionEditor from "@/components/agenda/CommissionEditor";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -158,6 +159,7 @@ export default function FinalizeSheet({
               </span>
             </div>
 
+            <CommissionEditor record={appointment}/>
             {items.map((item) => (
               <div
                 key={item.id}
@@ -165,6 +167,7 @@ export default function FinalizeSheet({
               >
                 <div className="flex-1 min-w-0">
                   <span className="block truncate">{item.service_name}</span>
+                  <CommissionEditor record={item} kind="item"/>
                   {item.unplanned && (
                     <Badge className="text-xs border-0 bg-amber-100 text-amber-700 mt-0.5">
                       Não previsto

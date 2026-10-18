@@ -1,3 +1,4 @@
+import CommissionPanel from "@/components/finance/CommissionPanel";
 import { useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -152,6 +153,7 @@ export default function Finance() {
         </div>
       </div>
 
+      <CommissionPanel start={start} end={end}/>
       {/* Transaction list */}
       <div className="px-5 space-y-2">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Movimentações</h3>

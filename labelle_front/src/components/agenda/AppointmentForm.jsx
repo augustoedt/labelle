@@ -1,8 +1,8 @@
 import { hasPhone } from "@/lib/phonePending";
 import { normalizeSearch } from "@/lib/serviceCatalog";
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ProfessionalServicesApi, ServiceVariantsApi } from "@/server/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ProfessionalServicesApi, ServiceVariantsApi, completeAppointmentPhone } from "@/server/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { formatBRL } from "@/lib/format";
 import { maskPhone } from "@/lib/phone";
 
 export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment, initialDate, initialTime, initialProfessional }) {
+  const queryClient = useQueryClient();
   // Só profissionais vinculadas ao serviço escolhido aparecem na lista —
   // evita agendar um serviço com quem não sabe fazer.
   const professionalServicesQuery = useQuery({
@@ -26,6 +27,8 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
     queryFn: () => ServiceVariantsApi.list({ limit: 1000 }),
   });
   const variants = variantsQuery.data || [];
+  const [contactError,setContactError] = useState("");
+  const [savingContact,setSavingContact] = useState(false);
   const [clientSuggestions,setClientSuggestions] = useState(false);
   const [serviceSearch,setServiceSearch] = useState("");
   const [serviceSuggestions,setServiceSuggestions] = useState(false);
@@ -62,7 +65,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
         date: initialDate || new Date().toISOString().split("T")[0], time: initialTime || "09:00", notes: "",
       });
     }
-    setClientSuggestions(false);setServiceSuggestions(false);
+    setClientSuggestions(false);setServiceSuggestions(false);setContactError("");
     setServiceSearch(appointment ? services?.find(s=>s.id===appointment.service_id)?.name || "" : "");
   }, [appointment, open, initialDate, initialTime, initialProfessional]);
 
@@ -108,7 +111,16 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setContactError("");
+    if (appointment && form.client_phone !== (appointment.client_phone || "")) {
+      if (!hasPhone(form.client_phone)) { setContactError("Informe um celular com DDD ou mantenha o número atual."); return; }
+      setSavingContact(true);
+      try { await completeAppointmentPhone({data:{id:appointment.id,phone:form.client_phone}});
+        for (const key of ["clients","phone-pending-appointments","appointments","professional-appointments"]) queryClient.invalidateQueries({queryKey:[key]}); }
+      catch { setContactError("Não foi possível salvar o celular. Confira o número e tente novamente."); setSavingContact(false); return; }
+      setSavingContact(false);
+    }
     const professional = professionals?.find(p => p.id === form.professional_id);
     const payload = {
       ...form,
@@ -116,7 +128,10 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
       professional_name: professional?.name || "",
 
     };
-    onSubmit(payload);
+    if (appointment) {
+      const { client_id, client_name, client_phone, ...editable } = payload;
+      onSubmit(editable);
+    } else onSubmit(payload);
   };
 
   const timeSlots = [];
@@ -135,7 +150,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Nome</Label>
-              <Input aria-label="Cliente" role="combobox" aria-expanded={clientSuggestions} aria-controls="booking-client-options" aria-autocomplete="list" autoComplete="off" value={form.client_name} onFocus={()=>setClientSuggestions(true)} onKeyDown={e=>{if(e.key==="Escape")setClientSuggestions(false);}} onChange={e => {setForm(prev => ({ ...prev, client_id:"", client_phone: prev.client_id ? "" : prev.client_phone, client_name: e.target.value }));setClientSuggestions(true);}} placeholder="Digite o nome da cliente" />
+              <Input aria-label="Cliente" disabled={!!appointment} role="combobox" aria-expanded={clientSuggestions} aria-controls="booking-client-options" aria-autocomplete="list" autoComplete="off" value={form.client_name} onFocus={()=>setClientSuggestions(true)} onKeyDown={e=>{if(e.key==="Escape")setClientSuggestions(false);}} onChange={e => {setForm(prev => ({ ...prev, client_id:"", client_phone: prev.client_id ? "" : prev.client_phone, client_name: e.target.value }));setClientSuggestions(true);}} placeholder="Digite o nome da cliente" />
               {clientSuggestions && <div id="booking-client-options" role="listbox" aria-label="Clientes com celular" className="booking-search-results">{clients?.filter(c=>hasPhone(c.phone) && c.is_active!==false && normalizeSearch(c.name).includes(normalizeSearch(form.client_name))).slice(0,30).map(c=><button type="button" role="option" aria-selected={form.client_id===c.id} key={c.id} onClick={()=>{handleClientSelect(c.id);setClientSuggestions(false);}}>{c.name}<small>{maskPhone(c.phone)}</small></button>)}<button type="button" onClick={()=>setClientSuggestions(false)}>Continuar com o nome digitado</button></div>}
             </div>
             <div>
@@ -213,7 +228,8 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             <Label className="text-xs">Observações</Label>
             <Textarea value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Observações..." rows={2} />
           </div>
-          <Button disabled={!variantsQuery.isSuccess || !professionalServicesQuery.isSuccess || !form.client_name.trim() || !form.service_id || !form.professional_id || (serviceVariantRows.length > 0 && !form.service_variant_id)} onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
+          {contactError && <p role="alert" className="text-sm text-destructive">{contactError}</p>}
+          <Button disabled={savingContact || !variantsQuery.isSuccess || !professionalServicesQuery.isSuccess || !form.client_name.trim() || !form.service_id || !form.professional_id || (serviceVariantRows.length > 0 && !form.service_variant_id)} onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
             {appointment ? "Atualizar" : "Agendar"}
           </Button>
         </div>

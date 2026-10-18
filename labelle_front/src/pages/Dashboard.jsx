@@ -28,7 +28,7 @@ export default function Dashboard() {
   );
   const appointmentQuery = useQuery({
     queryKey: ["appointments"],
-    queryFn: () => AppointmentsApi.list({ sort: "-date", limit: 200 }),
+    queryFn: () => AppointmentsApi.list({ sort: "-date", limit: 500 }),
   });
   const transactionQuery = useQuery({
     queryKey: ["transactions"],
@@ -150,15 +150,13 @@ export default function Dashboard() {
         isLoading={loading}
       />
       <div className="dashboard-panels">
-        <section className="dashboard-panel">
+        <section className="dashboard-panel dashboard-agenda-panel">
           <div className="dashboard-panel-title">
-            <h2>Agenda de hoje</h2>
+            <h2>Agenda do dia</h2>
             <Link to="/agenda">Ver agenda →</Link>
           </div>
           <TodayAgenda
-            appointments={[...todayAppointments].sort((a, b) =>
-              a.time?.localeCompare(b.time),
-            )}
+            appointments={appointments}
             isLoading={appointmentQuery.isPending}
           />
         </section>

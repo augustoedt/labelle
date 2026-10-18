@@ -1,5 +1,9 @@
 # Estado do projeto
 
+## Agenda — 2026-10-18
+
+Grade diária por profissional e visão de quatro semanas: [detalhes](../changes/agenda-profissionais.md). Navegação por data e preservação das ações de atendimento. Sem alterações de dados.
+
 ## Atualização de produto — 2026-10-17
 
 Website responsivo, painel e catálogo P/M/G implementados: [registro](../changes/website-responsivo.md). Todos os valores do JSON aprovados pelo responsável e importados com backup. Publicação no GitHub/main autorizada. O snapshot operacional abaixo é histórico.

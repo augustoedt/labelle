@@ -11,7 +11,7 @@ import { X } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 import { maskPhone } from "@/lib/phone";
 
-export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment }) {
+export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment, initialDate }) {
   // Só profissionais vinculadas ao serviço escolhido aparecem na lista —
   // evita agendar um serviço com quem não sabe fazer.
   const { data: professionalServices = [] } = useQuery({
@@ -26,7 +26,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
     service_id: "",
     service_variant_id: null,
     professional_id: "",
-    date: new Date().toISOString().split("T")[0],
+    date: initialDate || new Date().toISOString().split("T")[0],
     time: "09:00",
     notes: "",
   });
@@ -49,10 +49,10 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
         client_name: "", client_phone: "", client_id: "",
         service_id: "",
     service_variant_id: null, professional_id: "",
-        date: new Date().toISOString().split("T")[0], time: "09:00", notes: "",
+        date: initialDate || new Date().toISOString().split("T")[0], time: "09:00", notes: "",
       });
     }
-  }, [appointment, open]);
+  }, [appointment, open, initialDate]);
 
   const selectedService = services?.find(s => s.id === form.service_id);
 

@@ -117,7 +117,7 @@ export default function Dashboard() {
       )}
       <div className="dashboard-stats">
         {loading ? (
-          [1, 2, 3, 4].map((n) => (
+          [1, 2, 3, 4, 5].map((n) => (
             <Skeleton key={n} className="h-28 rounded-xl" />
           ))
         ) : (
@@ -142,6 +142,7 @@ export default function Dashboard() {
               value={formatBRL(monthRevenue)}
               icon={TrendingUp}
             />
+            <PhonePendingPanel compact />
           </>
         )}
       </div>

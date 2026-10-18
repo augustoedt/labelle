@@ -1,3 +1,4 @@
+import StatCard from "@/components/ui/StatCard";
 import {useState} from "react";
 import {useQuery,useMutation,useQueryClient} from "@tanstack/react-query";
 import {ClientsApi,AppointmentsApi,completeAppointmentPhone} from "@/server/api";
@@ -6,7 +7,7 @@ import {hasPhone,phonePendingRecords} from "@/lib/phonePending";
 import {maskPhone,maskPhoneDisplay} from "@/lib/phone";
 import {useUser} from "@/lib/auth";
 
-export default function PhonePendingPanel() {
+export default function PhonePendingPanel({compact = false}) {
   const user=useUser(), queryClient=useQueryClient();
   const [filter,setFilter]=useState("phone"),[editing,setEditing]=useState(null),[phone,setPhone]=useState("");
   const clientsQuery=useQuery({queryKey:["clients"],queryFn:()=>ClientsApi.list({limit:10000})});
@@ -18,6 +19,7 @@ export default function PhonePendingPanel() {
     for(const key of ["clients","appointments","professional-appointments","phone-pending-appointments"]) queryClient.invalidateQueries({queryKey:[key]});
     setEditing(null);setPhone("");
   }});
+  if (compact) return <StatCard title="Pendentes de celular" value={clientsQuery.isPending || appointmentsQuery.isPending ? "…" : clientsQuery.isError || appointmentsQuery.isError ? "Indisponível" : `${missing.length}/${records.length}`} icon={PhoneOff} />;
   if(clientsQuery.isPending || appointmentsQuery.isPending) return <section className="phone-pending-panel" role="status">Carregando pendências de celular…</section>;
   if(clientsQuery.isError || appointmentsQuery.isError) return <section className="phone-pending-panel" role="alert">Não foi possível carregar as pendências. <button onClick={()=>{clientsQuery.refetch();appointmentsQuery.refetch();}}>Tentar novamente</button></section>;
   return <section className="phone-pending-panel" aria-label="Pendências de celular">

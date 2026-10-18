@@ -1479,3 +1479,5 @@ button.schedule-slot:hover,button.schedule-slot:focus-visible { background:#e9d3
 .booking-search-results button { display:block;width:100%;padding:9px 12px;text-align:left;font-size:13px;border-bottom:1px solid #f2e8e1; }
 .booking-search-results button:hover,.booking-search-results button:focus-visible { background:#f5e9e3; }
 .booking-search-results small { display:block;color:#796960;font-size:11px; }
+
+@media(min-width:1024px) { .dashboard-stats { grid-template-columns:repeat(5,minmax(0,1fr)); } }

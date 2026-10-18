@@ -9,12 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProfissionalRouteImport } from './routes/profissional'
 import { Route as LogoutRouteImport } from './routes/logout'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ClienteRouteImport } from './routes/cliente'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AgendarRouteImport } from './routes/agendar'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as StaffRouteImport } from './routes/_staff'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as ProfissionalSectionRouteImport } from './routes/profissional.$section'
+import { Route as ClienteFidelidadeRouteImport } from './routes/cliente.fidelidade'
+import { Route as ClienteCatalogoRouteImport } from './routes/cliente.catalogo'
+import { Route as ClienteAgendarRouteImport } from './routes/cliente.agendar'
+import { Route as ClienteAgendamentosRouteImport } from './routes/cliente.agendamentos'
+import { Route as AdminSectionRouteImport } from './routes/admin.$section'
 import { Route as StaffServicosRouteImport } from './routes/_staff.servicos'
 import { Route as StaffRelatoriosRouteImport } from './routes/_staff.relatorios'
 import { Route as StaffPromocoesRouteImport } from './routes/_staff.promocoes'
@@ -30,6 +40,11 @@ import { Route as StaffConfiguracoesRouteImport } from './routes/_staff.configur
 import { Route as StaffClientesRouteImport } from './routes/_staff.clientes'
 import { Route as StaffAgendaRouteImport } from './routes/_staff.agenda'
 
+const ProfissionalRoute = ProfissionalRouteImport.update({
+  id: '/profissional',
+  path: '/profissional',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LogoutRoute = LogoutRouteImport.update({
   id: '/logout',
   path: '/logout',
@@ -38,6 +53,11 @@ const LogoutRoute = LogoutRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClienteRoute = ClienteRouteImport.update({
+  id: '/cliente',
+  path: '/cliente',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -50,6 +70,11 @@ const AgendarRoute = AgendarRouteImport.update({
   path: '/agendar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StaffRoute = StaffRouteImport.update({
   id: '/_staff',
   getParentRoute: () => rootRouteImport,
@@ -58,6 +83,41 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const ProfissionalSectionRoute = ProfissionalSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => ProfissionalRoute,
+} as any)
+const ClienteFidelidadeRoute = ClienteFidelidadeRouteImport.update({
+  id: '/fidelidade',
+  path: '/fidelidade',
+  getParentRoute: () => ClienteRoute,
+} as any)
+const ClienteCatalogoRoute = ClienteCatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
+  getParentRoute: () => ClienteRoute,
+} as any)
+const ClienteAgendarRoute = ClienteAgendarRouteImport.update({
+  id: '/agendar',
+  path: '/agendar',
+  getParentRoute: () => ClienteRoute,
+} as any)
+const ClienteAgendamentosRoute = ClienteAgendamentosRouteImport.update({
+  id: '/agendamentos',
+  path: '/agendamentos',
+  getParentRoute: () => ClienteRoute,
+} as any)
+const AdminSectionRoute = AdminSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => AdminRoute,
 } as any)
 const StaffServicosRoute = StaffServicosRouteImport.update({
   id: '/servicos',
@@ -132,10 +192,13 @@ const StaffAgendaRoute = StaffAgendaRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/agendar': typeof AgendarRoute
   '/app': typeof AppRoute
+  '/cliente': typeof ClienteRouteWithChildren
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/profissional': typeof ProfissionalRouteWithChildren
   '/agenda': typeof StaffAgendaRoute
   '/clientes': typeof StaffClientesRoute
   '/configuracoes': typeof StaffConfiguracoesRoute
@@ -150,13 +213,22 @@ export interface FileRoutesByFullPath {
   '/promocoes': typeof StaffPromocoesRoute
   '/relatorios': typeof StaffRelatoriosRoute
   '/servicos': typeof StaffServicosRoute
+  '/admin/$section': typeof AdminSectionRoute
+  '/cliente/agendamentos': typeof ClienteAgendamentosRoute
+  '/cliente/agendar': typeof ClienteAgendarRoute
+  '/cliente/catalogo': typeof ClienteCatalogoRoute
+  '/cliente/fidelidade': typeof ClienteFidelidadeRoute
+  '/profissional/$section': typeof ProfissionalSectionRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agendar': typeof AgendarRoute
   '/app': typeof AppRoute
+  '/cliente': typeof ClienteRouteWithChildren
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/profissional': typeof ProfissionalRouteWithChildren
   '/agenda': typeof StaffAgendaRoute
   '/clientes': typeof StaffClientesRoute
   '/configuracoes': typeof StaffConfiguracoesRoute
@@ -171,15 +243,25 @@ export interface FileRoutesByTo {
   '/promocoes': typeof StaffPromocoesRoute
   '/relatorios': typeof StaffRelatoriosRoute
   '/servicos': typeof StaffServicosRoute
+  '/admin/$section': typeof AdminSectionRoute
+  '/cliente/agendamentos': typeof ClienteAgendamentosRoute
+  '/cliente/agendar': typeof ClienteAgendarRoute
+  '/cliente/catalogo': typeof ClienteCatalogoRoute
+  '/cliente/fidelidade': typeof ClienteFidelidadeRoute
+  '/profissional/$section': typeof ProfissionalSectionRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_staff': typeof StaffRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/agendar': typeof AgendarRoute
   '/app': typeof AppRoute
+  '/cliente': typeof ClienteRouteWithChildren
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/profissional': typeof ProfissionalRouteWithChildren
   '/_staff/agenda': typeof StaffAgendaRoute
   '/_staff/clientes': typeof StaffClientesRoute
   '/_staff/configuracoes': typeof StaffConfiguracoesRoute
@@ -194,15 +276,25 @@ export interface FileRoutesById {
   '/_staff/promocoes': typeof StaffPromocoesRoute
   '/_staff/relatorios': typeof StaffRelatoriosRoute
   '/_staff/servicos': typeof StaffServicosRoute
+  '/admin/$section': typeof AdminSectionRoute
+  '/cliente/agendamentos': typeof ClienteAgendamentosRoute
+  '/cliente/agendar': typeof ClienteAgendarRoute
+  '/cliente/catalogo': typeof ClienteCatalogoRoute
+  '/cliente/fidelidade': typeof ClienteFidelidadeRoute
+  '/profissional/$section': typeof ProfissionalSectionRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/agendar'
     | '/app'
+    | '/cliente'
     | '/login'
     | '/logout'
+    | '/profissional'
     | '/agenda'
     | '/clientes'
     | '/configuracoes'
@@ -217,13 +309,22 @@ export interface FileRouteTypes {
     | '/promocoes'
     | '/relatorios'
     | '/servicos'
+    | '/admin/$section'
+    | '/cliente/agendamentos'
+    | '/cliente/agendar'
+    | '/cliente/catalogo'
+    | '/cliente/fidelidade'
+    | '/profissional/$section'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/agendar'
     | '/app'
+    | '/cliente'
     | '/login'
     | '/logout'
+    | '/profissional'
     | '/agenda'
     | '/clientes'
     | '/configuracoes'
@@ -238,14 +339,24 @@ export interface FileRouteTypes {
     | '/promocoes'
     | '/relatorios'
     | '/servicos'
+    | '/admin/$section'
+    | '/cliente/agendamentos'
+    | '/cliente/agendar'
+    | '/cliente/catalogo'
+    | '/cliente/fidelidade'
+    | '/profissional/$section'
+    | '/admin'
   id:
     | '__root__'
     | '/'
     | '/_staff'
+    | '/admin'
     | '/agendar'
     | '/app'
+    | '/cliente'
     | '/login'
     | '/logout'
+    | '/profissional'
     | '/_staff/agenda'
     | '/_staff/clientes'
     | '/_staff/configuracoes'
@@ -260,19 +371,36 @@ export interface FileRouteTypes {
     | '/_staff/promocoes'
     | '/_staff/relatorios'
     | '/_staff/servicos'
+    | '/admin/$section'
+    | '/cliente/agendamentos'
+    | '/cliente/agendar'
+    | '/cliente/catalogo'
+    | '/cliente/fidelidade'
+    | '/profissional/$section'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   StaffRoute: typeof StaffRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
   AgendarRoute: typeof AgendarRoute
   AppRoute: typeof AppRoute
+  ClienteRoute: typeof ClienteRouteWithChildren
   LoginRoute: typeof LoginRoute
   LogoutRoute: typeof LogoutRoute
+  ProfissionalRoute: typeof ProfissionalRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/profissional': {
+      id: '/profissional'
+      path: '/profissional'
+      fullPath: '/profissional'
+      preLoaderRoute: typeof ProfissionalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/logout': {
       id: '/logout'
       path: '/logout'
@@ -285,6 +413,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cliente': {
+      id: '/cliente'
+      path: '/cliente'
+      fullPath: '/cliente'
+      preLoaderRoute: typeof ClienteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -301,6 +436,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgendarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_staff': {
       id: '/_staff'
       path: ''
@@ -314,6 +456,55 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/profissional/$section': {
+      id: '/profissional/$section'
+      path: '/$section'
+      fullPath: '/profissional/$section'
+      preLoaderRoute: typeof ProfissionalSectionRouteImport
+      parentRoute: typeof ProfissionalRoute
+    }
+    '/cliente/fidelidade': {
+      id: '/cliente/fidelidade'
+      path: '/fidelidade'
+      fullPath: '/cliente/fidelidade'
+      preLoaderRoute: typeof ClienteFidelidadeRouteImport
+      parentRoute: typeof ClienteRoute
+    }
+    '/cliente/catalogo': {
+      id: '/cliente/catalogo'
+      path: '/catalogo'
+      fullPath: '/cliente/catalogo'
+      preLoaderRoute: typeof ClienteCatalogoRouteImport
+      parentRoute: typeof ClienteRoute
+    }
+    '/cliente/agendar': {
+      id: '/cliente/agendar'
+      path: '/agendar'
+      fullPath: '/cliente/agendar'
+      preLoaderRoute: typeof ClienteAgendarRouteImport
+      parentRoute: typeof ClienteRoute
+    }
+    '/cliente/agendamentos': {
+      id: '/cliente/agendamentos'
+      path: '/agendamentos'
+      fullPath: '/cliente/agendamentos'
+      preLoaderRoute: typeof ClienteAgendamentosRouteImport
+      parentRoute: typeof ClienteRoute
+    }
+    '/admin/$section': {
+      id: '/admin/$section'
+      path: '/$section'
+      fullPath: '/admin/$section'
+      preLoaderRoute: typeof AdminSectionRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/_staff/servicos': {
       id: '/_staff/servicos'
@@ -452,13 +643,57 @@ const StaffRouteChildren: StaffRouteChildren = {
 
 const StaffRouteWithChildren = StaffRoute._addFileChildren(StaffRouteChildren)
 
+interface AdminRouteChildren {
+  AdminSectionRoute: typeof AdminSectionRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminSectionRoute: AdminSectionRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface ClienteRouteChildren {
+  ClienteAgendamentosRoute: typeof ClienteAgendamentosRoute
+  ClienteAgendarRoute: typeof ClienteAgendarRoute
+  ClienteCatalogoRoute: typeof ClienteCatalogoRoute
+  ClienteFidelidadeRoute: typeof ClienteFidelidadeRoute
+}
+
+const ClienteRouteChildren: ClienteRouteChildren = {
+  ClienteAgendamentosRoute: ClienteAgendamentosRoute,
+  ClienteAgendarRoute: ClienteAgendarRoute,
+  ClienteCatalogoRoute: ClienteCatalogoRoute,
+  ClienteFidelidadeRoute: ClienteFidelidadeRoute,
+}
+
+const ClienteRouteWithChildren =
+  ClienteRoute._addFileChildren(ClienteRouteChildren)
+
+interface ProfissionalRouteChildren {
+  ProfissionalSectionRoute: typeof ProfissionalSectionRoute
+}
+
+const ProfissionalRouteChildren: ProfissionalRouteChildren = {
+  ProfissionalSectionRoute: ProfissionalSectionRoute,
+}
+
+const ProfissionalRouteWithChildren = ProfissionalRoute._addFileChildren(
+  ProfissionalRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   StaffRoute: StaffRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
   AgendarRoute: AgendarRoute,
   AppRoute: AppRoute,
+  ClienteRoute: ClienteRouteWithChildren,
   LoginRoute: LoginRoute,
   LogoutRoute: LogoutRoute,
+  ProfissionalRoute: ProfissionalRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

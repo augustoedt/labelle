@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { TransactionsApi } from "@/server/api";
 import { Plus, TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react";
@@ -17,9 +18,15 @@ import PendingTransactions from "@/components/finance/PendingTransactions";
 import { formatBRL } from "@/lib/format";
 
 export default function Finance() {
-  const [showForm, setShowForm] = useState(false);
-  const [period, setPeriod] = useState("mes");
-  const [statusFilter, setStatusFilter] = useState("pago");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const search = location.search;
+  const validPeriods = ["dia", "semana", "mes"];
+  const validStatuses = ["pago", "pagamento_parcial", "pendente_confirmacao", "cancelado", "estornado"];
+  const period = validPeriods.includes(search.period) ? search.period : "mes";
+  const statusFilter = validStatuses.includes(search.status) ? search.status : "pago";
+  const updateSearch = (patch, replace = true) => navigate({ to: "/admin/financeiro", search: (previous) => ({ ...previous, ...patch }), replace });
+  const showForm = search.view === "new";
   const [form, setForm] = useState({
     type: "entrada", category: "servico", description: "", amount: "",
     date: format(new Date(), "yyyy-MM-dd"), payment_method: "pix",
@@ -33,7 +40,7 @@ export default function Finance() {
 
   const createMutation = useMutation({
     mutationFn: (data) => TransactionsApi.create({ data: { ...data, amount: parseFloat(data.amount), status: "pago" } }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["transactions"] }); setShowForm(false); resetForm(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["transactions"] }); updateSearch({ view: undefined }); resetForm(); },
   });
 
   const resetForm = () => setForm({
@@ -84,7 +91,7 @@ export default function Finance() {
       <PageHeader
         title="Financeiro"
         action={
-          <Button size="sm" className="rounded-xl gap-1.5" onClick={() => setShowForm(true)}>
+          <Button size="sm" className="rounded-xl gap-1.5" onClick={() => updateSearch({ view: "new" }, false)}>
             <Plus className="w-4 h-4" /> Lançar
           </Button>
         }
@@ -92,7 +99,7 @@ export default function Finance() {
 
       {/* Period tabs */}
       <div className="px-5">
-        <Tabs value={period} onValueChange={setPeriod}>
+        <Tabs value={period} onValueChange={(value) => updateSearch({ period: value }, false)}>
           <TabsList className="w-full bg-secondary/50 rounded-xl">
             <TabsTrigger value="dia" className="flex-1 rounded-lg text-xs">Dia</TabsTrigger>
             <TabsTrigger value="semana" className="flex-1 rounded-lg text-xs">Semana</TabsTrigger>
@@ -131,7 +138,7 @@ export default function Finance() {
           ].map(({ v, l }) => (
             <button
               key={v}
-              onClick={() => setStatusFilter(v)}
+              onClick={() => { if (v !== statusFilter) updateSearch({ status: v }, false); }}
               className={cn(
                 "whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 statusFilter === v
@@ -192,7 +199,7 @@ export default function Finance() {
       </div>
 
       {/* New transaction form */}
-      <Sheet open={showForm} onOpenChange={() => { setShowForm(false); resetForm(); }}>
+      <Sheet open={showForm} onOpenChange={(open) => { if (!open) { updateSearch({ view: undefined }); resetForm(); } }}>
         <SheetContent side="bottom" className="max-h-[85vh] rounded-t-3xl overflow-y-auto">
           <SheetHeader className="pb-4">
             <SheetTitle className="font-heading">Novo Lançamento</SheetTitle>

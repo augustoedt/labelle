@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PromotionsApi } from "@/server/api";
 import { Plus, ArrowLeft, Tag } from "lucide-react";
@@ -18,24 +19,68 @@ import { useUser } from "@/lib/auth";
 
 export default function Promotions() {
   const user = useUser();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const route = user?.role === "admin" ? "/admin/promocoes" : "/profissional/promocoes";
+  const search = location.search;
+  const updateSearch = (patch, replace = true) => navigate({ to: route, search: (previous) => ({ ...previous, ...patch }), replace });
   // Profissional vê as ofertas ativas em leitura; só o admin gerencia.
   const canEdit = user?.role === "admin";
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
     name: "", description: "", discount_type: "percent", discount_value: "",
     start_date: format(new Date(), "yyyy-MM-dd"), end_date: "", rules: "", is_active: true,
   });
   const queryClient = useQueryClient();
 
-  const { data: promotions = [], isLoading } = useQuery({
+  const { data: promotions = [], isLoading, isSuccess: promotionsReady } = useQuery({
     queryKey: ["promotions"],
     // note: no "created_date" field on our Promotion resource yet (no timestamps)
     queryFn: () => PromotionsApi.list(),
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data) => PromotionsApi.create({ data: { ...data, discount_value: parseFloat(data.discount_value) || 0 } }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["promotions"] }); setShowForm(false); },
+  const openNew = () => {
+    setEditing(null);
+    setForm({ name: "", description: "", discount_type: "percent", discount_value: "", start_date: format(new Date(), "yyyy-MM-dd"), end_date: "", rules: "", is_active: true });
+    setShowForm(true);
+  };
+  const openEdit = (promotion) => {
+    setEditing(promotion);
+    setForm({
+      name: promotion.name || "", description: promotion.description || "",
+      discount_type: promotion.discount_type || "percent", discount_value: String(promotion.discount_value ?? ""),
+      start_date: promotion.start_date || "", end_date: promotion.end_date || "",
+      rules: promotion.rules || "", is_active: promotion.is_active !== false,
+    });
+    setShowForm(true);
+  };
+
+  useEffect(() => {
+    if (!canEdit) return;
+    if (search.view === "new") {
+      if (!showForm || editing) openNew();
+      return;
+    }
+    if (typeof search.promotion === "string") {
+      if (isLoading || !promotionsReady) return;
+      const promotion = promotions.find((item) => String(item.id) === search.promotion);
+      if (!promotion) {
+        updateSearch({ promotion: undefined, view: undefined });
+        setShowForm(false);
+        setEditing(null);
+      } else if (String(editing?.id) !== search.promotion) openEdit(promotion);
+      return;
+    }
+    setShowForm(false);
+    setEditing(null);
+  }, [canEdit, search.promotion, search.view, promotions, isLoading, promotionsReady]);
+
+  const saveMutation = useMutation({
+    mutationFn: ({ id, data }) => id
+      ? PromotionsApi.update({ id, attributes: { ...data, discount_value: parseFloat(data.discount_value) || 0 } })
+      : PromotionsApi.create({ data: { ...data, discount_value: parseFloat(data.discount_value) || 0 } }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["promotions"] }); setShowForm(false); setEditing(null); updateSearch({ promotion: undefined, view: undefined }); },
   });
 
   const toggleMutation = useMutation({
@@ -50,9 +95,9 @@ export default function Promotions() {
         subtitle={`${promotions.filter(p => p.is_active).length} ativas`}
         action={
           <div className="flex gap-2">
-            <Link to="/mais"><Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button></Link>
+            <Link to={canEdit ? "/admin/mais" : "/profissional/mais"}><Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button></Link>
             {canEdit && (
-              <Button size="sm" className="rounded-xl gap-1.5" onClick={() => setShowForm(true)}><Plus className="w-4 h-4" /> Nova</Button>
+              <Button size="sm" className="rounded-xl gap-1.5" onClick={() => updateSearch({ view: "new", promotion: undefined }, false)}><Plus className="w-4 h-4" /> Nova</Button>
             )}
           </div>
         }
@@ -66,7 +111,7 @@ export default function Promotions() {
         ) : (
           <>
         {promotions.map((promo) => (
-          <div key={promo.id} className="bg-card rounded-2xl border border-border/50 p-4">
+          <div key={promo.id} role={canEdit ? "button" : undefined} tabIndex={canEdit ? 0 : undefined} onClick={() => { if (canEdit) updateSearch({ promotion: String(promo.id), view: "edit" }, false); }} className="bg-card rounded-2xl border border-border/50 p-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-accent/20">
@@ -79,7 +124,7 @@ export default function Promotions() {
                   </p>
                 </div>
               </div>
-              <Switch checked={promo.is_active} disabled={!canEdit} onCheckedChange={(v) => toggleMutation.mutate({ id: promo.id, is_active: v })} />
+              <Switch checked={promo.is_active} disabled={!canEdit} onClick={(event) => event.stopPropagation()} onCheckedChange={(v) => toggleMutation.mutate({ id: promo.id, is_active: v })} />
             </div>
             {promo.description && <p className="text-xs text-muted-foreground mt-2">{promo.description}</p>}
             {promo.end_date && (
@@ -95,10 +140,10 @@ export default function Promotions() {
       </div>
 
       {canEdit && (
-        <Sheet open={showForm} onOpenChange={() => setShowForm(false)}>
+        <Sheet open={showForm} onOpenChange={(open) => { if (!open) { setShowForm(false); setEditing(null); updateSearch({ promotion: undefined, view: undefined }); } }}>
         <SheetContent side="bottom" className="max-h-[85vh] rounded-t-3xl overflow-y-auto">
           <SheetHeader className="pb-4">
-            <SheetTitle className="font-heading">Nova Promoção</SheetTitle>
+            <SheetTitle className="font-heading">{editing ? "Editar Promoção" : "Nova Promoção"}</SheetTitle>
           </SheetHeader>
           <div className="space-y-4 pb-8">
             <div>
@@ -135,8 +180,9 @@ export default function Promotions() {
                 <Input type="date" value={form.end_date} onChange={e => setForm(p => ({ ...p, end_date: e.target.value }))} />
               </div>
             </div>
-            <Button onClick={() => createMutation.mutate(form)} className="w-full rounded-full h-12 font-semibold">
-              Criar Promoção
+            {saveMutation.isError && <p role="alert" className="text-sm text-destructive">Não foi possível salvar. Tente novamente.</p>}
+            <Button onClick={() => saveMutation.mutate({ id: editing?.id, data: form })} disabled={saveMutation.isPending} className="w-full rounded-full h-12 font-semibold">
+              {saveMutation.isPending ? "Salvando..." : editing ? "Atualizar Promoção" : "Criar Promoção"}
             </Button>
           </div>
         </SheetContent>

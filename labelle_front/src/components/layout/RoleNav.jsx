@@ -8,17 +8,17 @@ import { useUser } from "@/lib/auth";
 // clientes em leitura, comissões e um "Mais" filtrado).
 const NAV = {
   admin: [
-    { path: "/", label: "Início", icon: Home, exact: true },
-    { path: "/agenda", label: "Agenda", icon: CalendarDays },
-    { path: "/clientes", label: "Clientes", icon: Users },
-    { path: "/financeiro", label: "Financeiro", icon: Wallet },
-    { path: "/mais", label: "Mais", icon: MoreHorizontal },
+    { path: "/admin", label: "Início", icon: Home, exact: true },
+    { path: "/admin/agenda", label: "Agenda", icon: CalendarDays },
+    { path: "/admin/clientes", label: "Clientes", icon: Users },
+    { path: "/admin/financeiro", label: "Financeiro", icon: Wallet },
+    { path: "/admin/mais", label: "Mais", icon: MoreHorizontal },
   ],
   profissional: [
-    { path: "/minha-agenda", label: "Início", icon: Home, exact: true },
-    { path: "/clientes", label: "Clientes", icon: Users },
-    { path: "/minhas-comissoes", label: "Comissões", icon: Wallet },
-    { path: "/mais", label: "Mais", icon: MoreHorizontal },
+    { path: "/profissional/agenda", label: "Início", icon: Home, exact: true },
+    { path: "/profissional/clientes", label: "Clientes", icon: Users },
+    { path: "/profissional/comissoes", label: "Comissões", icon: Wallet },
+    { path: "/profissional/mais", label: "Mais", icon: MoreHorizontal },
   ],
 };
 

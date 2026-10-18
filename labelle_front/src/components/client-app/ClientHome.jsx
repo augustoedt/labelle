@@ -19,7 +19,11 @@ import {
   UserRound,
 } from "lucide-react";
 import { formatBRL } from "@/lib/format";
-import { availableService, minimumPrice } from "@/lib/serviceCatalog";
+import {
+  availableService,
+  minimumPrice,
+  promotionFor,
+} from "@/lib/serviceCatalog";
 import { categoryPhotos, categoryDescriptions } from "@/lib/brand";
 import ServiceCategoryIcon, {
   categoryLabels,
@@ -47,6 +51,9 @@ export default function ClientHome({ clientName, onNavigate, onCategory }) {
   const services = (serviceQuery.data || []).filter((s) =>
     availableService(s, variants),
   );
+  const applicablePromotions = services
+    .map((service) => promotionFor(promotions, service.id))
+    .filter(Boolean);
   const categories = [...new Set(services.map((s) => s.category))];
   const professionals = (professionalQuery.data || []).filter(
     (p) => p.is_active !== false,
@@ -210,7 +217,39 @@ export default function ClientHome({ clientName, onNavigate, onCategory }) {
         )}
       </section>
 
-      {promotions.some(p => p.is_active) && <section className="website-section website-offers"><div className="section-heading"><div><p className="eyebrow">Para aproveitar</p><h2>Promoções do salão</h2></div></div><div className="offers-grid">{promotions.filter(p => p.is_active).map(promo => <button className="offer-card" key={promo.id} onClick={() => onNavigate("catalogo")}><div><h3>{promo.name}</h3><p>{promo.description || promo.rules || "Consulte as condições do atendimento no catálogo."}</p></div><strong>{promo.discount_type === "percent" ? `−${promo.discount_value}%` : `−${formatBRL(promo.discount_value)}`}</strong></button>)}</div></section>}
+      {applicablePromotions.length > 0 && (
+        <section className="website-section website-offers">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Para aproveitar</p>
+              <h2>Promoções do salão</h2>
+            </div>
+          </div>
+          <div className="offers-grid">
+            {applicablePromotions.map((promo) => (
+              <button
+                className="offer-card"
+                key={promo.id}
+                onClick={() => onNavigate("catalogo")}
+              >
+                <div>
+                  <h3>{promo.name}</h3>
+                  <p>
+                    {promo.description ||
+                      promo.rules ||
+                      "Consulte as condições do atendimento no catálogo."}
+                  </p>
+                </div>
+                <strong>
+                  {promo.discount_type === "percent"
+                    ? `−${promo.discount_value}%`
+                    : `−${formatBRL(promo.discount_value)}`}
+                </strong>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section id="sobre" className="website-about website-section">
         <div className="about-image">

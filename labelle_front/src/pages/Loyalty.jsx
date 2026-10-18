@@ -36,7 +36,7 @@ export default function Loyalty() {
         title="Fidelidade"
         subtitle="Programa de pontos"
         action={
-          <Link to="/mais"><Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button></Link>
+          <Link to="/admin/mais"><Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button></Link>
         }
       />
 

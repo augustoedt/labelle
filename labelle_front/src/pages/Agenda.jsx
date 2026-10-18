@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppointmentsApi, ServicesApi, ProfessionalsApi, ClientsApi } from "@/server/api";
 import { Plus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
@@ -17,18 +18,38 @@ import { formatBRL } from "@/lib/format";
 
 
 export default function Agenda() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const location = useLocation();
+  const navigate = useNavigate();
+  const search = location.search;
+  const route = "/admin/agenda";
+  const dateParam = typeof search.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.date) && !Number.isNaN(new Date(`${search.date}T12:00:00`).getTime()) && format(new Date(`${search.date}T12:00:00`), "yyyy-MM-dd") === search.date ? search.date : null;
+  const selectedDate = dateParam ? new Date(`${dateParam}T12:00:00`) : new Date();
   const [showForm, setShowForm] = useState(false);
   const [editingApt, setEditingApt] = useState(null);
   const [finalizingApt, setFinalizingApt] = useState(null);
   const queryClient = useQueryClient();
   const dateStr = format(selectedDate, "yyyy-MM-dd");
+  const updateSearch = (patch, replace = true) => navigate({ to: route, search: (previous) => ({ ...previous, ...patch }), replace });
+  const navigateDate = (date) => { if (date !== dateStr) updateSearch({ date }, false); };
   const weekRowRef = useRef(null);
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments"],
     queryFn: () => AppointmentsApi.list({ sort: "-date", limit: 500 }),
   });
+
+  useEffect(() => {
+    if (!dateParam) updateSearch({ date: dateStr });
+  }, []);
+  useEffect(() => {
+    if (search.view === "new") { setEditingApt(null); setShowForm(true); setFinalizingApt(null); return; }
+    if ((search.view === "edit" || search.view === "finalize") && !isLoading) {
+      const apt = appointments.find((item) => String(item.id) === String(search.appointment));
+      if (!apt) { updateSearch({ appointment: undefined, view: undefined }); setShowForm(false); setFinalizingApt(null); return; }
+      if (search.view === "edit") { setEditingApt(apt); setShowForm(true); setFinalizingApt(null); }
+      else { setShowForm(false); setFinalizingApt(apt); }
+    } else if (!search.view) { setShowForm(false); setEditingApt(null); setFinalizingApt(null); }
+  }, [search.view, search.appointment, appointments, isLoading]);
 
   // Mantém o dia selecionado visível na fileira scrollável (centraliza).
   useEffect(() => {
@@ -60,6 +81,7 @@ export default function Agenda() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       setShowForm(false);
+      updateSearch({ appointment: undefined, view: undefined });
     },
   });
 
@@ -69,6 +91,7 @@ export default function Agenda() {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       setShowForm(false);
       setEditingApt(null);
+      updateSearch({ appointment: undefined, view: undefined });
     },
   });
 
@@ -172,7 +195,7 @@ export default function Agenda() {
         title="Agenda"
         subtitle={format(selectedDate, "MMMM yyyy", { locale: ptBR })}
         action={
-          <Button size="sm" className="rounded-xl gap-1.5" onClick={() => { setEditingApt(null); setShowForm(true); }}>
+          <Button size="sm" className="rounded-xl gap-1.5" onClick={() => updateSearch({ view: "new", appointment: undefined }, false)}>
             <Plus className="w-4 h-4" /> Novo
           </Button>
         }
@@ -181,13 +204,13 @@ export default function Agenda() {
       {/* Date navigation */}
       <div className="px-5">
         <div className="flex items-center justify-between mb-3">
-          <Button variant="ghost" size="icon" onClick={() => setSelectedDate(d => subDays(d, 7))} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={() => navigateDate(format(subDays(selectedDate, 7), "yyyy-MM-dd"))} className="h-8 w-8">
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setSelectedDate(new Date())} className="text-xs text-primary">
+          <Button variant="ghost" size="sm" onClick={() => navigateDate(format(new Date(), "yyyy-MM-dd"))} className="text-xs text-primary">
             Hoje
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setSelectedDate(d => addDays(d, 7))} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={() => navigateDate(format(addDays(selectedDate, 7), "yyyy-MM-dd"))} className="h-8 w-8">
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
@@ -208,7 +231,7 @@ export default function Agenda() {
               <button
                 key={d.toISOString()}
                 data-date={format(d, "yyyy-MM-dd")}
-                onClick={() => setSelectedDate(d)}
+                onClick={() => navigateDate(format(d, "yyyy-MM-dd"))}
                 className={cn(
                   "flex flex-col items-center py-2 px-3 rounded-xl transition-all duration-150 shrink-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   isSelected ? "bg-primary text-primary-foreground" : "bg-card hover:bg-secondary",
@@ -246,7 +269,7 @@ export default function Agenda() {
               role="button"
               tabIndex={0}
               className="bg-card rounded-2xl border border-border/50 overflow-hidden cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={() => { setEditingApt(apt); setShowForm(true); }}
+              onClick={() => updateSearch({ appointment: String(apt.id), view: "edit" }, false)}
             >
               <div className="flex">
                 <div className="w-1.5 bg-primary/70 flex-shrink-0" />
@@ -273,7 +296,7 @@ export default function Agenda() {
                       <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={(e) => { e.stopPropagation(); handleStatusChange(apt, "em_atendimento"); }}>Iniciar</Button>
                     )}
                     {apt.status === "em_atendimento" && (
-                      <Button size="sm" className="h-7 text-xs rounded-lg" onClick={(e) => { e.stopPropagation(); setFinalizingApt(apt); }}>Serviços / Finalizar</Button>
+                      <Button size="sm" className="h-7 text-xs rounded-lg" onClick={(e) => { e.stopPropagation(); updateSearch({ appointment: String(apt.id), view: "finalize" }, false); }}>Serviços / Finalizar</Button>
                     )}
                     {apt.status !== "cancelado" && apt.status !== "concluido" && (
                       <Button size="sm" variant="ghost" className="h-7 text-xs rounded-lg text-destructive" onClick={(e) => { e.stopPropagation(); handleStatusChange(apt, "cancelado"); }}>Cancelar</Button>
@@ -299,7 +322,7 @@ export default function Agenda() {
 
       <AppointmentForm
         open={showForm}
-        onClose={() => { setShowForm(false); setEditingApt(null); }}
+        onClose={() => { setShowForm(false); setEditingApt(null); updateSearch({ appointment: undefined, view: undefined }); }}
         onSubmit={handleSubmit}
         services={services}
         professionals={professionals}
@@ -309,7 +332,7 @@ export default function Agenda() {
 
       <FinalizeSheet
         open={!!finalizingApt}
-        onClose={() => setFinalizingApt(null)}
+        onClose={() => { setFinalizingApt(null); updateSearch({ appointment: undefined, view: undefined }); }}
         appointment={finalizingApt}
         services={services}
         onFinalized={() => queryClient.invalidateQueries({ queryKey: ["appointments"] })}

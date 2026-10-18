@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ProfessionalsApi, ProfessionalServicesApi, ServicesApi, AppointmentsApi, listUsers } from "@/server/api";
 import { Plus, ArrowLeft, Link2 } from "lucide-react";
@@ -19,6 +20,11 @@ const typeLabels = { fixo: "Fixo", comissao: "Comissão", aluguel: "Aluguel Cade
 const typeColors = { fixo: "bg-blue-100 text-blue-700", comissao: "bg-emerald-100 text-emerald-700", aluguel: "bg-purple-100 text-purple-700" };
 
 export default function Professionals() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const search = location.search;
+  const route = "/admin/profissionais";
+  const updateSearch = (patch, replace = true) => navigate({ to: route, search: (previous) => ({ ...previous, ...patch }), replace });
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
@@ -32,7 +38,7 @@ export default function Professionals() {
   });
   const queryClient = useQueryClient();
 
-  const { data: professionals = [], isLoading } = useQuery({
+  const { data: professionals = [], isLoading, isSuccess: professionalsReady } = useQuery({
     queryKey: ["professionals"],
     queryFn: () => ProfessionalsApi.list(),
   });
@@ -42,10 +48,29 @@ export default function Professionals() {
     queryFn: () => ServicesApi.list(),
   });
 
-  const { data: professionalServices = [] } = useQuery({
+  const { data: professionalServices = [], isSuccess: professionalServicesReady } = useQuery({
     queryKey: ["professional-services"],
     queryFn: () => ProfessionalServicesApi.list({ limit: 1000 }),
   });
+
+  useEffect(() => {
+    if (search.view === "new") {
+      if (!showForm || editing) openNew();
+      return;
+    }
+    if (typeof search.professional === "string") {
+      if (isLoading || !professionalsReady || !professionalServicesReady) return;
+      const professional = professionals.find((item) => String(item.id) === search.professional);
+      if (!professional) {
+        updateSearch({ professional: undefined, view: undefined });
+        setShowForm(false);
+        setEditing(null);
+      } else if (String(editing?.id) !== search.professional) openEdit(professional);
+      return;
+    }
+    setShowForm(false);
+    setEditing(null);
+  }, [search.professional, search.view, professionals, isLoading, professionalsReady, professionalServicesReady]);
 
   const { data: appointments = [] } = useQuery({
     queryKey: ["appointments"],
@@ -125,6 +150,7 @@ export default function Professionals() {
       queryClient.invalidateQueries({ queryKey: ["professional-services"] });
       setShowForm(false);
       setEditing(null);
+      updateSearch({ professional: undefined, view: undefined });
     } finally {
       setSaving(false);
     }
@@ -149,8 +175,8 @@ export default function Professionals() {
         subtitle={`${professionals.length} cadastrados`}
         action={
           <div className="flex gap-2">
-            <Link to="/mais"><Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button></Link>
-            <Button size="sm" className="rounded-xl gap-1.5" onClick={openNew}><Plus className="w-4 h-4" /> Novo</Button>
+            <Link to="/admin/mais"><Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button></Link>
+            <Button size="sm" className="rounded-xl gap-1.5" onClick={() => updateSearch({ view: "new", professional: undefined }, false)}><Plus className="w-4 h-4" /> Novo</Button>
           </div>
         }
       />
@@ -162,7 +188,7 @@ export default function Professionals() {
           ))
         ) : (
         professionals.map((prof) => (
-          <div key={prof.id} role="button" tabIndex={0} className="bg-card rounded-2xl border border-border/50 p-4 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => openEdit(prof)}>
+          <div key={prof.id} role="button" tabIndex={0} className="bg-card rounded-2xl border border-border/50 p-4 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => updateSearch({ professional: String(prof.id), view: "edit" }, false)}>
             <div className="flex items-start gap-3">
               <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
                 <span className="text-base font-heading font-bold tracking-tight text-primary">{prof.name?.charAt(0)}</span>
@@ -185,7 +211,7 @@ export default function Professionals() {
         )}
       </div>
 
-      <Sheet open={showForm} onOpenChange={() => { setShowForm(false); setEditing(null); }}>
+      <Sheet open={showForm} onOpenChange={(open) => { if (!open) { setShowForm(false); setEditing(null); updateSearch({ professional: undefined, view: undefined }); } }}>
         <SheetContent side="bottom" className="max-h-[85vh] rounded-t-3xl overflow-y-auto">
           <SheetHeader className="pb-4">
             <SheetTitle className="font-heading">{editing ? "Editar Profissional" : "Novo Profissional"}</SheetTitle>

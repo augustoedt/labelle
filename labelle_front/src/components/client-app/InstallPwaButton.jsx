@@ -63,7 +63,7 @@ export default function InstallPwaButton() {
   return (
     <>
       {/* Banner fixo no topo */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-lg z-50 bg-primary shadow-lg px-4 py-3 flex items-center gap-3">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-lg z-[55] bg-primary shadow-lg px-4 py-3 flex items-center gap-3">
         <Smartphone className="w-5 h-5 text-primary-foreground flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-primary-foreground text-xs font-semibold leading-tight">La Belle Studio</p>

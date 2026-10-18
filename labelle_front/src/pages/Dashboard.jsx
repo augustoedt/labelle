@@ -153,7 +153,7 @@ export default function Dashboard() {
         <section className="dashboard-panel">
           <div className="dashboard-panel-title">
             <h2>Agenda de hoje</h2>
-            <Link to="/agenda">Ver agenda →</Link>
+            <Link to="/admin/agenda">Ver agenda →</Link>
           </div>
           <TodayAgenda
             appointments={[...todayAppointments].sort((a, b) =>
@@ -166,7 +166,7 @@ export default function Dashboard() {
           <section className="dashboard-panel">
             <div className="dashboard-panel-title">
               <h2>Recebimentos da semana</h2>
-              <Link to="/financeiro">Ver financeiro</Link>
+              <Link to="/admin/financeiro">Ver financeiro</Link>
             </div>
             <div className="dashboard-chart">
               {transactionQuery.isPending ? (
@@ -215,7 +215,7 @@ export default function Dashboard() {
           <section className="dashboard-panel">
             <div className="dashboard-panel-title">
               <h2>Serviços mais realizados no mês</h2>
-              <Link to="/relatorios">Ver relatórios</Link>
+              <Link to="/admin/relatorios">Ver relatórios</Link>
             </div>
             {topServices.length ? (
               <ol className="dashboard-service-list">

@@ -118,9 +118,16 @@ export default function FinalizeSheet({
 
   const total =
     (appointment.price || 0) + items.reduce((s, i) => s + (i.price || 0), 0);
-  const availableServices = (services || []).filter(
-    (s) => s.is_active !== false,
-  );
+  const availableServices = (services || []).filter((s) => {
+    if (s.is_active === false || !variantsQuery.isSuccess) return false;
+    const serviceVariants = (variantsQuery.data || []).filter(
+      (variant) => variant.service_id === s.id,
+    );
+    return (
+      serviceVariants.length === 0 ||
+      serviceVariants.some((variant) => variant.is_active !== false)
+    );
+  });
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
@@ -191,8 +198,8 @@ export default function FinalizeSheet({
                   setAddingVariantId("");
                 }}
               >
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Adicionar serviço..." />
+                <SelectTrigger className="flex-1" disabled={!variantsQuery.isSuccess}>
+                  <SelectValue placeholder={variantsQuery.isSuccess ? "Adicionar serviço..." : "Carregando opções..."} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableServices.map((s) => (
@@ -207,9 +214,10 @@ export default function FinalizeSheet({
                 className="rounded-xl gap-1"
                 disabled={
                   !addingServiceId ||
+                  !availableServices.some((service) => service.id === addingServiceId) ||
                   addMutation.isPending ||
                   !variantsQuery.isSuccess ||
-                  (options.length > 0 && !addingVariantId)
+                  (options.length > 0 && !options.some((option) => option.id === addingVariantId))
                 }
                 onClick={() => addMutation.mutate(addingServiceId)}
               >

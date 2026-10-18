@@ -5,6 +5,6 @@ export const Route = createFileRoute('/logout')({
   preload: false,
   loader: async () => {
     await logoutFn()
-    throw redirect({ to: '/login' })
+    throw redirect({ to: '/login', search: { returnTo: undefined } })
   },
 })

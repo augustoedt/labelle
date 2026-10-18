@@ -118,7 +118,7 @@ export default function Reports() {
               <FileDown className="w-3.5 h-3.5" />
               Exportar Excel
             </Button>
-            <Link to="/mais"><Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button></Link>
+            <Link to="/admin/mais"><Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button></Link>
           </div>
         }
       />

@@ -21,25 +21,27 @@ import LaBelleLogo from "@/components/ui/LaBelleLogo";
 import { useUser } from "@/lib/auth";
 
 const adminLinks = [
-  { path: "/", label: "Início", icon: Home },
-  { path: "/agenda", label: "Agenda", icon: CalendarDays },
-  { path: "/clientes", label: "Clientes", icon: Users },
-  { path: "/servicos", label: "Serviços", icon: Scissors },
-  { path: "/produtos", label: "Produtos", icon: Package },
-  { path: "/profissionais", label: "Profissionais", icon: UsersRound },
-  { path: "/financeiro", label: "Financeiro", icon: Wallet },
-  { path: "/relatorios", label: "Relatórios", icon: BarChart3 },
-  { path: "/promocoes", label: "Promoções", icon: Tag },
-  { path: "/fidelidade", label: "Fidelidade", icon: Gift },
-  { path: "/lembretes", label: "Lembretes", icon: BellRing },
-  { path: "/configuracoes", label: "Configurações", icon: Settings },
+  { path: "/admin", label: "Início", icon: Home },
+  { path: "/admin/agenda", label: "Agenda", icon: CalendarDays },
+  { path: "/admin/clientes", label: "Clientes", icon: Users },
+  { path: "/admin/servicos", label: "Serviços", icon: Scissors },
+  { path: "/admin/produtos", label: "Produtos", icon: Package },
+  { path: "/admin/profissionais", label: "Profissionais", icon: UsersRound },
+  { path: "/admin/financeiro", label: "Financeiro", icon: Wallet },
+  { path: "/admin/relatorios", label: "Relatórios", icon: BarChart3 },
+  { path: "/admin/promocoes", label: "Promoções", icon: Tag },
+  { path: "/admin/fidelidade", label: "Fidelidade", icon: Gift },
+  { path: "/admin/lembretes", label: "Lembretes", icon: BellRing },
+  { path: "/admin/configuracoes", label: "Configurações", icon: Settings },
+  { path: "/admin/mais", label: "Mais", icon: Search },
 ];
 const professionalLinks = [
-  { path: "/minha-agenda", label: "Minha agenda", icon: CalendarDays },
-  { path: "/clientes", label: "Clientes", icon: Users },
-  { path: "/servicos", label: "Serviços", icon: Scissors },
-  { path: "/minhas-comissoes", label: "Comissões", icon: Wallet },
-  { path: "/promocoes", label: "Promoções", icon: Tag },
+  { path: "/profissional/agenda", label: "Minha agenda", icon: CalendarDays },
+  { path: "/profissional/clientes", label: "Clientes", icon: Users },
+  { path: "/profissional/servicos", label: "Serviços", icon: Scissors },
+  { path: "/profissional/comissoes", label: "Comissões", icon: Wallet },
+  { path: "/profissional/promocoes", label: "Promoções", icon: Tag },
+  { path: "/profissional/mais", label: "Mais", icon: Search }
 ];
 export default function AppLayout({ children }) {
   const user = useUser();

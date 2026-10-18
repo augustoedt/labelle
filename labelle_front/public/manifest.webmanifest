@@ -2,7 +2,7 @@
   "name": "La Belle Studio",
   "short_name": "La Belle",
   "description": "Gestão e agendamento online do La Belle Studio",
-  "start_url": "/app",
+  "start_url": "/cliente",
   "display": "standalone",
   "background_color": "#fbf7f4",
   "theme_color": "#a76c68",

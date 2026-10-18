@@ -13,8 +13,23 @@ export function serviceOptions(service, variants) {
   const options = activeVariants(variants, service.id);
   return options.length ? options : [service];
 }
-export function promotionFor(promotions, serviceId) {
-  return promotions.find((p) => p.is_active && p.service_id === serviceId);
+export function promotionFor(promotions, serviceId, salonDate) {
+  const date =
+    salonDate ||
+    new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return promotions
+    .filter(
+      (promotion) =>
+        promotion.is_active === true &&
+        promotion.service_id === serviceId &&
+        (!promotion.start_date || promotion.start_date <= date) &&
+        (!promotion.end_date || promotion.end_date >= date),
+    )
+    .sort((a, b) => {
+      const firstId = String(a.id ?? "");
+      const secondId = String(b.id ?? "");
+      return firstId < secondId ? -1 : firstId > secondId ? 1 : 0;
+    })[0];
 }
 export function finalPrice(option, promotion) {
   const price = Number(option?.price || 0);

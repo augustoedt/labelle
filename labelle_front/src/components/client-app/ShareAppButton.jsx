@@ -8,7 +8,7 @@ export default function ShareAppButton({ className }) {
 
   // window is only available client-side; compute lazily inside handlers so
   // this component can still render during SSR.
-  const getAppUrl = () => `${window.location.origin}/app`;
+  const getAppUrl = () => `${window.location.origin}/cliente`;
   const getMessage = () => `✨ Agende seu horário na La Belle Studio!\n\nAcesse agora: ${getAppUrl()}`;
 
   const handleCopy = async () => {

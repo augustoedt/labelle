@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { roleHome, safeStaffReturnTo } from '~/lib/staffRoutes'
 import { useServerFn } from '@tanstack/react-start'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -9,11 +10,13 @@ import { Label } from '~/components/ui/label'
 import LaBelleLogo from '~/components/ui/LaBelleLogo'
 
 export const Route = createFileRoute('/login')({
+  validateSearch: (search: Record<string, unknown>) => ({ returnTo: typeof search.returnTo === 'string' ? search.returnTo : undefined }),
   component: LoginPage,
 })
 
 function LoginPage() {
   const router = useRouter()
+  const { returnTo } = Route.useSearch()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const login = useServerFn(loginFn)
@@ -23,7 +26,8 @@ function LoginPage() {
     onSuccess: async (result) => {
       if (result.error) return
       await router.invalidate()
-      router.navigate({ to: result.user.role === 'admin' ? '/' : '/minha-agenda' })
+      const destination = new URL(safeStaffReturnTo(returnTo, result.user.role) || roleHome(result.user.role), window.location.origin)
+      router.navigate({ to: destination.pathname as never, search: Object.fromEntries(destination.searchParams) as never, replace: true })
     },
   })
 

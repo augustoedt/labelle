@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ProductsApi } from "@/server/api";
-import { Plus, ArrowLeft, AlertTriangle, Package } from "lucide-react";
+import { Plus, ArrowLeft, AlertTriangle, Package, Search } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,13 @@ import PageHeader from "@/components/ui/PageHeader";
 import { formatBRL } from "@/lib/format";
 
 export default function Products() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const search = location.search;
+  const q = typeof search.q === "string" ? search.q : "";
+  const [queryDraft, setQueryDraft] = useState(q);
+  const lowStock = search.lowStock === true || search.lowStock === "true";
+  const updateSearch = (patch, replace = true) => navigate({ to: "/admin/produtos", search: (previous) => ({ ...previous, ...patch }), replace });
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
@@ -25,6 +33,22 @@ export default function Products() {
     queryFn: () => ProductsApi.list(),
   });
 
+  useEffect(() => { setQueryDraft(q); }, [q]);
+  useEffect(() => {
+    const timer = setTimeout(() => { if (queryDraft !== q) updateSearch({ q: queryDraft || undefined }); }, 250);
+    return () => clearTimeout(timer);
+  }, [queryDraft]);
+  useEffect(() => {
+    if (!search.product || isLoading) return;
+    const product = products.find((item) => String(item.id) === String(search.product));
+    if (!product) { updateSearch({ product: undefined }); setEditing(null); setShowForm(false); return; }
+    openEdit(product);
+  }, [search.product, products, isLoading]);
+  useEffect(() => {
+    if (search.view === "new") openNew();
+    else if (!search.product) setShowForm(false);
+  }, [search.view, search.product]);
+
   const createMutation = useMutation({
     mutationFn: (data) => ProductsApi.create({
       data: {
@@ -32,7 +56,7 @@ export default function Products() {
         quantity: parseInt(data.quantity) || 0, min_quantity: parseInt(data.min_quantity) || 5,
       },
     }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); setShowForm(false); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); setShowForm(false); updateSearch({ product: undefined, view: undefined }); },
   });
 
   const updateMutation = useMutation({
@@ -43,7 +67,7 @@ export default function Products() {
         quantity: parseInt(data.quantity) || 0, min_quantity: parseInt(data.min_quantity) || 5,
       },
     }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); setShowForm(false); setEditing(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); setShowForm(false); setEditing(null); updateSearch({ product: undefined, view: undefined }); },
   });
 
   const openEdit = (p) => {
@@ -76,11 +100,19 @@ export default function Products() {
         subtitle={`${products.length} produtos • ${lowStockCount} em baixa`}
         action={
           <div className="flex gap-2">
-            <Link to="/mais"><Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button></Link>
-            <Button size="sm" className="rounded-xl gap-1.5" onClick={openNew}><Plus className="w-4 h-4" /> Novo</Button>
+            <Link to="/admin/mais"><Button variant="ghost" size="icon" className="rounded-xl h-9 w-9"><ArrowLeft className="w-4 h-4" /></Button></Link>
+            <Button size="sm" className="rounded-xl gap-1.5" onClick={() => { updateSearch({ view: "new", product: undefined }, false); openNew(); }}><Plus className="w-4 h-4" /> Novo</Button>
           </div>
         }
       />
+
+      <div className="px-5 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input value={queryDraft} onChange={(event) => setQueryDraft(event.target.value)} placeholder="Buscar produto..." className="pl-10 rounded-xl bg-card" />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground"><input type="checkbox" checked={lowStock} onChange={(event) => updateSearch({ lowStock: event.target.checked || undefined }, false)} /> Apenas estoque baixo</label>
+      </div>
 
       <div className="px-5 space-y-2">
         {isLoading ? (
@@ -89,10 +121,10 @@ export default function Products() {
           ))
         ) : (
           <>
-        {products.map((p) => {
+        {products.filter((p) => (!lowStock || p.quantity <= (p.min_quantity || 5)) && (!q || `${p.name || ""} ${p.category || ""}`.toLowerCase().includes(q.toLowerCase()))).map((p) => {
           const isLow = p.quantity <= (p.min_quantity || 5);
           return (
-            <div key={p.id} role="button" tabIndex={0} className="bg-card rounded-xl border border-border/50 p-3.5 flex items-center gap-3 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => openEdit(p)}>
+            <div key={p.id} role="button" tabIndex={0} className="bg-card rounded-xl border border-border/50 p-3.5 flex items-center gap-3 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => updateSearch({ product: String(p.id), view: undefined }, false)}>
               <div className={cn("p-2 rounded-lg", isLow ? "bg-red-50" : "bg-secondary/50")}>
                 {isLow ? <AlertTriangle className="w-4 h-4 text-red-500" /> : <Package className="w-4 h-4 text-muted-foreground" />}
               </div>
@@ -110,11 +142,14 @@ export default function Products() {
         {products.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-12">Nenhum produto cadastrado</p>
         )}
+        {products.length > 0 && !products.some((p) => (!lowStock || p.quantity <= (p.min_quantity || 5)) && (!q || `${p.name || ""} ${p.category || ""}`.toLowerCase().includes(q.toLowerCase()))) && (
+          <p className="text-center text-sm text-muted-foreground py-12">Nenhum produto encontrado</p>
+        )}
           </>
         )}
       </div>
 
-      <Sheet open={showForm} onOpenChange={() => { setShowForm(false); setEditing(null); }}>
+      <Sheet open={showForm} onOpenChange={() => { setShowForm(false); setEditing(null); updateSearch({ product: undefined, view: undefined }); }}>
         <SheetContent side="bottom" className="max-h-[85vh] rounded-t-3xl overflow-y-auto">
           <SheetHeader className="pb-4">
             <SheetTitle className="font-heading">{editing ? "Editar Produto" : "Novo Produto"}</SheetTitle>

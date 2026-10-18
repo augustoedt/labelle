@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RemindersApi } from "@/server/api";
 import { MessageCircle, Check, X } from "lucide-react";
@@ -34,8 +35,14 @@ const statusColors = {
 // WhatsApp" tenta o envio automático pelo WhatsApp da empresa (WAHA); se não
 // há provedor conectado, ou o envio falha, cai pro link wa.me manual.
 export default function Reminders() {
-  const [statusFilter, setStatusFilter] = useState("pendente");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const allowedStatuses = ["pendente", "enviado", "falhou", "cancelado", "todos"];
+  const statusFilter = allowedStatuses.includes(location.search.status) ? location.search.status : "pendente";
   const queryClient = useQueryClient();
+  const setStatusFilter = (status) => {
+    if (status !== statusFilter) navigate({ to: "/admin/lembretes", search: (previous) => ({ ...previous, status }) });
+  };
 
   const { data: reminders = [], isLoading } = useQuery({
     queryKey: ["client-reminders"],

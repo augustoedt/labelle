@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ServicesApi, ServiceVariantsApi } from "@/server/api";
 import { Plus, ArrowLeft, Clock } from "lucide-react";
@@ -36,6 +37,11 @@ const categoryLabels = {
 
 export default function Services() {
   const user = useUser();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const route = user?.role === "admin" ? "/admin/servicos" : "/profissional/servicos";
+  const search = location.search;
+  const updateSearch = (patch, replace = true) => navigate({ to: route, search: (previous) => ({ ...previous, ...patch }), replace });
   // Profissional vê o catálogo em leitura; só o admin edita.
   const canEdit = user?.role === "admin";
   const [showForm, setShowForm] = useState(false);
@@ -56,10 +62,30 @@ export default function Services() {
   });
   const queryClient = useQueryClient();
 
-  const { data: services = [], isLoading } = useQuery({
+  const { data: services = [], isLoading, isSuccess: servicesReady } = useQuery({
     queryKey: ["services"],
     queryFn: () => ServicesApi.list(),
   });
+
+  useEffect(() => {
+    if (!canEdit) return;
+    if (search.view === "new") {
+      if (!showForm || editing) openNew();
+      return;
+    }
+    if (typeof search.service === "string") {
+      if (isLoading || !servicesReady || !variantsQuery.isSuccess) return;
+      const service = services.find((item) => String(item.id) === search.service);
+      if (!service) {
+        updateSearch({ service: undefined, view: undefined, category: undefined });
+        setShowForm(false);
+        setEditing(null);
+      } else if (String(editing?.id) !== search.service) openEdit(service);
+      return;
+    }
+    setShowForm(false);
+    setEditing(null);
+  }, [canEdit, search.service, search.view, services, isLoading, servicesReady, variantsQuery.isSuccess]);
 
   const createMutation = useMutation({
     mutationFn: (data) =>
@@ -82,6 +108,7 @@ export default function Services() {
       queryClient.invalidateQueries({ queryKey: ["services"] });
       queryClient.invalidateQueries({ queryKey: ["service-variants"] });
       setShowForm(false);
+      updateSearch({ service: undefined, view: undefined, category: undefined });
     },
   });
 
@@ -108,6 +135,7 @@ export default function Services() {
       queryClient.invalidateQueries({ queryKey: ["service-variants"] });
       setShowForm(false);
       setEditing(null);
+      updateSearch({ service: undefined, view: undefined, category: undefined });
     },
   });
 
@@ -237,7 +265,7 @@ export default function Services() {
         subtitle={`${services.length} cadastrados`}
         action={
           <div className="flex gap-2">
-            <Link to="/mais">
+            <Link to={canEdit ? "/admin/mais" : "/profissional/mais"}>
               <Button
                 variant="ghost"
                 size="icon"
@@ -250,7 +278,7 @@ export default function Services() {
               <Button
                 size="sm"
                 className="rounded-xl gap-1.5"
-                onClick={openNew}
+                onClick={() => updateSearch({ view: "new", service: undefined }, false)}
               >
                 <Plus className="w-4 h-4" /> Novo
               </Button>
@@ -287,7 +315,7 @@ export default function Services() {
                     key={svc.id}
                     className="bg-card rounded-xl border border-border/50 p-3.5 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     onClick={() => {
-                      if (canEdit) openEdit(svc);
+                      if (canEdit) updateSearch({ service: String(svc.id), view: "edit" }, false);
                     }}
                   >
                     <div className="flex items-center justify-between">
@@ -329,9 +357,12 @@ export default function Services() {
       {canEdit && (
         <Sheet
           open={showForm}
-          onOpenChange={() => {
-            setShowForm(false);
-            setEditing(null);
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowForm(false);
+              setEditing(null);
+              updateSearch({ service: undefined, view: undefined, category: undefined });
+            }
           }}
         >
           <SheetContent

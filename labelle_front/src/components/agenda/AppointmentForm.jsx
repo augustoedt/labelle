@@ -14,11 +14,16 @@ import { maskPhone } from "@/lib/phone";
 export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment }) {
   // Só profissionais vinculadas ao serviço escolhido aparecem na lista —
   // evita agendar um serviço com quem não sabe fazer.
-  const { data: professionalServices = [] } = useQuery({
+  const professionalServicesQuery = useQuery({
     queryKey: ["professional-services"],
     queryFn: () => ProfessionalServicesApi.list({ limit: 1000 }),
   });
-  const { data: variants = [] } = useQuery({ queryKey: ["service-variants"], queryFn: () => ServiceVariantsApi.list({ limit: 1000 }) });
+  const professionalServices = professionalServicesQuery.data || [];
+  const variantsQuery = useQuery({
+    queryKey: ["service-variants"],
+    queryFn: () => ServiceVariantsApi.list({ limit: 1000 }),
+  });
+  const variants = variantsQuery.data || [];
   const [form, setForm] = useState({
     client_name: "",
     client_phone: "",
@@ -56,8 +61,18 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
 
   const selectedService = services?.find(s => s.id === form.service_id);
 
-  const serviceVariants = variants.filter(v => v.service_id === form.service_id && v.is_active !== false);
+  const serviceVariantRows = variants.filter(v => v.service_id === form.service_id);
+  const serviceVariants = serviceVariantRows.filter(v => v.is_active !== false);
+  const retainedVariant = appointment && appointment.service_variant_id === form.service_variant_id &&
+    variants.find(v => v.id === form.service_variant_id && v.service_id === form.service_id);
+  const variantOptions = retainedVariant && !serviceVariants.some(v => v.id === retainedVariant.id)
+    ? [...serviceVariants, retainedVariant]
+    : serviceVariants;
   const selectedOption = variants.find(v => v.id === form.service_variant_id) || selectedService;
+  const hasOnlyInactiveVariants = (serviceId) => {
+    const rows = variants.filter(v => v.service_id === serviceId);
+    return rows.length > 0 && !rows.some(v => v.is_active !== false);
+  };
 
   // Sem serviço escolhido ainda, mostra todo mundo. Com serviço escolhido,
   // mostra só quem está vinculada — inclusive se ninguém estiver vinculado
@@ -73,11 +88,11 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
   // Se trocar de serviço e a profissional escolhida não fizer o novo
   // serviço, limpa a seleção em vez de deixar um agendamento inválido.
   useEffect(() => {
-    if (form.professional_id && !qualifiedProfessionals?.some(p => p.id === form.professional_id)) {
+    if (professionalServicesQuery.isSuccess && form.professional_id && !qualifiedProfessionals?.some(p => p.id === form.professional_id)) {
       setForm(prev => ({ ...prev, professional_id: "" }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.service_id, professionalServices]);
+  }, [form.service_id, professionalServices, professionalServicesQuery.isSuccess]);
 
   const handleClientSelect = (clientId) => {
     const client = clients?.find(c => c.id === clientId);
@@ -131,19 +146,35 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
               <Input value={form.client_phone} onChange={e => setForm(prev => ({ ...prev, client_phone: maskPhone(e.target.value) }))} placeholder="(00) 00000-0000" />
             </div>
           </div>
+          {variantsQuery.isError && (
+            <div role="alert" className="text-sm text-destructive">
+              Não foi possível carregar as opções dos serviços.{' '}
+              <button type="button" className="underline" onClick={() => variantsQuery.refetch()}>
+                Tentar novamente
+              </button>
+            </div>
+          )}
+          {professionalServicesQuery.isError && (
+            <div role="alert" className="text-sm text-destructive">
+              Não foi possível carregar os vínculos das profissionais.{' '}
+              <button type="button" className="underline" onClick={() => professionalServicesQuery.refetch()}>
+                Tentar novamente
+              </button>
+            </div>
+          )}
           <div>
             <Label className="text-xs">Serviço</Label>
             <Select value={form.service_id} onValueChange={v => setForm(prev => ({ ...prev, service_id: v, service_variant_id: null }))}>
-              <SelectTrigger><SelectValue placeholder="Selecionar serviço..." /></SelectTrigger>
+              <SelectTrigger disabled={!variantsQuery.isSuccess}><SelectValue placeholder={variantsQuery.isSuccess ? "Selecionar serviço..." : "Carregando opções..."} /></SelectTrigger>
               <SelectContent>
-                {services?.filter(s => s.is_active !== false).map(s => (
+                {services?.filter(s => s.is_active !== false && (!variantsQuery.isSuccess || !hasOnlyInactiveVariants(s.id) || (appointment && s.id === appointment.service_id))).map(s => (
                   <SelectItem key={s.id} value={s.id}>{s.name} - {formatBRL(s.price)} ({s.duration_minutes}min)</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div>
-            {serviceVariants.length > 0 && <div className="mb-4"><Label>Opção do serviço</Label><Select value={form.service_variant_id || ""} onValueChange={v => setForm(prev => ({ ...prev, service_variant_id: v }))}><SelectTrigger><SelectValue placeholder="Escolher opção..." /></SelectTrigger><SelectContent>{serviceVariants.map(v => <SelectItem key={v.id} value={v.id}>{v.name} — {formatBRL(v.price)} ({v.duration_minutes}min)</SelectItem>)}</SelectContent></Select></div>}
+            {serviceVariantRows.length > 0 && <div className="mb-4"><Label>Opção do serviço</Label><Select value={form.service_variant_id || ""} onValueChange={v => setForm(prev => ({ ...prev, service_variant_id: v }))}><SelectTrigger disabled={!variantsQuery.isSuccess}><SelectValue placeholder="Escolher opção..." /></SelectTrigger><SelectContent>{variantOptions.map(v => <SelectItem key={v.id} value={v.id}>{v.name} — {formatBRL(v.price)} ({v.duration_minutes}min)</SelectItem>)}</SelectContent></Select></div>}
             <Label className="text-xs">Profissional</Label>
             <Select
               value={form.professional_id}
@@ -190,7 +221,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             <Label className="text-xs">Observações</Label>
             <Textarea value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Observações..." rows={2} />
           </div>
-          <Button disabled={!form.client_name.trim() || !form.service_id || !form.professional_id || (serviceVariants.length > 0 && !form.service_variant_id)} onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
+          <Button disabled={!variantsQuery.isSuccess || !professionalServicesQuery.isSuccess || !form.client_name.trim() || !form.service_id || !form.professional_id || (serviceVariantRows.length > 0 && !form.service_variant_id)} onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
             {appointment ? "Atualizar" : "Agendar"}
           </Button>
         </div>

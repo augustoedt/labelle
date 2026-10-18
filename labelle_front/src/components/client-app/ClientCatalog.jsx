@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ServicesApi, ServiceVariantsApi, PromotionsApi } from "@/server/api";
 import { CalendarPlus, Clock, Search } from "lucide-react";
@@ -30,12 +30,17 @@ import { categoryPhotos as photos, durationLabel } from "@/lib/brand";
 export default function ClientCatalog({
   onNavigate,
   onBook,
+  onCategoryChange,
   initialCategory = "all",
+  initialSearch = "",
+  onSearchChange,
+  initialServiceId,
+  initialVariantId,
+  onDetailChange,
 }) {
-  const [category, setCategory] = useState(initialCategory);
-  const [search, setSearch] = useState("");
-  const [service, setService] = useState(null);
-  const [variant, setVariant] = useState(null);
+  const category = initialCategory;
+  const [search, setSearch] = useState(initialSearch);
+  useEffect(() => setSearch(initialSearch), [initialSearch]);
   const servicesQuery = useQuery({
     queryKey: ["services"],
     queryFn: () => ServicesApi.list(),
@@ -59,6 +64,13 @@ export default function ClientCatalog({
     promotionsQuery.isPending;
   const error =
     servicesQuery.isError || variantsQuery.isError || promotionsQuery.isError;
+  const service = services.find((item) => String(item.id) === initialServiceId && availableService(item, variants)) || null;
+  const variant = service ? activeVariants(variants, service.id).find((item) => String(item.id) === initialVariantId) || null : null;
+  useEffect(() => {
+    if (!servicesQuery.isSuccess || !variantsQuery.isSuccess) return;
+    if (initialServiceId && !service) onDetailChange?.(undefined, undefined, false);
+    else if (service && initialVariantId && !variant) onDetailChange?.(service.id, undefined, false);
+  }, [initialServiceId, initialVariantId, servicesQuery.isSuccess, variantsQuery.isSuccess, service, variant, onDetailChange]);
   const filtered = services
     .filter((s) => availableService(s, variants))
     .filter(
@@ -89,7 +101,10 @@ export default function ClientCatalog({
           className="pl-10 rounded-full bg-card"
           placeholder="Buscar serviço..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            onSearchChange?.(e.target.value);
+          }}
         />
       </div>
       <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Categorias">
@@ -97,7 +112,7 @@ export default function ClientCatalog({
           <button
             key={cat}
             aria-pressed={category === cat}
-            onClick={() => setCategory(cat)}
+            onClick={() => onCategoryChange(cat)}
             className={cn(
               "rounded-full whitespace-nowrap px-4 py-2 text-sm border transition-colors focus-visible:ring-2 focus-visible:ring-ring",
               category === cat
@@ -146,10 +161,7 @@ export default function ClientCatalog({
               return (
                 <button
                   key={s.id}
-                  onClick={() => {
-                    setService(s);
-                    setVariant(null);
-                  }}
+                  onClick={() => onDetailChange?.(s.id, undefined, true)}
                   className="bg-card rounded-2xl border border-border/60 overflow-hidden text-left shadow-sm hover:shadow-md transition-shadow focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <img
@@ -198,7 +210,7 @@ export default function ClientCatalog({
       <Sheet
         open={!!service}
         onOpenChange={(open) => {
-          if (!open) setService(null);
+          if (!open) onDetailChange?.(undefined, undefined, true);
         }}
       >
         <SheetContent
@@ -236,7 +248,7 @@ export default function ClientCatalog({
                           type="radio"
                           name="catalog-variant"
                           checked={variant?.id === v.id}
-                          onChange={() => setVariant(v)}
+                          onChange={() => onDetailChange?.(service.id, v.id, true)}
                         />
                         <span className="flex-1">
                           <span className="font-semibold">{v.name}</span>
@@ -274,7 +286,6 @@ export default function ClientCatalog({
                         variantId: variant?.id || null,
                       });
                     else onNavigate("agendar");
-                    setService(null);
                   }}
                 >
                   <CalendarPlus className="h-4 w-4" /> Agendar este serviço

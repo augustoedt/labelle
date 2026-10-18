@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ServiceVariantsApi,
@@ -10,7 +10,7 @@ import {
   getAvailableSlots,
   upsertClient,
 } from "@/server/api";
-import { ChevronRight, CheckCircle2, Clock } from "lucide-react";
+import { ChevronRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Reveal from "@/components/ui/Reveal";
 import ServiceCategoryIcon from "@/components/ui/ServiceCategoryIcon";
 import { normalizePhone } from "@/lib/clientUtils";
@@ -32,18 +31,19 @@ import {
   availableService,
 } from "@/lib/serviceCatalog";
 import { maskPhone } from "@/lib/phone";
+import { toast } from "@/components/ui/use-toast";
 
 export default function ClientBooking({
   clientName,
   clientPhone,
   onSaveClient,
   onSuccess,
-  initialSelection,
-  onClearSelection,
+  initialBookingState,
+  onBookingStateChange,
 }) {
   const [step, setStep] = useState(1);
+  const hydratedSearchRef = useRef(null);
   const [serviceSearch, setServiceSearch] = useState("");
-  const prefersReduced = useReducedMotion();
   const [selectedService, setSelectedService] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
@@ -53,11 +53,11 @@ export default function ClientBooking({
   const [formPhone, setFormPhone] = useState(clientPhone || "");
   const queryClient = useQueryClient();
 
-  const { data: services = [], isLoading: isLoadingServices } = useQuery({
+  const { data: services = [], isLoading: isLoadingServices, isSuccess: servicesReady } = useQuery({
     queryKey: ["services"],
     queryFn: () => ServicesApi.list(),
   });
-  const { data: professionals = [], isLoading: isLoadingProfessionals } =
+  const { data: professionals = [], isLoading: isLoadingProfessionals, isSuccess: professionalsReady } =
     useQuery({
       queryKey: ["professionals"],
       queryFn: () => ProfessionalsApi.list(),
@@ -66,7 +66,7 @@ export default function ClientBooking({
     queryKey: ["promotions"],
     queryFn: () => PromotionsApi.list(),
   });
-  const { data: professionalServices = [] } = useQuery({
+  const { data: professionalServices = [], isSuccess: qualificationsReady } = useQuery({
     queryKey: ["professional-services"],
     queryFn: () => ProfessionalServicesApi.list({ limit: 1000 }),
   });
@@ -84,42 +84,80 @@ export default function ClientBooking({
     !!selectedService &&
     (options.length === 0 || !!selectedVariant) &&
     variantsQuery.isSuccess;
+  const bookingSearchKey = JSON.stringify(initialBookingState || {});
   useEffect(() => {
-    if (!initialSelection || !services.length || !variantsQuery.isSuccess)
-      return;
-    const service = services.find(
-      (s) => s.id === initialSelection.serviceId && s.is_active !== false,
+    if (!servicesReady || !professionalsReady || !qualificationsReady || !variantsQuery.isSuccess) return;
+    if (hydratedSearchRef.current === bookingSearchKey) return;
+    const state = initialBookingState || {};
+    const service = services.find((item) => String(item.id) === String(state.serviceId) && item.is_active !== false) || null;
+    const variant = variants.find((item) => String(item.id) === String(state.variantId) && item.service_id === service?.id && item.is_active !== false) || null;
+    const professional = professionals.find((item) => String(item.id) === String(state.professionalId) && item.is_active !== false) || null;
+    const needsVariant = service && activeVariants(variants, service.id).length > 0;
+    const hasOption = service && (!needsVariant || variant);
+    const qualified = hasOption && professional && professionalServices.some((link) =>
+      link.service_id === service.id && link.professional_id === professional.id
     );
-    setSelectedService(service || null);
-    const variant =
-      variants.find(
-        (v) =>
-          v.id === initialSelection.variantId &&
-          v.service_id === service?.id &&
-          v.is_active !== false,
-      ) || null;
+    const dateValid = typeof state.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(state.date) &&
+      !Number.isNaN(new Date(`${state.date}T12:00:00`).getTime()) &&
+      format(new Date(`${state.date}T12:00:00`), "yyyy-MM-dd") === state.date;
+    const date = dateValid ? new Date(`${state.date}T12:00:00`) : null;
+    const time = typeof state.time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(state.time) ? state.time : null;
+    setSelectedService(service);
     setSelectedVariant(variant);
-    if (
-      service &&
-      (variant || activeVariants(variants, service.id).length === 0)
-    )
-      setStep(2);
-  }, [initialSelection, services, variantsQuery.data]);
+    setSelectedProfessional(qualified ? professional : null);
+    setSelectedDate(date && qualified ? date : null);
+    setSelectedTime(time && date && qualified ? time : null);
+    const requested = Number(state.step);
+    const validStep = requested === 4 && qualified && date && time ? 4
+      : requested === 3 && qualified ? 3
+      : requested >= 2 && hasOption ? 2 : 1;
+    setStep(validStep);
+    hydratedSearchRef.current = bookingSearchKey;
+    const canonical = {
+      serviceId: service?.id,
+      variantId: variant?.id,
+      professionalId: qualified ? professional.id : undefined,
+      date: date && qualified ? state.date : undefined,
+      time: time && date && qualified ? time : undefined,
+      step: validStep,
+    };
+    if (state.serviceId !== canonical.serviceId || state.variantId !== canonical.variantId ||
+        state.professionalId !== canonical.professionalId || state.date !== canonical.date ||
+        state.time !== canonical.time || (state.step !== undefined && Number(state.step) !== validStep)) {
+      onBookingStateChange?.(canonical);
+    }
+  }, [bookingSearchKey, servicesReady, professionalsReady, qualificationsReady, variantsQuery.isSuccess, services, professionals, professionalServices, variants]);
+  const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
+  const publish = (patch, push = false) => {
+    onBookingStateChange?.({
+      serviceId: selectedService?.id,
+      variantId: selectedVariant?.id,
+      professionalId: selectedProfessional?.id,
+      date: dateStr,
+      time: selectedTime,
+      step,
+      ...patch,
+    }, push);
+  };
+  const changeStep = (next, push = false) => {
+    setStep(next);
+    publish({ step: next }, push);
+  };
   const chooseService = (svc) => {
     setSelectedService(svc);
     setSelectedVariant(null);
     setSelectedProfessional(null);
     setSelectedDate(null);
     setSelectedTime(null);
-    onClearSelection?.();
+    publish({ serviceId: svc.id, variantId: undefined, professionalId: undefined, date: undefined, time: undefined, step: 1 });
   };
   const chooseVariant = (value) => {
     setSelectedVariant(value);
     setSelectedProfessional(null);
     setSelectedDate(null);
     setSelectedTime(null);
+    publish({ variantId: value.id, professionalId: undefined, date: undefined, time: undefined });
   };
-  const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
   const { data: slots = [], isLoading: isLoadingSlots } = useQuery({
     queryKey: [
       "slots",
@@ -150,11 +188,9 @@ export default function ClientBooking({
       queryClient.invalidateQueries({ queryKey: ["client-appointments"] });
       queryClient.invalidateQueries({ queryKey: ["slots"] });
       onSaveClient(formName, formPhone);
-      // A confirmação de recebimento agora é enviada automaticamente pelo
-      // backend (WhatsApp da empresa via WAHA, action :book_online do
-      // Appointment) direto pra cliente — não abre mais o WhatsApp dela
-      // pra ela mesma mandar mensagem pro estúdio.
-      setStep(5);
+      toast({ title: "Solicitação enviada", description: "Acompanhe a confirmação em Agendamentos." });
+      // Sai da etapa de envio: recarregar a URL nunca deve reenviar a reserva.
+      onSuccess?.();
     },
   });
 
@@ -185,21 +221,10 @@ export default function ClientBooking({
     if (isIdentified) {
       setFormName(clientName);
       setFormPhone(clientPhone);
-      setStep(4);
-    } else {
-      setStep(4);
     }
+    changeStep(4, true);
   };
 
-  const reset = () => {
-    setStep(1);
-    setSelectedService(null);
-    setSelectedVariant(null);
-    onClearSelection?.();
-    setSelectedProfessional(null);
-    setSelectedDate(null);
-    setSelectedTime(null);
-  };
   const activeServices = services.filter(
     (s) =>
       availableService(s, variants) &&
@@ -241,19 +266,9 @@ export default function ClientBooking({
         </ol>
       )}
 
-      <AnimatePresence mode="wait">
+      <>
         {step === 1 && (
-          <motion.div
-            key="s1"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{
-              duration: prefersReduced === true ? 0 : 0.25,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="space-y-3"
-          >
+          <div className="space-y-3">
             <h2 className="text-lg font-heading font-semibold tracking-tight">
               Escolha o serviço
             </h2>
@@ -316,7 +331,7 @@ export default function ClientBooking({
                     </Reveal>
                   );
                 })}
-          </motion.div>
+          </div>
         )}
 
         {step === 1 && selectedService && (
@@ -369,17 +384,7 @@ export default function ClientBooking({
         )}
 
         {step === 2 && (
-          <motion.div
-            key="s2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{
-              duration: prefersReduced === true ? 0 : 0.25,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="space-y-3"
-          >
+          <div className="space-y-3">
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-lg font-heading font-semibold tracking-tight">
                 Profissional
@@ -387,7 +392,7 @@ export default function ClientBooking({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setStep(1)}
+                onClick={() => changeStep(1)}
                 className="text-xs"
               >
                 Voltar
@@ -413,6 +418,7 @@ export default function ClientBooking({
                       setSelectedDate(null);
                       setSelectedTime(null);
                       setStep(3);
+                      publish({ professionalId: prof.id, date: undefined, time: undefined, step: 3 }, true);
                     }}
                     className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-border/50 bg-card hover:border-foreground/30 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
@@ -433,21 +439,11 @@ export default function ClientBooking({
                 ))}
               </>
             )}
-          </motion.div>
+          </div>
         )}
 
         {step === 3 && (
-          <motion.div
-            key="s3"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{
-              duration: prefersReduced === true ? 0 : 0.25,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="space-y-4"
-          >
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-heading font-semibold tracking-tight">
                 Data e Horário
@@ -455,7 +451,7 @@ export default function ClientBooking({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setStep(2)}
+                onClick={() => changeStep(2)}
                 className="text-xs"
               >
                 Voltar
@@ -473,6 +469,7 @@ export default function ClientBooking({
                     onClick={() => {
                       setSelectedDate(d);
                       setSelectedTime(null);
+                      publish({ date: format(d, "yyyy-MM-dd"), time: undefined });
                     }}
                     className={cn(
                       "flex flex-col items-center py-3 px-4 rounded-2xl min-w-[64px] border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -510,7 +507,7 @@ export default function ClientBooking({
                     {slots.map((t) => (
                       <button
                         key={t}
-                        onClick={() => setSelectedTime(t)}
+                        onClick={() => { setSelectedTime(t); publish({ time: t }); }}
                         className={cn(
                           "py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           selectedTime === t
@@ -525,21 +522,11 @@ export default function ClientBooking({
                 )}
               </div>
             )}
-          </motion.div>
+          </div>
         )}
 
         {step === 4 && (
-          <motion.div
-            key="s4"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{
-              duration: prefersReduced === true ? 0 : 0.25,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="space-y-4"
-          >
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-heading font-semibold tracking-tight">
                 Confirmar agendamento
@@ -547,7 +534,7 @@ export default function ClientBooking({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setStep(3)}
+                onClick={() => changeStep(3)}
                 className="text-xs"
               >
                 Voltar
@@ -645,64 +632,26 @@ export default function ClientBooking({
                 ? "Agendando..."
                 : "Solicitar agendamento"}
             </Button>
-          </motion.div>
+          </div>
         )}
 
-        {step === 5 && (
-          <motion.div
-            key="s5"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{
-              duration: prefersReduced === true ? 0 : 0.3,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="py-16 text-center space-y-4"
-          >
-            <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-10 h-10 text-foreground" />
-            </div>
-            <h2 className="text-2xl font-heading font-bold tracking-tight">
-              Solicitação enviada
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              O salão vai conferir a agenda e confirmar seu atendimento. Você
-              pode acompanhar em Histórico.
-            </p>
-            <Button className="rounded-full" onClick={onSuccess}>
-              Ver meus agendamentos
-            </Button>
-            <Button variant="outline" className="rounded-xl" onClick={reset}>
-              Fazer novo agendamento
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </>
 
       {/* Botão flutuante "Continuar" acima da barra inferior */}
       <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-3xl px-5 pointer-events-none z-40">
-        <AnimatePresence>
-          {(step === 1 && ready) || (step === 3 && selectedTime) ? (
-            <motion.div
-              key="floating-continue"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
-              transition={{ duration: 0.18 }}
-              className="flex justify-end"
-            >
+        {((step === 1 && ready) || (step === 3 && selectedTime)) && (
+            <div className="flex justify-end">
               <Button
                 className="pointer-events-auto rounded-full h-12 px-6 font-semibold shadow-lg shadow-primary/30 gap-2"
-                onClick={() => (step === 1 ? setStep(2) : goToConfirm())}
+                onClick={() => (step === 1 ? changeStep(2, true) : goToConfirm())}
               >
                 Continuar
                 <span className="w-7 h-7 rounded-full bg-primary-foreground/20 flex items-center justify-center">
                   <ChevronRight className="w-4 h-4" />
                 </span>
               </Button>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+            </div>
+        )}
       </div>
     </div>
   );

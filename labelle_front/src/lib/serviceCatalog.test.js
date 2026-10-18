@@ -5,6 +5,7 @@ import {
   finalPrice,
   activeVariants,
   availableService,
+  promotionFor,
 } from "./serviceCatalog.js";
 import { appointmentCalendar } from "./appointmentCalendar.js";
 const service = { id: "s", price: 20, is_active: true };
@@ -21,6 +22,53 @@ test("catalog price uses active variants and the same promotion calculation as c
   assert.equal(
     finalPrice(service, { discount_type: "value", discount_value: 90 }),
     0,
+  );
+});
+test("promotion dates include their start and end salon dates", () => {
+  const promotion = {
+    id: "00000000-0000-0000-0000-000000000001",
+    service_id: "s",
+    is_active: true,
+    start_date: "2026-10-17",
+    end_date: "2026-10-20",
+  };
+  assert.equal(promotionFor([promotion], "s", "2026-10-17"), promotion);
+  assert.equal(promotionFor([promotion], "s", "2026-10-20"), promotion);
+  assert.equal(promotionFor([promotion], "s", "2026-10-16"), undefined);
+  assert.equal(promotionFor([promotion], "s", "2026-10-21"), undefined);
+});
+test("promotion selection uses the smallest UUID among valid active promotions", () => {
+  const promotions = [
+    {
+      id: "00000000-0000-0000-0000-000000000003",
+      service_id: "s",
+      is_active: true,
+    },
+    {
+      id: "00000000-0000-0000-0000-000000000001",
+      service_id: "s",
+      is_active: true,
+    },
+    {
+      id: "00000000-0000-0000-0000-000000000000",
+      service_id: "s",
+      is_active: false,
+    },
+    {
+      id: "00000000-0000-0000-0000-000000000002",
+      service_id: "other",
+      is_active: true,
+    },
+  ];
+  assert.equal(promotionFor(promotions, "s", "2026-10-17"), promotions[1]);
+  assert.equal(promotionFor([], "s", "2026-10-17"), undefined);
+  assert.equal(
+    promotionFor(
+      [{ ...promotions[0], start_date: "2026-10-18" }],
+      "s",
+      "2026-10-17",
+    ),
+    undefined,
   );
 });
 test("a service whose variations were disabled cannot fall back to the base price", () => {

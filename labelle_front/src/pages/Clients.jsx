@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClientsApi } from "@/server/api";
 import { Plus, Search, Crown, MessageCircle, Smartphone, Settings } from "lucide-react";
@@ -23,13 +24,18 @@ const sourceLabel = {
 };
 
 export default function Clients() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const user = useUser();
+  const canEdit = user?.role === "admin";
+  const route = canEdit ? "/admin/clientes" : "/profissional/clientes";
+  const searchParams = location.search;
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  // Busca por nome/telefone é dado pessoal: mantenha fora da URL e do histórico.
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
-  const user = useUser();
-  // Profissional consulta a base (para agendar), mas só o admin edita.
-  const canEdit = user?.role === "admin";
+  const updateSearch = (patch, replace = true) => navigate({ to: route, search: (previous) => ({ ...previous, ...patch }), replace });
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients"],
@@ -39,14 +45,22 @@ export default function Clients() {
     queryFn: () => ClientsApi.list({ limit: 500 }),
   });
 
+  useEffect(() => {
+    if (!canEdit || !searchParams.client || isLoading) return;
+    const client = clients.find((item) => String(item.id) === String(searchParams.client));
+    if (!client) { updateSearch({ client: undefined }); setEditing(null); setShowForm(false); return; }
+    setEditing(client);
+    setShowForm(true);
+  }, [canEdit, searchParams.client, clients, isLoading]);
+
   const createMutation = useMutation({
     mutationFn: (data) => ClientsApi.create({ data }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clients"] }); setShowForm(false); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clients"] }); setShowForm(false); updateSearch({ client: undefined }); },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => ClientsApi.update({ id, attributes: data }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clients"] }); setShowForm(false); setEditing(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clients"] }); setShowForm(false); setEditing(null); updateSearch({ client: undefined }); },
   });
 
   const handleSubmit = (data) => {
@@ -69,7 +83,7 @@ export default function Clients() {
         subtitle={`${clients.length} cadastradas`}
         action={
           canEdit && (
-            <Button size="sm" className="rounded-xl gap-1.5" onClick={() => { setEditing(null); setShowForm(true); }}>
+            <Button size="sm" className="rounded-xl gap-1.5" onClick={() => { setEditing(null); updateSearch({ client: undefined }, false); setShowForm(true); }}>
               <Plus className="w-4 h-4" /> Nova
             </Button>
           )
@@ -103,7 +117,7 @@ export default function Clients() {
             role="button"
             tabIndex={0}
             className="bg-card/90 rounded-2xl border border-border/60 p-4 shadow-[0_8px_20px_-18px_hsl(var(--foreground)/0.4)] transition-all duration-200 hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            onClick={() => { if (canEdit) { setEditing(client); setShowForm(true); } }}
+            onClick={() => { if (canEdit) updateSearch({ client: String(client.id) }, false); }}
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -165,7 +179,7 @@ export default function Clients() {
       {canEdit && (
         <ClientForm
           open={showForm}
-          onClose={() => { setShowForm(false); setEditing(null); }}
+          onClose={() => { setShowForm(false); setEditing(null); updateSearch({ client: undefined }); }}
           onSubmit={handleSubmit}
           client={editing}
         />

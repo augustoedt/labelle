@@ -1,14 +1,33 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRouteContext } from "@tanstack/react-router";
+import { useRouteContext, useLocation, useNavigate } from "@tanstack/react-router";
 import { ProfessionalsApi, AppointmentsApi, AppointmentServicesApi, ServicesApi } from "@/server/api";
-import { format } from "date-fns";
+import { addMonths, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PageHeader from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatBRL } from "@/lib/format";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function MinhasComissoes() {
   const { user } = useRouteContext({ from: "__root__" });
+  const location = useLocation();
+  const navigate = useNavigate();
+  const monthParam = typeof location.search.month === "string" ? location.search.month : "";
+  const monthMatch = /^(\d{4})-(\d{2})$/.exec(monthParam);
+  const monthYear = monthMatch ? Number(monthMatch[1]) : NaN;
+  const monthNumber = monthMatch ? Number(monthMatch[2]) : NaN;
+  const validMonth = monthMatch && monthYear >= 1 && monthYear <= 9999 && monthNumber >= 1 && monthNumber <= 12;
+  const today = new Date();
+  const selectedMonth = new Date(0);
+  selectedMonth.setFullYear(validMonth ? monthYear : today.getFullYear(), validMonth ? monthNumber - 1 : today.getMonth(), 1);
+  selectedMonth.setHours(0, 0, 0, 0);
+  const monthStart = format(selectedMonth, "yyyy-MM-dd");
+  const monthEnd = format(addMonths(selectedMonth, 1), "yyyy-MM-dd");
+  const updateMonth = month => navigate({
+    to: "/profissional/comissoes",
+    search: { month: format(month, "yyyy-MM") },
+  });
 
   const { data: professionals = [], isLoading: isLoadingProfessionals } = useQuery({
     queryKey: ["professionals"],
@@ -47,11 +66,8 @@ export default function MinhasComissoes() {
     return acc;
   }, {});
 
-  const today = new Date();
-  const monthStart = format(new Date(today.getFullYear(), today.getMonth(), 1), "yyyy-MM-dd");
-
   const myDone = appointments.filter(
-    a => a.professional_id === myProfessional?.id && a.status === "concluido" && a.date >= monthStart
+    a => a.professional_id === myProfessional?.id && a.status === "concluido" && a.date >= monthStart && a.date < monthEnd
   );
 
   const revenueFor = apt =>
@@ -95,8 +111,17 @@ export default function MinhasComissoes() {
     <div className="space-y-4">
       <PageHeader
         title="Minhas Comissões"
-        subtitle={format(today, "MMMM yyyy", { locale: ptBR })}
+        subtitle={format(selectedMonth, "MMMM yyyy", { locale: ptBR })}
       />
+      <div className="flex items-center justify-center gap-3 px-5">
+        <Button variant="outline" size="icon" aria-label="Mês anterior" onClick={() => updateMonth(addMonths(selectedMonth, -1))}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <span className="min-w-32 text-center text-sm font-medium capitalize">{format(selectedMonth, "MMMM yyyy", { locale: ptBR })}</span>
+        <Button variant="outline" size="icon" aria-label="Próximo mês" onClick={() => updateMonth(addMonths(selectedMonth, 1))}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
 
       <div className="px-5 space-y-3">
         {/* Resumo */}
@@ -131,7 +156,7 @@ export default function MinhasComissoes() {
         {/* Lista de atendimentos */}
         <p className="text-xs font-medium text-muted-foreground pt-2">Atendimentos do mês</p>
         {myDone.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground py-8">Nenhum atendimento concluído este mês</p>
+          <p className="text-center text-sm text-muted-foreground py-8">Nenhum atendimento concluído neste mês</p>
         ) : (
           myDone.map(apt => {
             const commission = commissionFor(apt);

@@ -34,7 +34,7 @@ export default function More() {
         {items.map(({ path, icon: Icon, label, desc }) => (
           <Link
             key={path}
-            to={path}
+            to={`${user?.role === "profissional" ? "/profissional" : "/admin"}${path}`}
             className="flex items-center gap-4 p-4 bg-card/90 rounded-2xl border border-border/60 hover:border-primary/30 transition-all duration-200 active:scale-[0.99]"
           >
             <div className="p-2.5 rounded-xl bg-primary/10">

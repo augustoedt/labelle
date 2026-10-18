@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Home,
   CalendarPlus,
@@ -39,34 +40,41 @@ const sections = [
   { id: "sobre", label: "Sobre" },
   { id: "contato", label: "Contato" },
 ];
-export default function ClientApp({ initialTab = "home" }) {
-  const [activeTab, setActiveTab] = useState(initialTab);
-  const [bookingSelection, setBookingSelection] = useState(null);
-  const [category, setCategory] = useState("all");
+export default function ClientApp() {
+  const location = useLocation();
+  const navigateRoute = useNavigate();
+  const search = location.search;
+  const activeTab = location.pathname.startsWith("/cliente/")
+    ? ({ catalogo: "catalogo", agendar: "agendar", agendamentos: "historico", fidelidade: "fidelidade" }[location.pathname.split("/")[2]] || "home")
+    : location.pathname === "/agendar" ? "agendar" : location.pathname === "/app" ? search.tab || "home" : "home";
+  const category = activeTab === "catalogo" ? search.category || "all" : "all";
   const [client, setClient] = useState(() => getClientSession());
   const [menuOpen, setMenuOpen] = useState(false);
-  const [sectionTarget, setSectionTarget] = useState(null);
-  const navigate = (tab) => {
-    setActiveTab(tab);
+  const navigate = (tab, { category: selectedCategory = "all", selection } = {}) => {
+    const path = { home: "/cliente", catalogo: "/cliente/catalogo", agendar: "/cliente/agendar", historico: "/cliente/agendamentos", fidelidade: "/cliente/fidelidade" }[tab] || "/cliente";
+    if (tab === "agendar") {
+      navigateRoute({ to: path, search: selection ? { serviceId: selection.serviceId, variantId: selection.variantId || undefined, step: 2 } : {} });
+    } else {
+      navigateRoute({ to: path, search: tab === "catalogo" ? { category: selectedCategory, q: search.q || undefined } : {} });
+    }
     setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
   const section = (id) => {
-    setActiveTab("home");
-    setSectionTarget(id);
+    if (activeTab === "home" && search.section === id) {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigateRoute({ to: "/cliente", hash: id });
+    }
     setMenuOpen(false);
   };
   useEffect(() => {
-    if (activeTab === "home" && sectionTarget) {
-      const target = document.getElementById(sectionTarget);
-      target?.scrollIntoView({
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "instant"
-          : "smooth",
+    if (activeTab === "home" && location.hash) {
+      document.getElementById(location.hash.slice(1))?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
       });
-      setSectionTarget(null);
     }
-  }, [activeTab, sectionTarget]);
+  }, [activeTab, location.hash]);
   const updateClient = useCallback(
     (updates) => {
       const updated = { ...client, ...updates };
@@ -147,10 +155,7 @@ export default function ClientApp({ initialTab = "home" }) {
           <ClientHome
             clientName={client?.name || ""}
             onNavigate={navigate}
-            onCategory={(cat) => {
-              setCategory(cat);
-              navigate("catalogo");
-            }}
+            onCategory={(cat) => navigate("catalogo", { category: cat })}
           />
         ) : (
           <div
@@ -183,21 +188,41 @@ export default function ClientApp({ initialTab = "home" }) {
           {activeTab === "catalogo" && (
               <ClientCatalog
                 initialCategory={category}
+                initialSearch={search.q || ""}
+                initialServiceId={search.service}
+                initialVariantId={search.variant}
+                onDetailChange={(service, variant, push = false) =>
+                  navigateRoute({
+                    to: "/cliente/catalogo",
+                    search: { ...search, service, variant },
+                    replace: !push,
+                  })
+                }
+                onSearchChange={(q) => navigateRoute({ to: "/cliente/catalogo", search: { ...search, q: q || undefined }, replace: true })}
+                onCategoryChange={(selectedCategory) =>
+                  navigateRoute({
+                    to: "/cliente/catalogo",
+                    search: { ...search, category: selectedCategory },
+                  })
+                }
                 onNavigate={navigate}
-                onBook={(selection) => {
-                  setBookingSelection(selection);
-                  navigate("agendar");
-                }}
+                onBook={(selection) => navigate("agendar", { selection })}
               />
             )}
             {activeTab === "agendar" && (
               <ClientBooking
-                initialSelection={bookingSelection}
-                onClearSelection={() => setBookingSelection(null)}
+                initialBookingState={search}
+                onBookingStateChange={(state, push = false) =>
+                  navigateRoute({
+                    to: "/cliente/agendar",
+                    search: Object.fromEntries(Object.entries(state).filter(([, value]) => value !== undefined && value !== null && value !== "")),
+                    replace: !push,
+                  })
+                }
                 clientName={client?.name || ""}
                 clientPhone={client?.phone || ""}
                 onSaveClient={(name, phone) => updateClient({ name, phone })}
-                onSuccess={() => navigate("historico")}
+                onSuccess={() => navigateRoute({ to: "/cliente/agendamentos", replace: true })}
               />
             )}
             {activeTab === "historico" && (
@@ -223,7 +248,6 @@ export default function ClientApp({ initialTab = "home" }) {
           <button
             key={id}
             onClick={() => {
-              if (id === "catalogo") setCategory("all");
               navigate(id);
             }}
             className={cn(activeTab === id && "active")}

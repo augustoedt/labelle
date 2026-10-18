@@ -402,4 +402,70 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
       assert item.appointment_id == appointment.id
     end
   end
+
+  describe "celular preenchido depois do agendamento" do
+    test "manual sem telefone continua permitido; preenchimento cria e vincula cadastro sem alterar cobrança" do
+      admin = create_user!(:admin)
+      professional = create_professional!(create_user!(:profissional))
+      service = create_service!(%{})
+      apt = create_appointment!(professional, service, %{client_id: nil, client_phone: nil})
+      assert is_nil(apt.client_id)
+
+      updated =
+        apt
+        |> Ash.Changeset.for_update(:complete_phone, %{client_phone: "(11) 98888-1234"},
+          actor: admin
+        )
+        |> Ash.update!()
+
+      assert updated.client_id
+      assert updated.price == apt.price
+      assert updated.date == apt.date
+      assert updated.status == apt.status
+
+      again =
+        updated
+        |> Ash.Changeset.for_update(:complete_phone, %{client_phone: "11988881234"}, actor: admin)
+        |> Ash.update!()
+
+      assert again.client_id == updated.client_id
+    end
+
+    test "apenas admin e profissional dona podem preencher; número inválido é rejeitado" do
+      owner = create_user!(:profissional)
+      professional = create_professional!(owner)
+
+      apt =
+        create_appointment!(professional, create_service!(%{}), %{
+          client_id: nil,
+          client_phone: nil
+        })
+
+      assert {:error, _} =
+               apt
+               |> Ash.Changeset.for_update(:complete_phone, %{client_phone: "123"}, actor: owner)
+               |> Ash.update()
+
+      other = create_user!(:profissional)
+
+      assert {:error, _} =
+               apt
+               |> Ash.Changeset.for_update(:complete_phone, %{client_phone: "11988881234"},
+                 actor: other
+               )
+               |> Ash.update()
+
+      assert {:error, _} =
+               apt
+               |> Ash.Changeset.for_update(:complete_phone, %{client_phone: "11988881234"})
+               |> Ash.update()
+
+      updated =
+        apt
+        |> Ash.Changeset.for_update(:complete_phone, %{client_phone: "11988881234"}, actor: owner)
+        |> Ash.update!()
+
+      assert updated.client_id
+    end
+  end
 end

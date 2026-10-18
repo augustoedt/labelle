@@ -121,6 +121,13 @@ defmodule LabelleBack.Studio.Appointment do
       change LabelleBack.Studio.Changes.SnapshotAppointmentFields
     end
 
+    update :complete_phone do
+      require_atomic? false
+      accept [:client_phone]
+      validate present(:client_phone)
+      change LabelleBack.Studio.Changes.ResolveBookingClient
+    end
+
     update :finalize do
       require_atomic? false
 
@@ -206,7 +213,7 @@ defmodule LabelleBack.Studio.Appointment do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 
-    policy action([:finalize, :confirm, :start, :cancel, :send_reminder]) do
+    policy action([:finalize, :confirm, :start, :cancel, :send_reminder, :complete_phone]) do
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if expr(professional.user_id == ^actor(:id))
     end

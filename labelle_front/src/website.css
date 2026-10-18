@@ -1448,3 +1448,34 @@ h2 em {
 .four-week-event small { display:block; }
 @media(min-width:1024px) { .dashboard-side { display:grid;grid-template-columns:1fr 1fr;gap:20px;grid-column:1 / -1; } }
 @media(max-width:600px) { .schedule-date-nav label span { display:none; } .agenda-view-toggle label { width:100%;margin-left:0; } .day-schedule-scroll { max-height:520px; } }
+
+/* Non-blocking contact completion reminders */
+.appointment-phone-missing { border:2px solid #dc4545 !important; }
+.phone-pending-badge { display:inline-flex;align-items:center;gap:4px;color:#b42323;background:#fff1f0;border-radius:4px;padding:2px 4px;font-size:10px;font-weight:600;vertical-align:middle; }
+.phone-pending-panel { margin:0 22px 20px;border:1px solid #edb6ae;border-radius:14px;background:#fffaf8;padding:18px;min-width:0; }
+.px-5>.phone-pending-panel { margin:0; }
+.phone-pending-heading { display:flex;gap:12px;align-items:center;color:#993e36; }
+.phone-pending-heading h2 { font-size:16px;margin:0; }
+.phone-pending-heading p,.phone-pending-help { font-size:12px;color:#796960;margin-top:5px; }
+.phone-pending-heading strong { font-size:23px; }
+.phone-pending-filters { display:flex;gap:8px;flex-wrap:wrap;margin-top:14px; }
+.phone-pending-filters button { border:1px solid #ddc8c0;padding:7px 10px;border-radius:20px;font-size:12px; }
+.phone-pending-filters button[aria-pressed=true] { background:#a76c68;color:white;border-color:#a76c68; }
+.phone-pending-list { max-height:340px;overflow:auto;margin-top:12px; }
+.phone-pending-row { display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 4px;border-top:1px solid #efdfd8; }
+.phone-pending-row strong { display:block;font-size:13px; }
+.phone-pending-row small { display:block;font-size:11px;color:#796960;margin-top:3px; }
+.phone-pending-edit,.phone-pending-form button { display:inline-flex;align-items:center;gap:5px;border:1px solid #d9b8af;border-radius:8px;padding:7px 9px;font-size:12px;background:white; }
+.phone-pending-form { display:flex;align-items:end;gap:8px;flex-wrap:wrap;width:100%; }
+.phone-pending-form label { font-size:12px; }
+.phone-pending-form input { display:block;width:190px;border:1px solid #c8b4ab;border-radius:6px;padding:8px;margin-top:5px;background:white; }
+.phone-pending-form button:disabled { opacity:.5; }
+.phone-pending-form p { color:#b42323;font-size:12px;width:100%; }
+@media(max-width:600px) { .phone-pending-panel { margin:0 16px 16px;padding:14px; } }
+
+button.schedule-slot { display:block;width:100%;cursor:pointer; }
+button.schedule-slot:hover,button.schedule-slot:focus-visible { background:#e9d3ca;outline:2px solid #a76c68;outline-offset:-2px; }
+.booking-search-results { max-height:190px;overflow:auto;border:1px solid #dfcec6;border-radius:8px;background:white;margin-top:5px; }
+.booking-search-results button { display:block;width:100%;padding:9px 12px;text-align:left;font-size:13px;border-bottom:1px solid #f2e8e1; }
+.booking-search-results button:hover,.booking-search-results button:focus-visible { background:#f5e9e3; }
+.booking-search-results small { display:block;color:#796960;font-size:11px; }

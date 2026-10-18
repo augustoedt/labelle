@@ -1,3 +1,5 @@
+import PhonePendingBadge from "@/components/ui/PhonePendingBadge";
+import { hasPhone } from "@/lib/phonePending";
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouteContext, useLocation, useNavigate } from "@tanstack/react-router";
@@ -285,13 +287,13 @@ export default function MinhaAgenda() {
           </div>
         ) : (
           dayAppointments.map((apt) => (
-            <div key={apt.id} className="bg-card rounded-2xl border border-border/50 overflow-hidden">
+            <div key={apt.id} className={`bg-card rounded-2xl border border-border/50 overflow-hidden ${!hasPhone(apt.client_phone) ? "appointment-phone-missing" : ""}`}>
               <div className="flex">
                 <div className="w-1.5 bg-primary/70 flex-shrink-0" />
                 <div className="flex-1 p-4">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-semibold text-sm">{apt.client_name}</p>
+                      <p className="font-semibold text-sm">{apt.client_name} <PhonePendingBadge phone={apt.client_phone}/></p>
                       <p className="text-xs text-muted-foreground mt-0.5">{apt.service_name}</p>
                     </div>
                     <Badge className={cn("text-xs border-0", statusColors[apt.status])}>

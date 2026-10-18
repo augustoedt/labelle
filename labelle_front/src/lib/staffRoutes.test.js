@@ -35,3 +35,5 @@ test('staff query validation keeps only supported non-sensitive state', () => {
     service: 'abc', view: 'edit', month: '2026-10', lowStock: true,
   })
 })
+
+ test('slot time survives safe navigation and rejects invalid hours',()=>{assert.equal(validateStaffSearch({time:'10:30'}).time,'10:30');assert.equal(validateStaffSearch({time:'25:00'}).time,undefined);});

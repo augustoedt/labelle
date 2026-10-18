@@ -1,3 +1,4 @@
+import PhonePendingPanel from "@/components/clients/PhonePendingPanel";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -90,6 +91,7 @@ export default function Clients() {
         }
       />
 
+      <div className="px-5"><PhonePendingPanel /></div>
       {/* Search */}
       <div className="px-5">
         <div className="relative">

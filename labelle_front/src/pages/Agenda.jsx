@@ -1,3 +1,5 @@
+import PhonePendingBadge from "@/components/ui/PhonePendingBadge";
+import { hasPhone } from "@/lib/phonePending";
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -200,7 +202,7 @@ export default function Agenda() {
         title="Agenda"
         subtitle={format(selectedDate, "MMMM yyyy", { locale: ptBR })}
         action={
-          <Button size="sm" className="rounded-xl gap-1.5" onClick={() => updateSearch({ view: "new", appointment: undefined }, false)}>
+          <Button size="sm" className="rounded-xl gap-1.5" onClick={() => updateSearch({ view: "new", appointment: undefined, time:undefined, professional:undefined }, false)}>
             <Plus className="w-4 h-4" /> Novo
           </Button>
         }
@@ -271,12 +273,12 @@ export default function Agenda() {
             return <button key={key} className={`four-week-day ${key === format(new Date(),"yyyy-MM-dd") ? "is-today" : ""}`} onClick={()=>{navigateDate(format(day,"yyyy-MM-dd"));setView("day");}} aria-label={`${format(day,"dd/MM/yyyy")}, ${daily.length} agendamentos`}>
               <strong>{format(day,"d MMM",{locale:ptBR})}</strong>
               <span className="four-week-count">{daily.length ? `${daily.length} agendamento${daily.length>1 ? "s" : ""}` : "Sem agendamentos"}</span>
-              {daily.slice().sort((a,b)=>(a.time || "").localeCompare(b.time || "")).slice(0,3).map(a=><span className={`four-week-event ${a.status === "cancelado" ? "is-cancelled" : ""}`} key={a.id}>{a.time?.slice(0,5)} {a.client_name}<small>{a.professional_name}</small></span>)}
+              {daily.slice().sort((a,b)=>(a.time || "").localeCompare(b.time || "")).slice(0,3).map(a=><span className={`four-week-event ${!hasPhone(a.client_phone) ? "appointment-phone-missing" : ""} ${a.status === "cancelado" ? "is-cancelled" : ""}`} key={a.id}>{a.time?.slice(0,5)} {a.client_name}<PhonePendingBadge phone={a.client_phone}/><small>{a.professional_name}</small></span>)}
               {daily.length>3 && <small>+{daily.length-3} · ver dia</small>}
             </button>;
           })}
         </div></div>
-      </div> : <div className="px-5"><DaySchedule date={selectedDate} professionals={professionals} appointments={appointments} isLoading={isLoading || loadingProfessionals} onAppointment={apt=>updateSearch({appointment:apt.id,view:"edit"},false)} /></div>}
+      </div> : <div className="px-5"><DaySchedule date={selectedDate} professionals={professionals} appointments={appointments} isLoading={isLoading || loadingProfessionals} onAppointment={apt=>updateSearch({appointment:apt.id,view:"edit"},false)} onSlot={slot=>updateSearch({date:slot.date,time:slot.time,professional:slot.professional_id,view:"new",appointment:undefined},false)} /></div>}
 
       {/* Appointments list and existing status actions */}
       {view === "day" && <div className="px-5 space-y-3">
@@ -295,7 +297,7 @@ export default function Agenda() {
               key={apt.id}
               role="button"
               tabIndex={0}
-              className="bg-card rounded-2xl border border-border/50 overflow-hidden cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={cn("bg-card rounded-2xl border border-border/50 overflow-hidden cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", !hasPhone(apt.client_phone) && "appointment-phone-missing")}
               onClick={() => updateSearch({ appointment: String(apt.id), view: "edit" }, false)}
             >
               <div className="flex">
@@ -303,7 +305,7 @@ export default function Agenda() {
                 <div className="flex-1 p-4">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-semibold text-sm">{apt.client_name}</p>
+                      <p className="font-semibold text-sm">{apt.client_name} <PhonePendingBadge phone={apt.client_phone}/></p>
                       <p className="text-xs text-muted-foreground mt-0.5">{apt.service_name}</p>
                     </div>
                     <Badge className={cn("text-xs border-0", statusColors[apt.status])}>
@@ -356,6 +358,8 @@ export default function Agenda() {
         clients={clients}
         appointment={editingApt}
         initialDate={dateStr}
+        initialTime={typeof search.time === "string" ? search.time : undefined}
+        initialProfessional={typeof search.professional === "string" ? search.professional : undefined}
       />
 
       <FinalizeSheet

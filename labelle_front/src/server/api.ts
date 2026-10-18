@@ -242,6 +242,9 @@ export const updateAppointment = createServerFn({ method: 'POST' })
   .handler(({ data }) => jsonApiUpdate('appointments', 'appointment', data.id, data.attributes))
 // Finaliza o atendimento cobrando: o backend soma serviço principal + itens
 // adicionais e registra a transação financeira como paga (action :finalize).
+export const completeAppointmentPhone = createServerFn({ method: 'POST' })
+  .validator((data: { id: string; phone: string }) => data)
+  .handler(({ data }) => jsonApiAction('appointments', 'appointment', data.id, 'complete_phone', { client_phone: data.phone }))
 export const finalizeAppointment = createServerFn({ method: 'POST' })
   .validator((data: { id: string; payment_method: string }) => data)
   .handler(({ data }) =>

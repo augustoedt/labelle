@@ -27,7 +27,7 @@ export default function DaySchedule({date, professionals = [], appointments = []
           return working && !occupied && onSlot ? <button key={time} {...props} aria-label={`Novo agendamento ${format(date,"dd/MM/yyyy")} às ${clock(time)} com ${p.name}`} onClick={()=>onSlot({date:dateStr,time:clock(time),professional_id:p.id})} /> : <div key={time} {...props}/>;
         })}
         {appointmentLanes(p.id === "unassigned" ? unknown : items.filter(a=>a.professional_id===p.id)).map(a=>{
-          const content = <><strong>{(a.time || "").slice(0,5)} · {a.client_name}</strong><PhonePendingBadge phone={a.client_phone}/><span>{a.service_name}</span><small>{statusLabels[a.status] || a.status} · {a.duration_minutes || 30} min</small></>;
+          const content = <><strong>{(a.time || "").slice(0,5)} · {a.client_name}</strong><PhonePendingBadge phone={a.client_phone}/>{a.professional_referral && <span className="referral-badge">Cliente da profissional</span>}<span>{a.service_name}</span><small>{statusLabels[a.status] || a.status} · {a.duration_minutes || 30} min</small></>;
           const props = {className:`schedule-appointment ${!hasPhone(a.client_phone) ? "appointment-phone-missing" : ""} ${a.status === "cancelado" ? "is-cancelled" : ""}`,style:{top:(a.gridStart-start)*1.6,height:Math.max(26,(a.gridEnd-a.gridStart)*1.6-3),left:`calc(${a.lane/a.lanes*100}% + 3px)`,width:`calc(${100/a.lanes}% - 6px)`},title:`${a.client_name} · ${a.service_name} · ${a.time} · ${statusLabels[a.status] || a.status}`};
           return onAppointment ? <button key={a.id} {...props} onClick={()=>onAppointment(a)}>{content}</button> : <div key={a.id} {...props}>{content}</div>;
         })}

@@ -33,9 +33,17 @@ defmodule LabelleBack.Studio.AppointmentService do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    destroy :destroy do
+      require_atomic? false
+      argument :edit_comment, :string
+      change LabelleBack.Studio.Changes.AuditCompletedEdit
+    end
 
     create :create do
+      argument :edit_comment, :string
+
       accept [
         :appointment_id,
         :service_id,
@@ -49,24 +57,37 @@ defmodule LabelleBack.Studio.AppointmentService do
                 fields: [:price, :duration_minutes]}
 
       change LabelleBack.Studio.Changes.SnapshotServiceItemFields
+      change LabelleBack.Studio.Changes.AuditCompletedEdit
+    end
+
+    update :edit_financial do
+      require_atomic? false
+      accept [:price, :commission_percent]
+      argument :edit_comment, :string
+      change LabelleBack.Studio.Changes.AuditCompletedEdit
     end
 
     update :set_commission do
+      require_atomic? false
+      argument :edit_comment, :string
+      change LabelleBack.Studio.Changes.AuditCompletedEdit
       accept [:commission_percent]
       validate present(:commission_percent)
     end
 
     update :update do
       require_atomic? false
+      argument :edit_comment, :string
 
       accept [:service_id, :service_variant_id, :price, :duration_minutes, :unplanned]
 
       change LabelleBack.Studio.Changes.SnapshotServiceItemFields
+      change LabelleBack.Studio.Changes.AuditCompletedEdit
     end
   end
 
   policies do
-    policy action(:set_commission) do
+    policy action([:set_commission, :edit_financial]) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 

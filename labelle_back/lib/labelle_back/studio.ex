@@ -9,6 +9,11 @@ defmodule LabelleBack.Studio do
     authorize? true
 
     routes do
+      base_route "/financial_edits", LabelleBack.Studio.FinancialEdit do
+        index :read
+        patch :add_comment, route: "/:id/add_comment"
+      end
+
       base_route "/clients", LabelleBack.Studio.Client do
         get :read
         index :read
@@ -58,6 +63,7 @@ defmodule LabelleBack.Studio do
         patch :confirm, route: "/:id/confirm"
         patch :start, route: "/:id/start"
         patch :cancel, route: "/:id/cancel"
+        patch :edit_financial, route: "/:id/edit_financial"
         patch :set_commission, route: "/:id/set_commission"
         patch :reschedule, route: "/:id/reschedule"
         patch :complete_phone, route: "/:id/complete_phone"
@@ -69,6 +75,7 @@ defmodule LabelleBack.Studio do
         get :read
         index :read
         post :create
+        patch :edit_financial, route: "/:id/edit_financial"
         patch :set_commission, route: "/:id/set_commission"
         patch :update
         delete :destroy
@@ -149,6 +156,7 @@ defmodule LabelleBack.Studio do
       define :available_slots, action: :available_slots, args: [:professional_id, :date]
     end
 
+    resource LabelleBack.Studio.FinancialEdit
     resource LabelleBack.Studio.AppointmentService
 
     resource LabelleBack.Studio.ClientReminder do

@@ -1,3 +1,4 @@
+import {useUser} from "@/lib/auth";
 import { hasPhone } from "@/lib/phonePending";
 import { normalizeSearch } from "@/lib/serviceCatalog";
 import { useState, useEffect } from "react";
@@ -15,6 +16,8 @@ import { maskPhone } from "@/lib/phone";
 
 export default function AppointmentForm({ open, onClose, onSubmit, services, professionals, clients, appointment, initialDate, initialTime, initialProfessional, initialBooking, title, submitError, isSaving = false, footerActions }) {
   const queryClient = useQueryClient();
+  const admin=useUser()?.role==="admin";
+  const [referral,setReferral]=useState(false),[editComment,setEditComment]=useState("");
   // Só profissionais vinculadas ao serviço escolhido aparecem na lista —
   // evita agendar um serviço com quem não sabe fazer.
   const professionalServicesQuery = useQuery({
@@ -65,6 +68,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
         date: initialDate || new Date().toISOString().split("T")[0], time: initialTime || "09:00", notes: "",
       });
     }
+    setReferral(Boolean(appointment?.professional_referral || initialBooking?.professional_referral));setEditComment("");
     setClientSuggestions(false);setServiceSuggestions(false);setContactError("");
     setServiceSearch(appointment ? services?.find(s=>s.id===appointment.service_id)?.name || "" : services?.find(s=>s.id===initialBooking?.service_id)?.name || "");
   }, [appointment, open, initialDate, initialTime, initialProfessional, initialBooking?.id]);
@@ -104,6 +108,13 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.service_id, professionalServices, professionalServicesQuery.isSuccess]);
 
+  useEffect(()=>{
+    if(appointment)return;
+    const digits=value=>(value || "").replace(/\D/g,"").replace(/^55(?=\d{10,11}$)/,"");
+    const client=clients?.find(c=>c.id===form.client_id || (digits(form.client_phone).length>=10 && digits(c.phone)===digits(form.client_phone)));
+    if(client)setReferral(client.referring_professional_id===form.professional_id);
+    else if(!initialBooking?.professional_referral)setReferral(false);
+  },[form.client_id,form.client_phone,form.professional_id,clients,appointment]);
   const handleClientSelect = (clientId) => {
     const client = clients?.find(c => c.id === clientId);
     if (client) {
@@ -124,6 +135,8 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
     const professional = professionals?.find(p => p.id === form.professional_id);
     const payload = {
       ...form,
+      ...(admin ? {professional_referral:referral} : {}),
+      ...(appointment?.status==="concluido" ? {edit_comment:editComment} : {}),
       service_name: selectedService?.name || "",
       professional_name: professional?.name || "",
 
@@ -203,6 +216,11 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
               </p>
             )}
           </div>
+          <div className="space-y-2 rounded-xl border p-3">
+            <label className="flex gap-2 text-sm"><input type="checkbox" checked={referral} disabled={!admin} onChange={e=>setReferral(e.target.checked)}/>Cliente desta profissional</label>
+            <p className="text-xs text-muted-foreground">O vínculo fica salvo para pré-marcar os próximos agendamentos com esta profissional. O admin pode corrigir a marcação. Clientes sem cadastro vinculado precisam ser associadas pelo celular para memorizar o vínculo.</p>
+          </div>
+          {appointment?.status==="concluido" && <div><Label>Comentário da alteração após conclusão</Label><Textarea aria-label="Comentário da alteração após conclusão" value={editComment} onChange={e=>setEditComment(e.target.value)} placeholder="Explique a alteração"/>{!editComment.trim() && <p className="text-sm text-red-700">Sem comentário, a alteração terá contorno vermelho e alerta no financeiro.</p>}</div>}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Data</Label>

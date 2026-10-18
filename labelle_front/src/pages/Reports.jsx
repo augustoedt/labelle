@@ -1,7 +1,7 @@
 import CommissionPanel from "@/components/finance/CommissionPanel";
 import { appointmentCommission } from "@/lib/commissions";
 import { useQuery } from "@tanstack/react-query";
-import { AppointmentsApi, TransactionsApi, ProfessionalsApi, AppointmentServicesApi } from "@/server/api";
+import { AppointmentsApi, TransactionsApi, ProfessionalsApi, AppointmentServicesApi,listFinancialEdits } from "@/server/api";
 import { ArrowLeft, TrendingUp, Users, Scissors, DollarSign, FileDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,8 @@ export default function Reports() {
     queryFn: () => ProfessionalsApi.list(),
   });
 
+  const edits=useQuery({queryKey:["financial-edits"],queryFn:()=>listFinancialEdits({data:{limit:10000,sort:"-inserted_at"}})});
+  const noComment=id=>(edits.data || []).some(e=>e.appointment_id===id && !e.comment?.trim());
   const isLoading = isLoadingAppointments || isLoadingTransactions;
 
   // Last 7 days revenue chart
@@ -78,6 +80,8 @@ export default function Reports() {
       "Gorjeta (R$)": appointmentCommission(a,commissionItems).tip,
       "Bônus indicação (R$)": appointmentCommission(a,commissionItems).referralBonus,
       "Comissão pendente": appointmentCommission(a,commissionItems).missing ? "Sim" : "Não",
+      "Alteração sem comentário": noComment(a.id)?"Sim":"Não",
+      "Cliente da profissional": a.professional_referral?"Sim":"Não",
       "Status": a.status,
       "Pagamento": a.payment_method || "",
     }));
@@ -114,6 +118,7 @@ export default function Reports() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(svcData), "Serviços");
 
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(appointments.filter(a=>a.status==="concluido").map(a=>({Data:a.date,Cliente:a.client_name,Profissional:a.professional_name,Receita:appointmentCommission(a,commissionItems).revenue,"Comissão registrada":appointmentCommission(a,commissionItems).amount,"Gorjeta":appointmentCommission(a,commissionItems).tip,"Bônus indicação":appointmentCommission(a,commissionItems).referralBonus,"Percentual pendente":appointmentCommission(a,commissionItems).missing ? "Sim" : "Não"}))), "Comissões");
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((edits.data || []).map(e=>({Data:e.inserted_at,Autor:e.actor_email,Atendimento:e.appointment_id,Tipo:e.record_kind,Antes:JSON.stringify(e.old_values),Depois:JSON.stringify(e.new_values),Comentário:e.comment || "SEM COMENTÁRIO"}))),"Alterações");
     XLSX.writeFile(wb, `relatorio-la-belle-${format(new Date(), "yyyy-MM")}.xlsx`);
   };
 

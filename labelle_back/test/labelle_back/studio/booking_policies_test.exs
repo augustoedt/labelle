@@ -918,4 +918,243 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
                |> Ash.update()
     end
   end
+
+  describe "edição financeira com histórico e memória de indicação" do
+    test "alterar preço e comissão após concluir sincroniza cobrança e preserva auditoria" do
+      admin = create_user!(:admin)
+      pro = create_professional!(create_user!(:profissional))
+      service = create_service!(%{commission_percent: Decimal.new(40)})
+
+      a =
+        create_appointment!(pro, service)
+        |> Ash.Changeset.for_update(:confirm, %{}, authorize?: false)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(:start, %{}, authorize?: false)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(
+          :finalize,
+          %{payment_method: :pix, tip_mode: :percent, tip_input: 10},
+          actor: admin
+        )
+        |> Ash.update!()
+
+      changed =
+        a
+        |> Ash.Changeset.for_update(
+          :edit_financial,
+          %{price: 200, commission_percent: 50, edit_comment: "Ajuste acordado com a cliente"},
+          actor: admin
+        )
+        |> Ash.update!()
+
+      assert Decimal.equal?(changed.tip_amount, Decimal.new(20))
+
+      [[amount]] =
+        LabelleBack.Repo.query!("SELECT amount FROM transactions WHERE appointment_id = $1", [
+          Ecto.UUID.dump!(a.id)
+        ]).rows
+
+      assert Decimal.equal?(amount, Decimal.new(220))
+      [entry] = Ash.read!(LabelleBack.Studio.FinancialEdit, actor: admin)
+      assert entry.comment == "Ajuste acordado com a cliente"
+      assert entry.actor_id == admin.id
+      assert entry.old_values["price"] == "100"
+      assert entry.new_values["price"] == "200"
+      assert entry.old_values["commission_percent"] == "40"
+      assert entry.new_values["commission_percent"] == "50"
+
+      assert {:error, _} =
+               changed
+               |> Ash.Changeset.for_update(:edit_financial, %{price: -1}, actor: admin)
+               |> Ash.update()
+
+      assert length(Ash.read!(LabelleBack.Studio.FinancialEdit, actor: admin)) == 1
+
+      item =
+        AppointmentService
+        |> Ash.Changeset.for_create(:create, %{appointment_id: a.id, service_id: service.id},
+          actor: admin
+        )
+        |> Ash.create!()
+
+      item =
+        item
+        |> Ash.Changeset.for_update(
+          :edit_financial,
+          %{price: 50, commission_percent: 25, edit_comment: "  "},
+          actor: admin
+        )
+        |> Ash.update!()
+
+      [[amount, count]] =
+        LabelleBack.Repo.query!(
+          "SELECT sum(amount), count(*) FROM transactions WHERE appointment_id = $1",
+          [Ecto.UUID.dump!(a.id)]
+        ).rows
+
+      assert count == 1
+      assert Decimal.equal?(amount, Decimal.new(275))
+
+      pending =
+        Ash.read!(LabelleBack.Studio.FinancialEdit, actor: admin)
+        |> Enum.find(&(&1.record_id == item.id && &1.action_name == "edit_financial"))
+
+      assert is_nil(pending.comment)
+
+      filled =
+        pending
+        |> Ash.Changeset.for_update(:add_comment, %{comment: "Correção do adicional"},
+          actor: admin
+        )
+        |> Ash.update!()
+
+      assert filled.old_values == pending.old_values
+      assert filled.comment == "Correção do adicional"
+      assert filled.commented_by == admin.id
+
+      item
+      |> Ash.Changeset.for_destroy(:destroy, %{edit_comment: "Item incluído por engano"},
+        actor: admin
+      )
+      |> Ash.destroy!()
+
+      [[amount]] =
+        LabelleBack.Repo.query!("SELECT amount FROM transactions WHERE appointment_id = $1", [
+          Ecto.UUID.dump!(a.id)
+        ]).rows
+
+      assert Decimal.equal?(amount, Decimal.new(220))
+    end
+
+    test "profissional não altera concluído, histórico ou indicação; memória é por cliente e profissional" do
+      admin = create_user!(:admin)
+      user = create_user!(:profissional)
+      pro = create_professional!(user)
+      other = create_professional!(create_user!(:profissional))
+      service = create_service!(%{commission_percent: Decimal.new(40)})
+      client = create_client!()
+
+      first =
+        create_appointment!(pro, service, %{client_id: client.id})
+        |> Ash.Changeset.for_update(:update, %{professional_referral: true}, actor: admin)
+        |> Ash.update!()
+
+      assert Ash.get!(Client, client.id, actor: admin).referring_professional_id == pro.id
+      again = create_appointment!(pro, service, %{client_id: client.id})
+      assert again.professional_referral
+      different = create_appointment!(other, service, %{client_id: client.id})
+      refute different.professional_referral
+
+      assert {:error, _} =
+               Appointment
+               |> Ash.Changeset.for_create(
+                 :create,
+                 %{
+                   client_name: client.name,
+                   client_id: client.id,
+                   professional_id: pro.id,
+                   service_id: service.id,
+                   date: Date.utc_today(),
+                   time: ~T[15:00:00],
+                   professional_referral: true
+                 },
+                 actor: user
+               )
+               |> Ash.create()
+
+      done =
+        first
+        |> Ash.Changeset.for_update(:confirm, %{}, authorize?: false)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(:start, %{}, authorize?: false)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(:finalize, %{payment_method: :credito}, actor: user)
+        |> Ash.update!()
+
+      assert Decimal.equal?(done.referral_bonus_percent, Decimal.new(10))
+
+      assert {:error, _} =
+               done
+               |> Ash.Changeset.for_update(:edit_financial, %{price: 1, commission_percent: 99},
+                 actor: user
+               )
+               |> Ash.update()
+
+      assert {:error, _} =
+               AppointmentService
+               |> Ash.Changeset.for_create(
+                 :create,
+                 %{appointment_id: done.id, service_id: service.id},
+                 actor: user
+               )
+               |> Ash.create()
+
+      corrected =
+        done
+        |> Ash.Changeset.for_update(:edit_financial, %{commission_percent: 35}, actor: admin)
+        |> Ash.update!()
+
+      [entry] = Ash.read!(LabelleBack.Studio.FinancialEdit, actor: admin)
+
+      assert [] == Ash.read!(LabelleBack.Studio.FinancialEdit, actor: user)
+
+      assert {:error, _} =
+               entry
+               |> Ash.Changeset.for_update(:add_comment, %{comment: "Ocultar pendência"},
+                 actor: user
+               )
+               |> Ash.update()
+
+      assert [] == Ash.read!(LabelleBack.Studio.FinancialEdit, actor: user)
+      assert Decimal.equal?(corrected.commission_percent, Decimal.new(35))
+
+      again
+      |> Ash.Changeset.for_update(:update, %{professional_referral: false}, actor: admin)
+      |> Ash.update!()
+
+      assert is_nil(Ash.get!(Client, client.id, actor: admin).referring_professional_id)
+      refute create_appointment!(pro, service, %{client_id: client.id}).professional_referral
+    end
+  end
+
+  test "reconciliação corrige somente cobrança paga divergente e não duplica ajustes" do
+    admin = create_user!(:admin)
+    pro = create_professional!(create_user!(:profissional))
+    service = create_service!(%{commission_percent: Decimal.new(40)})
+
+    a =
+      create_appointment!(pro, service)
+      |> Ash.Changeset.for_update(:confirm, %{}, authorize?: false)
+      |> Ash.update!()
+      |> Ash.Changeset.for_update(:start, %{}, authorize?: false)
+      |> Ash.update!()
+      |> Ash.Changeset.for_update(:finalize, %{payment_method: :pix}, actor: admin)
+      |> Ash.update!()
+
+    LabelleBack.Repo.query!("UPDATE transactions SET amount = 60 WHERE appointment_id = $1", [
+      Ecto.UUID.dump!(a.id)
+    ])
+
+    [candidate] = LabelleBack.Studio.FinancialReconciliation.preview()
+    assert Decimal.equal?(candidate.old_amount, Decimal.new(60))
+    assert Decimal.equal?(candidate.new_amount, Decimal.new(100))
+    assert length(LabelleBack.Studio.FinancialReconciliation.run!()) == 1
+    assert [] == LabelleBack.Studio.FinancialReconciliation.run!()
+    [entry] = Ash.read!(LabelleBack.Studio.FinancialEdit, actor: admin)
+    assert entry.action_name == "reconcile_charge"
+    refute is_nil(entry.comment)
+
+    LabelleBack.Repo.query!("DELETE FROM transactions WHERE appointment_id = $1", [
+      Ecto.UUID.dump!(a.id)
+    ])
+
+    a
+    |> Ash.Changeset.for_update(:set_commission, %{commission_percent: 35}, actor: admin)
+    |> Ash.update!()
+
+    assert [] ==
+             LabelleBack.Repo.query!("SELECT id FROM transactions WHERE appointment_id = $1", [
+               Ecto.UUID.dump!(a.id)
+             ]).rows
+  end
 end

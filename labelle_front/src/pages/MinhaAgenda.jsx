@@ -296,7 +296,7 @@ export default function MinhaAgenda() {
                 <div className="flex-1 p-4">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-semibold text-sm">{apt.client_name} <PhonePendingBadge phone={apt.client_phone}/></p>
+                      <p className="font-semibold text-sm">{apt.client_name} <PhonePendingBadge phone={apt.client_phone}/>{apt.professional_referral && <span className="referral-badge">Cliente da profissional</span>}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{apt.service_name}</p>
                     </div>
                     <Badge className={cn("text-xs border-0", statusColors[apt.status])}>

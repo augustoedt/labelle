@@ -20,7 +20,17 @@ defmodule LabelleBack.Studio.Changes.RegisterChargeOnFinalize do
     Ash.Changeset.after_action(changeset, &register_charge/2)
   end
 
-  defp register_charge(_changeset, appointment) do
+  def sync_completed!(id) do
+    appointment =
+      Ash.get!(LabelleBack.Studio.Appointment, id, authorize?: false)
+      |> Ash.Changeset.for_update(:refresh_totals, %{}, authorize?: false)
+      |> Ash.update!()
+
+    {:ok, appointment} = register_charge(nil, appointment)
+    appointment
+  end
+
+  defp register_charge(changeset, appointment) do
     items =
       LabelleBack.Studio.AppointmentService
       |> Ash.Query.filter(appointment_id == ^appointment.id)
@@ -53,17 +63,27 @@ defmodule LabelleBack.Studio.Changes.RegisterChargeOnFinalize do
 
     existing =
       LabelleBack.Studio.Transaction
-      |> Ash.Query.filter(appointment_id == ^appointment.id)
+      |> Ash.Query.filter(
+        appointment_id == ^appointment.id and type == :entrada and category == :servico
+      )
       |> Ash.Query.limit(1)
       |> Ash.read!(authorize?: false)
 
     case existing do
       [transaction | _] ->
         transaction
-        |> Ash.Changeset.for_update(:update, Map.drop(attrs, [:appointment_id]),
+        |> Ash.Changeset.for_update(
+          :update,
+          Map.drop(
+            attrs,
+            if(is_nil(changeset), do: [:appointment_id, :status], else: [:appointment_id])
+          ),
           authorize?: false
         )
         |> Ash.update!()
+
+      [] when is_nil(changeset) ->
+        :ok
 
       [] ->
         LabelleBack.Studio.Transaction

@@ -1514,3 +1514,14 @@ button.schedule-slot:hover,button.schedule-slot:focus-visible { background:#e9d3
 .commission-edit-fields input { display:block;width:125px;padding:7px;border:1px solid #cfafa4;border-radius:6px;background:white; }
 .commission-edit-fields [role=alert] { color:#b42323; }
 @media(max-width:600px) { .commission-panel { margin:0 16px 16px;padding:14px; } }
+
+/* Alterações após conclusão: pendência visível só nas telas de gestão. */
+.financial-edit-uncommented { border:2px solid #dc3535 !important; border-radius:12px; padding:12px; background:#fff7f7; }
+.financial-edit-warning { display:inline-flex; align-items:center; gap:5px; color:#b42323; font-size:.78rem; font-weight:600; margin-right:8px; white-space:normal; }
+.financial-edit-entry { padding:12px; margin:10px 0; border:1px solid var(--border); border-radius:10px; font-size:.8rem; overflow-wrap:anywhere; }
+.financial-edit-entry p { margin:4px 0; }
+.financial-edit-history > summary { cursor:pointer; padding:10px 0; font-weight:600; }
+.financial-edit-entry textarea,.commission-edit-fields textarea { display:block; width:100%; border:1px solid #d9c8c0; border-radius:8px; min-height:64px; padding:8px; background:white; color:#473a33; }
+.financial-edit-entry button { padding:7px 12px; margin-top:6px; border:1px solid #ba817a; border-radius:8px; }
+.referral-badge { display:inline-flex; width:fit-content; padding:2px 6px; border-radius:6px; background:#f0e2d7; color:#794c36; font-size:.65rem; line-height:1.3; }
+.commission-history > details > summary { flex-wrap:wrap; }

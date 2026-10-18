@@ -122,6 +122,7 @@ export default function FinalizeSheet({
         queryKey: ["professional-appointments"],
       });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
       queryClient.invalidateQueries({ queryKey: ["commission-appointments"] });
       queryClient.invalidateQueries({ queryKey: ["commission-items"] });
       onFinalized?.();
@@ -274,7 +275,7 @@ export default function FinalizeSheet({
             <Label>Gorjeta — repassada integralmente à profissional</Label>
             <Select value={tipMode} onValueChange={setTipMode}><SelectTrigger aria-label="Tipo de gorjeta"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="amount">Valor em R$</SelectItem><SelectItem value="percent">Percentual dos serviços</SelectItem></SelectContent></Select>
             <Input aria-label="Gorjeta" type="number" min="0" step="0.01" value={tipInput} onChange={e=>setTipInput(e.target.value)} placeholder="0" />
-            {canEditPrice && <label className="flex gap-2 text-sm"><input type="checkbox" checked={referral} onChange={e=>setReferral(e.target.checked)} />Cliente indicada por esta profissional neste atendimento (admin)</label>}
+            {canEditPrice && <label className="flex gap-2 text-sm"><input type="checkbox" checked={referral} onChange={e=>setReferral(e.target.checked)} />Cliente indicada por esta profissional — memorizar vínculo (admin)</label>}
             {referral && <p className="text-sm">Bônus de indicação: +{["debito","credito"].includes(paymentMethod) ? 10 : 15} pontos percentuais sobre os serviços. No cartão, a diferença de 5 pontos cobre a máquina; sem desconto adicional.</p>}
             <p className="text-sm">Gorjeta: {formatBRL(tipAmount,{decimals:2})} · Bônus: {formatBRL(commissionPreview.referralBonus,{decimals:2})} · Total da profissional: {formatBRL(commissionPreview.amount,{decimals:2})}{commissionPreview.missing ? " + comissão base pendente" : ""}</p>
             <p className="text-xs text-muted-foreground">A comissão base vem de cada serviço ou opção P/M/G. A gorjeta é somada à cobrança.</p>

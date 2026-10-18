@@ -1,8 +1,10 @@
+import {financialTotals} from "@/lib/financialTotals";
+import {needsEditComment,MissingEditComment} from "@/components/finance/FinancialEditHistory";
 import CommissionPanel from "@/components/finance/CommissionPanel";
 import { useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { TransactionsApi } from "@/server/api";
+import { TransactionsApi,AppointmentsApi,AppointmentServicesApi,listFinancialEdits } from "@/server/api";
 import { Plus, TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,9 +38,13 @@ export default function Finance() {
 
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ["transactions"],
-    queryFn: () => TransactionsApi.list({ sort: "-date", limit: 500 }),
+    queryFn: () => TransactionsApi.list({ sort: "-date", limit: 10000 }),
   });
 
+  const commissionAppointments=useQuery({queryKey:["commission-appointments"],queryFn:()=>AppointmentsApi.list({limit:10000,sort:"-date"})});
+  const commissionItems=useQuery({queryKey:["commission-items"],queryFn:()=>AppointmentServicesApi.list({limit:10000})});
+  const edits=useQuery({queryKey:["financial-edits"],queryFn:()=>listFinancialEdits({data:{limit:10000,sort:"-inserted_at"}})});
+  const noComment=id=>!!id && (edits.data || []).some(e=>e.appointment_id===id && needsEditComment(e));
   const createMutation = useMutation({
     mutationFn: (data) => TransactionsApi.create({ data: { ...data, amount: parseFloat(data.amount), status: "pago" } }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["transactions"] }); updateSearch({ view: undefined }); resetForm(); },
@@ -58,11 +64,9 @@ export default function Finance() {
 
   const { start, end } = getRange();
 
-  // Apenas lançamentos "pago" entram nos totais
-  const paidInRange = transactions.filter(t => t.date >= start && t.date <= end && t.status === "pago");
-  const entradas = paidInRange.filter(t => t.type === "entrada").reduce((s, t) => s + (t.amount || 0), 0);
-  const saidas = paidInRange.filter(t => t.type === "saida").reduce((s, t) => s + (t.amount || 0), 0);
-  const lucro = entradas - saidas;
+  const totals=financialTotals(transactions,commissionAppointments.data || [],commissionItems.data || [],start,end);
+  const totalsLoading=isLoading || commissionAppointments.isPending || commissionItems.isPending;
+  const totalsError=commissionAppointments.isError || commissionItems.isError;
 
   // Lista filtrada por período + status selecionado
   const filtered = transactions
@@ -110,20 +114,24 @@ export default function Finance() {
       </div>
 
       {/* Stats — apenas lançamentos pagos */}
-      <div className="px-5 grid grid-cols-3 gap-2">
-        {isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => (
+      <div className="px-5 grid grid-cols-2 xl:grid-cols-5 gap-2">
+        {totalsLoading ? (
+          Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-24 rounded-2xl" />
           ))
         ) : (
           <>
-            <StatCard title="Entradas" value={formatBRL(entradas)} icon={ArrowUpRight} />
-            <StatCard title="Saídas" value={formatBRL(saidas)} icon={ArrowDownRight} />
-            <StatCard title="Lucro" value={formatBRL(lucro)} icon={DollarSign} />
+            <StatCard title="Entradas" value={formatBRL(totals.income,{decimals:2})} icon={ArrowUpRight} />
+            <StatCard title="Saídas" value={formatBRL(totals.expenses,{decimals:2})} icon={ArrowDownRight} />
+            <StatCard title="Saldo em caixa" value={formatBRL(totals.cash,{decimals:2})} icon={DollarSign} />
+            <StatCard title="Comissões dos recebidos" value={totalsError ? "Indisponível" : formatBRL(totals.commission,{decimals:2})} icon={DollarSign} />
+            <StatCard title="Saldo após comissões" value={totalsError ? "Indisponível" : formatBRL(totals.afterCommission,{decimals:2})} icon={DollarSign} />
           </>
         )}
       </div>
 
+      <p className="px-5 text-xs text-muted-foreground">Saldo após comissões considera os atendimentos concluídos recebidos no período, incluindo bônus e gorjetas. Repasses já lançados em Saídas → Comissão não são descontados duas vezes.</p>
+      {(totals.missing || totalsError) && <p role="alert" className="px-5 text-sm text-amber-700">{totalsError?"Não foi possível carregar as comissões.":"Existem comissões sem percentual definido: o saldo após comissões é parcial."}</p>}
       {/* Pendentes de confirmação */}
       <PendingTransactions transactions={transactions} isLoading={isLoading} />
 
@@ -168,6 +176,7 @@ export default function Finance() {
             "bg-card rounded-xl border border-border/50 p-3 flex items-center gap-3",
             t.status === "pendente_confirmacao" && "border-amber-200 bg-amber-50/50",
             t.status === "cancelado" && "opacity-60",
+            noComment(t.appointment_id) && "financial-edit-uncommented",
           )}>
             <div className={cn(
               "p-2 rounded-lg",
@@ -181,7 +190,7 @@ export default function Finance() {
             </div>
             <div className="flex-1 min-w-0">
               <p className={cn("text-sm font-medium truncate", t.status === "cancelado" && "line-through")}>
-                {t.description || t.category}
+                {noComment(t.appointment_id) && <MissingEditComment/>}{t.description || t.category}
               </p>
               <p className="text-xs text-muted-foreground">
                 {t.date && format(new Date(t.date + "T12:00"), "dd/MM")} • {methodLabels[t.payment_method] || t.payment_method}

@@ -50,6 +50,7 @@ defmodule LabelleBack.Studio.Appointment do
     # (confirm/start/finalize/cancel), que validam a origem.
     create :create do
       accept [
+        :professional_referral,
         :client_id,
         :client_name,
         :client_phone,
@@ -66,9 +67,10 @@ defmodule LabelleBack.Studio.Appointment do
       ]
 
       validate {LabelleBack.Studio.Validations.AdminOnlyFinancialInputs,
-                fields: [:price, :duration_minutes, :payment_method]}
+                fields: [:price, :duration_minutes, :payment_method, :professional_referral]}
 
       change LabelleBack.Studio.Changes.SnapshotAppointmentFields
+      change LabelleBack.Studio.Changes.RememberClientReferral
 
       # Agendamento feito pela cliente no app público: o estúdio manda a
       # confirmação de recebimento pra ela via WhatsApp da empresa, em vez
@@ -100,13 +102,16 @@ defmodule LabelleBack.Studio.Appointment do
       change LabelleBack.Studio.Changes.ApplyActivePromotion
       change LabelleBack.Studio.Changes.ValidateOnlineAvailability
       change LabelleBack.Studio.Changes.ResolveBookingClient
+      change LabelleBack.Studio.Changes.RememberClientReferral
       change {LabelleBack.Studio.Changes.SendWhatsAppMessage, kind: :new_booking_notification}
     end
 
     update :update do
       require_atomic? false
+      argument :edit_comment, :string
 
       accept [
+        :professional_referral,
         :professional_id,
         :service_id,
         :service_variant_id,
@@ -119,10 +124,13 @@ defmodule LabelleBack.Studio.Appointment do
       ]
 
       change LabelleBack.Studio.Changes.SnapshotAppointmentFields
+      change LabelleBack.Studio.Changes.RememberClientReferral
+      change LabelleBack.Studio.Changes.AuditCompletedEdit
     end
 
     create :book_return do
       accept [
+        :professional_referral,
         :client_id,
         :client_name,
         :client_phone,
@@ -134,8 +142,12 @@ defmodule LabelleBack.Studio.Appointment do
         :notes
       ]
 
+      validate {LabelleBack.Studio.Validations.AdminOnlyFinancialInputs,
+                fields: [:professional_referral]}
+
       change set_attribute(:source, :manual)
       change LabelleBack.Studio.Changes.SnapshotAppointmentFields
+      change LabelleBack.Studio.Changes.RememberClientReferral
       change LabelleBack.Studio.Changes.ValidateOnlineAvailability
     end
 
@@ -146,8 +158,24 @@ defmodule LabelleBack.Studio.Appointment do
       change LabelleBack.Studio.Changes.ValidateOnlineAvailability
     end
 
+    update :refresh_totals do
+      require_atomic? false
+      accept []
+      change LabelleBack.Studio.Changes.CalculateCompletionExtras
+    end
+
+    update :edit_financial do
+      require_atomic? false
+      accept [:price, :commission_percent]
+      argument :edit_comment, :string
+      change LabelleBack.Studio.Changes.AuditCompletedEdit
+    end
+
     update :set_commission do
+      require_atomic? false
+      argument :edit_comment, :string
       accept [:commission_percent]
+      change LabelleBack.Studio.Changes.AuditCompletedEdit
       validate present(:commission_percent)
     end
 
@@ -168,6 +196,7 @@ defmodule LabelleBack.Studio.Appointment do
       validate {LabelleBack.Studio.Validations.AdminOnlyFinancialInputs,
                 fields: [:professional_referral]}
 
+      change LabelleBack.Studio.Changes.RememberClientReferral
       change LabelleBack.Studio.Changes.CalculateCompletionExtras
 
       validate present(:payment_method) do
@@ -228,7 +257,7 @@ defmodule LabelleBack.Studio.Appointment do
   end
 
   policies do
-    policy action(:set_commission) do
+    policy action([:set_commission, :edit_financial, :refresh_totals]) do
       authorize_if actor_attribute_equals(:role, :admin)
     end
 

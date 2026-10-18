@@ -36,6 +36,10 @@ defmodule LabelleBack.Studio.Client do
       change LabelleBack.Studio.Changes.NormalizePhone
     end
 
+    update :set_referrer do
+      accept [:referring_professional_id]
+    end
+
     update :update do
       require_atomic? false
 
@@ -125,6 +129,7 @@ defmodule LabelleBack.Studio.Client do
   end
 
   relationships do
+    belongs_to :referring_professional, LabelleBack.Studio.Professional, public?: true
     has_many :appointments, LabelleBack.Studio.Appointment
     has_many :transactions, LabelleBack.Studio.Transaction
     has_many :payments, LabelleBack.Studio.Payment

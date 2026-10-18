@@ -242,6 +242,17 @@ export const updateAppointment = createServerFn({ method: 'POST' })
   .handler(({ data }) => jsonApiUpdate('appointments', 'appointment', data.id, data.attributes))
 // Finaliza o atendimento cobrando: o backend soma serviço principal + itens
 // adicionais e registra a transação financeira como paga (action :finalize).
+export const listFinancialEdits = createServerFn({method:'GET'})
+ .validator((data: ListParams) => data)
+ .handler(({data})=>jsonApiList('financial_edits',data))
+export const addFinancialEditComment = createServerFn({method:'POST'})
+ .validator((data:{id:string;comment:string})=>data)
+ .handler(({data})=>jsonApiAction('financial_edits','financial_edit',data.id,'add_comment',{comment:data.comment}))
+export const editRecordedService = createServerFn({method:'POST'})
+ .validator((data:{id:string;kind:'appointment'|'item';price:number;percent?:number;comment?:string})=>{
+   if(!['appointment','item'].includes(data.kind) || !Number.isFinite(data.price) || data.price<0 || (data.percent!==undefined && (!Number.isFinite(data.percent) || data.percent<0 || data.percent>100)))throw new Error('Valor inválido');return data;
+ })
+ .handler(({data})=>jsonApiAction(data.kind==='item'?'appointment_services':'appointments',data.kind==='item'?'appointment_service':'appointment',data.id,'edit_financial',{price:data.price,...(data.percent!==undefined?{commission_percent:data.percent}:{}),edit_comment:data.comment || ''}))
 export const setRecordedCommission = createServerFn({ method: 'POST' })
   .validator((data: { id: string; kind: 'appointment' | 'item'; percent: number }) => {
     if (!['appointment','item'].includes(data.kind) || !Number.isFinite(data.percent) || data.percent < 0 || data.percent > 100) throw new Error('Comissão inválida')

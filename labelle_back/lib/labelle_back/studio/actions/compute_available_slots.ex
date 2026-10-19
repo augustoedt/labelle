@@ -11,7 +11,7 @@ defmodule LabelleBack.Studio.Actions.ComputeAvailableSlots do
 
   require Ash.Query
 
-  alias LabelleBack.Studio.{Appointment, Professional}
+  alias LabelleBack.Studio.Professional
 
   @impl true
   def run(input, _opts, _context) do
@@ -23,11 +23,7 @@ defmodule LabelleBack.Studio.Actions.ComputeAvailableSlots do
 
     work_end = args[:work_end] || professional_time(args.professional_id, :work_end) || "18:00"
 
-    booked =
-      Appointment
-      |> Ash.Query.filter(professional_id == ^args.professional_id and date == ^args.date)
-      |> Ash.Query.filter(status != :cancelado)
-      |> Ash.read!(authorize?: false)
+    booked = LabelleBack.Studio.ProfessionalSchedule.bookings(args.professional_id, args.date)
 
     professional = Ash.get!(Professional, args.professional_id, authorize?: false)
     day = rem(Date.day_of_week(args.date), 7)

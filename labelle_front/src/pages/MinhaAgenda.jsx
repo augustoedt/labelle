@@ -1,3 +1,4 @@
+import {serviceScheduleEntries} from "@/lib/serviceSchedule";
 import AppointmentActions from "@/components/agenda/AppointmentActions";
 import NextAppointmentSheet from "@/components/agenda/NextAppointmentSheet";
 import PhonePendingBadge from "@/components/ui/PhonePendingBadge";
@@ -5,7 +6,7 @@ import { hasPhone } from "@/lib/phonePending";
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouteContext, useLocation, useNavigate } from "@tanstack/react-router";
-import { AppointmentsApi, ProfessionalsApi, ServicesApi, ClientsApi } from "@/server/api";
+import { AppointmentsApi,AppointmentServicesApi, ProfessionalsApi, ServicesApi, ClientsApi } from "@/server/api";
 import { Plus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -155,7 +156,8 @@ export default function MinhaAgenda() {
     },
   });
 
-  const myAppointments = appointments;
+  const additional=useQuery({queryKey:["appointment-services"],queryFn:()=>AppointmentServicesApi.list({limit:10000}),enabled:!!myProfessional});
+  const myAppointments=serviceScheduleEntries(appointments,additional.data || []).filter(a=>a.professional_id===myProfessional?.id);
 
   useEffect(() => {
     if (!dateParam) updateSearch({ date: dateStr });
@@ -307,18 +309,19 @@ export default function MinhaAgenda() {
                     <span>{apt.time} • {apt.duration_minutes}min</span>
                     {apt.price > 0 && <span className="font-medium text-foreground tabular-nums">{formatBRL(apt.price)}</span>}
                   </div>
-                  <AppointmentActions appointment={apt}/>
+                  {!apt.is_additional_service && <AppointmentActions appointment={apt}/>}
+                  {apt.is_additional_service && <p className="text-xs text-muted-foreground">Serviço adicional · Atendimento principal de {apt.principal_professional_name}</p>}
                   <div className="flex gap-1.5 mt-3 flex-wrap">
-                    {apt.status === "agendado" && (
+                    {!apt.is_additional_service && apt.status === "agendado" && (
                       <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => handleStatusChange(apt, "confirmado")}>Confirmar</Button>
                     )}
-                    {apt.status === "confirmado" && (
+                    {!apt.is_additional_service && apt.status === "confirmado" && (
                       <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => handleStatusChange(apt, "em_atendimento")}>Iniciar</Button>
                     )}
-                    {apt.status === "em_atendimento" && (
+                    {!apt.is_additional_service && apt.status === "em_atendimento" && (
                       <Button size="sm" className="h-7 text-xs rounded-lg" onClick={() => updateSearch({ appointment: String(apt.id), view: "finalize" }, false)}>Serviços / Finalizar</Button>
                     )}
-                    {apt.client_phone && apt.status !== "cancelado" && apt.status !== "concluido" && (
+                    {!apt.is_additional_service && apt.client_phone && apt.status !== "cancelado" && apt.status !== "concluido" && (
                       <Button size="sm" variant="ghost" className="h-7 text-xs rounded-lg text-emerald-600 gap-1"
                         disabled={reminderMutation.isPending}
                         onClick={() => reminderMutation.mutate({ id: apt.id })}>

@@ -1,14 +1,13 @@
-import {appointmentCommission,roundMoney} from "@/lib/commissions";
+import AdditionalServices from "@/components/agenda/AdditionalServices";
+import {appointmentCommission,commissionAllocations,roundMoney} from "@/lib/commissions";
 import CommissionEditor from "@/components/agenda/CommissionEditor";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  ServiceVariantsApi,
   AppointmentsApi,
   AppointmentServicesApi,
 } from "@/server/api";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,7 +23,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, X } from "lucide-react";
 import { formatBRL } from "@/lib/format";
 
 const paymentMethods = [
@@ -49,16 +47,6 @@ export default function FinalizeSheet({
   const queryClient = useQueryClient();
   const [bookNext,setBookNext]=useState(false);
   useEffect(()=>setBookNext(false),[appointment?.id,open]);
-  const [addingServiceId, setAddingServiceId] = useState("");
-  const [addingVariantId, setAddingVariantId] = useState("");
-  const variantsQuery = useQuery({
-    queryKey: ["service-variants"],
-    queryFn: () => ServiceVariantsApi.list({ limit: 1000 }),
-    enabled: open,
-  });
-  const options = (variantsQuery.data || []).filter(
-    (v) => v.service_id === addingServiceId && v.is_active !== false,
-  );
   const [paymentMethod, setPaymentMethod] = useState("");
   const [tipMode,setTipMode]=useState("amount");
   const [tipInput,setTipInput]=useState("");
@@ -72,39 +60,6 @@ export default function FinalizeSheet({
         filter: { appointment_id: appointment.id },
       }),
     enabled: open && !!appointment,
-  });
-
-  const invalidateItems = () =>
-    queryClient.invalidateQueries({
-      queryKey: ["appointment-services", appointment?.id],
-    });
-
-  const addMutation = useMutation({
-    mutationFn: (serviceId) =>
-      AppointmentServicesApi.create({
-        data: {
-          appointment_id: appointment.id,
-          service_id: serviceId,
-          ...(addingVariantId ? { service_variant_id: addingVariantId } : {}),
-          unplanned: appointment.status === "em_atendimento",
-        },
-      }),
-    onSuccess: () => {
-      setAddingServiceId("");
-      setAddingVariantId("");
-      invalidateItems();
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, price }) =>
-      AppointmentServicesApi.update({ id, attributes: { price } }),
-    onSuccess: invalidateItems,
-  });
-
-  const removeMutation = useMutation({
-    mutationFn: (id) => AppointmentServicesApi.delete({ id }),
-    onSuccess: invalidateItems,
   });
 
   const finalizeMutation = useMutation({
@@ -136,17 +91,10 @@ export default function FinalizeSheet({
   const total =
     (appointment.price || 0) + items.reduce((s, i) => s + (i.price || 0), 0);
   const tipAmount=roundMoney(tipMode === "percent" ? total*Number(tipInput || 0)/100 : Number(tipInput || 0));
-  const commissionPreview=appointmentCommission({...appointment,tip_amount:tipAmount,referral_bonus_percent:referral ? (["debito","credito"].includes(paymentMethod) ? 10 : 15) : 0},items);
-  const availableServices = (services || []).filter((s) => {
-    if (s.is_active === false || !variantsQuery.isSuccess) return false;
-    const serviceVariants = (variantsQuery.data || []).filter(
-      (variant) => variant.service_id === s.id,
-    );
-    return (
-      serviceVariants.length === 0 ||
-      serviceVariants.some((variant) => variant.is_active !== false)
-    );
-  });
+  const previewReferrer=referral ? appointment.professional_id : (appointment.referral_professional_id===appointment.professional_id ? null : appointment.referral_professional_id);
+  const previewAppointment={...appointment,tip_amount:tipAmount,referral_professional_id:previewReferrer,referral_bonus_percent:previewReferrer ? (["debito","credito"].includes(paymentMethod) ? 10 : 15) : 0};
+  const previewAllocations=commissionAllocations(previewAppointment,items);
+  const commissionPreview=appointmentCommission(previewAppointment,items);
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
@@ -173,112 +121,17 @@ export default function FinalizeSheet({
             </div>
 
             <CommissionEditor record={appointment}/>
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-2 bg-secondary/50 rounded-xl p-3 text-sm"
-              >
-                <div className="flex-1 min-w-0">
-                  <span className="block truncate">{item.service_name}</span>
-                  <CommissionEditor record={item} kind="item"/>
-                  {item.unplanned && (
-                    <Badge className="text-xs border-0 bg-amber-100 text-amber-700 mt-0.5">
-                      Não previsto
-                    </Badge>
-                  )}
-                </div>
-                {canEditPrice ? (
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    className="w-24 h-8 text-right"
-                    defaultValue={item.price ?? 0}
-                    onBlur={(e) => {
-                      const price = parseFloat(e.target.value);
-                      if (!Number.isNaN(price) && price !== item.price) {
-                        updateMutation.mutate({ id: item.id, price });
-                      }
-                    }}
-                  />
-                ) : (
-                  <span className="font-medium tabular-nums">{formatBRL(item.price, { decimals: 2 })}</span>
-                )}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 text-destructive flex-shrink-0"
-                  onClick={() => removeMutation.mutate(item.id)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-
-            {/* Adicionar serviço (previsto ou não) */}
-            <div className="flex gap-2">
-              <Select
-                value={addingServiceId}
-                onValueChange={(id) => {
-                  setAddingServiceId(id);
-                  setAddingVariantId("");
-                }}
-              >
-                <SelectTrigger className="flex-1" disabled={!variantsQuery.isSuccess}>
-                  <SelectValue placeholder={variantsQuery.isSuccess ? "Adicionar serviço..." : "Carregando opções..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableServices.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} - {formatBRL(s.price)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                className="rounded-xl gap-1"
-                disabled={
-                  !addingServiceId ||
-                  !availableServices.some((service) => service.id === addingServiceId) ||
-                  addMutation.isPending ||
-                  !variantsQuery.isSuccess ||
-                  (options.length > 0 && !options.some((option) => option.id === addingVariantId))
-                }
-                onClick={() => addMutation.mutate(addingServiceId)}
-              >
-                <Plus className="w-4 h-4" /> Incluir
-              </Button>
-            </div>
+            <AdditionalServices appointment={appointment}/>
           </div>
-
-          {options.length > 0 && (
-            <Select value={addingVariantId} onValueChange={setAddingVariantId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Escolha a opção do serviço adicional" />
-              </SelectTrigger>
-              <SelectContent>
-                {options.map((v) => (
-                  <SelectItem key={v.id} value={v.id}>
-                    {v.name} — {formatBRL(v.price)} ({v.duration_minutes}min)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          {(addMutation.isError || variantsQuery.isError) && (
-            <p role="alert" className="text-sm text-destructive">
-              Não foi possível carregar ou incluir a opção do serviço. Tente
-              novamente.
-            </p>
-          )}
           <div className="space-y-2 rounded-xl border p-3">
             <Label>Gorjeta — repassada integralmente à profissional</Label>
             <Select value={tipMode} onValueChange={setTipMode}><SelectTrigger aria-label="Tipo de gorjeta"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="amount">Valor em R$</SelectItem><SelectItem value="percent">Percentual dos serviços</SelectItem></SelectContent></Select>
             <Input aria-label="Gorjeta" type="number" min="0" step="0.01" value={tipInput} onChange={e=>setTipInput(e.target.value)} placeholder="0" />
             {canEditPrice && <label className="flex gap-2 text-sm"><input type="checkbox" checked={referral} onChange={e=>setReferral(e.target.checked)} />Cliente indicada por esta profissional — memorizar vínculo (admin)</label>}
-            {referral && <p className="text-sm">Bônus de indicação: +{["debito","credito"].includes(paymentMethod) ? 10 : 15} pontos percentuais sobre os serviços. No cartão, a diferença de 5 pontos cobre a máquina; sem desconto adicional.</p>}
-            <p className="text-sm">Gorjeta: {formatBRL(tipAmount,{decimals:2})} · Bônus: {formatBRL(commissionPreview.referralBonus,{decimals:2})} · Total da profissional: {formatBRL(commissionPreview.amount,{decimals:2})}{commissionPreview.missing ? " + comissão base pendente" : ""}</p>
-            <p className="text-xs text-muted-foreground">A comissão base vem de cada serviço ou opção P/M/G. A gorjeta é somada à cobrança.</p>
+            {previewReferrer && <p className="text-sm">Bônus de indicação: +{["debito","credito"].includes(paymentMethod) ? 10 : 15} pontos percentuais somente sobre os serviços executados por quem indicou a cliente. No cartão, a diferença de 5 pontos cobre a máquina; sem desconto adicional.</p>}
+            <p className="text-sm">Gorjeta: {formatBRL(tipAmount,{decimals:2})} · Bônus: {formatBRL(commissionPreview.referralBonus,{decimals:2})} · Total de comissões da equipe: {formatBRL(commissionPreview.amount,{decimals:2})}{commissionPreview.missing ? " + comissão base pendente" : ""}</p>
+            {previewAllocations.map(allocation=><p key={allocation.professional_id || "principal"} className="text-sm">{allocation.professional_name}: {formatBRL(allocation.amount,{decimals:2})}{allocation.referralBonus>0 ? ` (inclui bônus de ${formatBRL(allocation.referralBonus,{decimals:2})})` : ""}</p>)}
+            <p className="text-xs text-muted-foreground">A gorjeta informada aqui é da profissional principal. Cada profissional recebe bônus de indicação somente sobre os serviços que ela mesma executou para uma cliente indicada por ela. A comissão base vem de cada serviço ou opção P/M/G. A gorjeta é somada à cobrança.</p>
           </div>
           {/* Total */}
           <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl p-3">
@@ -318,7 +171,7 @@ export default function FinalizeSheet({
               className="rounded-xl h-12 flex-1"
               onClick={onClose}
             >
-              Salvar e voltar
+              Voltar
             </Button>
             <Button
               className="rounded-xl h-12 flex-1 font-semibold"

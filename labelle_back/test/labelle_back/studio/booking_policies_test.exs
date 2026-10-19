@@ -1157,4 +1157,337 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
                Ecto.UUID.dump!(a.id)
              ]).rows
   end
+
+  describe "serviços com profissionais diferentes" do
+    test "adicionais simultâneos para outra e para a mesma profissional preservam autoria e cobrança" do
+      admin = create_user!(:admin)
+      user = create_user!(:profissional)
+      owner = create_professional!(user)
+      other_user = create_user!(:profissional)
+      other = create_professional!(other_user)
+      stranger = create_user!(:profissional)
+      create_professional!(stranger)
+      service = create_service!(%{commission_percent: Decimal.new(40)})
+
+      LabelleBack.Studio.ProfessionalService
+      |> Ash.Changeset.for_create(:create, %{professional_id: other.id, service_id: service.id},
+        authorize?: false
+      )
+      |> Ash.create!()
+
+      a = create_appointment!(owner, service, %{time: ~T[11:00:00]})
+
+      additional =
+        AppointmentService
+        |> Ash.Changeset.for_create(
+          :create,
+          %{appointment_id: a.id, professional_id: other.id, service_id: service.id},
+          actor: admin
+        )
+        |> Ash.create!()
+
+      own =
+        AppointmentService
+        |> Ash.Changeset.for_create(
+          :create,
+          %{appointment_id: a.id, professional_id: owner.id, service_id: service.id},
+          actor: admin
+        )
+        |> Ash.create!()
+
+      again =
+        AppointmentService
+        |> Ash.Changeset.for_create(
+          :create,
+          %{appointment_id: a.id, professional_id: owner.id, service_id: service.id},
+          actor: admin
+        )
+        |> Ash.create!()
+
+      assert additional.professional_id == other.id
+      assert additional.professional_name == other.name
+      assert own.professional_id == owner.id && again.professional_id == owner.id
+      assert Ash.get!(Appointment, a.id, actor: other_user).id == a.id
+
+      assert [additional.id] ==
+               Ash.read!(AppointmentService, actor: other_user) |> Enum.map(& &1.id)
+
+      assert [] == Ash.read!(Appointment, actor: stranger)
+
+      assert {:error, _} =
+               a |> Ash.Changeset.for_update(:confirm, %{}, actor: other_user) |> Ash.update()
+
+      assert {:error, _} =
+               additional
+               |> Ash.Changeset.for_update(:set_commission, %{commission_percent: 90},
+                 actor: other_user
+               )
+               |> Ash.update()
+
+      assert {:error, _} =
+               AppointmentService
+               |> Ash.Changeset.for_create(
+                 :create,
+                 %{appointment_id: a.id, professional_id: other.id, service_id: service.id},
+                 actor: user
+               )
+               |> Ash.create()
+
+      done =
+        a
+        |> Ash.Changeset.for_update(:confirm, %{}, actor: user)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(:start, %{}, actor: user)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(
+          :finalize,
+          %{payment_method: :pix, professional_referral: true},
+          actor: admin
+        )
+        |> Ash.update!()
+
+      assert Decimal.equal?(done.referral_bonus_percent, Decimal.new(15))
+
+      [[amount]] =
+        LabelleBack.Repo.query!("SELECT amount FROM transactions WHERE appointment_id = $1", [
+          Ecto.UUID.dump!(a.id)
+        ]).rows
+
+      assert Decimal.equal?(amount, Decimal.new(400))
+
+      extra =
+        AppointmentService
+        |> Ash.Changeset.for_create(
+          :create,
+          %{
+            appointment_id: a.id,
+            professional_id: other.id,
+            service_id: service.id,
+            edit_comment: "Serviço realizado pela segunda profissional"
+          },
+          actor: admin
+        )
+        |> Ash.create!()
+
+      assert extra.professional_id == other.id
+
+      [[amount]] =
+        LabelleBack.Repo.query!("SELECT amount FROM transactions WHERE appointment_id = $1", [
+          Ecto.UUID.dump!(a.id)
+        ]).rows
+
+      assert Decimal.equal?(amount, Decimal.new(500))
+      assert length(Ash.read!(LabelleBack.Studio.FinancialEdit, actor: admin)) == 1
+    end
+
+    test "adicional reserva o horário de quem executa e bloqueia outra cliente" do
+      admin = create_user!(:admin)
+      owner = create_professional!(create_user!(:profissional))
+      other = create_professional!(create_user!(:profissional))
+      service = create_service!(%{})
+
+      LabelleBack.Studio.ProfessionalService
+      |> Ash.Changeset.for_create(:create, %{professional_id: other.id, service_id: service.id},
+        authorize?: false
+      )
+      |> Ash.create!()
+
+      date = Date.add(Date.utc_today(), 5)
+      a = create_appointment!(owner, service, %{date: date, time: ~T[10:00:00]})
+
+      AppointmentService
+      |> Ash.Changeset.for_create(
+        :create,
+        %{appointment_id: a.id, professional_id: other.id, service_id: service.id},
+        actor: admin
+      )
+      |> Ash.create!()
+
+      assert LabelleBack.Studio.ProfessionalSchedule.conflict?(
+               other.id,
+               date,
+               ~T[10:00:00],
+               60,
+               nil
+             )
+
+      refute LabelleBack.Studio.ProfessionalSchedule.conflict?(
+               other.id,
+               date,
+               ~T[10:00:00],
+               60,
+               a.id
+             )
+
+      assert {:ok, slots} = LabelleBack.Studio.available_slots(other.id, date, authorize?: false)
+      refute "10:00" in slots
+      conflict = create_appointment!(owner, service, %{date: date, time: ~T[10:00:00]})
+
+      assert {:error, _} =
+               AppointmentService
+               |> Ash.Changeset.for_create(
+                 :create,
+                 %{
+                   appointment_id: conflict.id,
+                   professional_id: other.id,
+                   service_id: service.id
+                 },
+                 actor: admin
+               )
+               |> Ash.create()
+
+      same_client =
+        create_appointment!(owner, service, %{
+          date: date,
+          time: ~T[10:00:00],
+          client_id: a.client_id
+        })
+
+      assert {:ok, _} =
+               AppointmentService
+               |> Ash.Changeset.for_create(
+                 :create,
+                 %{
+                   appointment_id: same_client.id,
+                   professional_id: other.id,
+                   service_id: service.id
+                 },
+                 actor: admin
+               )
+               |> Ash.create()
+    end
+  end
+
+  test "reagendamento considera também o conflito da profissional do adicional" do
+    admin = create_user!(:admin)
+    owner = create_professional!(create_user!(:profissional))
+    other = create_professional!(create_user!(:profissional))
+    service = create_service!(%{})
+
+    LabelleBack.Studio.ProfessionalService
+    |> Ash.Changeset.for_create(:create, %{professional_id: other.id, service_id: service.id},
+      authorize?: false
+    )
+    |> Ash.create!()
+
+    date = Date.add(Date.utc_today(), 5)
+    a = create_appointment!(owner, service, %{date: date, time: ~T[10:00:00]})
+
+    AppointmentService
+    |> Ash.Changeset.for_create(
+      :create,
+      %{appointment_id: a.id, professional_id: other.id, service_id: service.id},
+      actor: admin
+    )
+    |> Ash.create!()
+
+    create_appointment!(other, service, %{date: date, time: ~T[14:00:00]})
+
+    assert {:error, _} =
+             a
+             |> Ash.Changeset.for_update(:reschedule, %{date: date, time: ~T[14:00:00]},
+               actor: admin
+             )
+             |> Ash.update()
+
+    assert Ash.get!(Appointment, a.id, actor: admin).time == ~T[10:00:00]
+
+    assert {:ok, moved} =
+             a
+             |> Ash.Changeset.for_update(:reschedule, %{date: date, time: ~T[12:00:00]},
+               actor: admin
+             )
+             |> Ash.update()
+
+    assert moved.time == ~T[12:00:00]
+  end
+
+  test "indicação acompanha a identidade da cliente mesmo quando quem indicou executa só o adicional" do
+    admin = create_user!(:admin)
+    referrer = create_professional!(create_user!(:profissional))
+    principal = create_professional!(create_user!(:profissional))
+    service = create_service!(%{commission_percent: Decimal.new(40)})
+
+    LabelleBack.Studio.ProfessionalService
+    |> Ash.Changeset.for_create(:create, %{professional_id: referrer.id, service_id: service.id},
+      authorize?: false
+    )
+    |> Ash.create!()
+
+    client =
+      create_client!()
+      |> Ash.Changeset.for_update(:set_referrer, %{referring_professional_id: referrer.id},
+        actor: admin
+      )
+      |> Ash.update!()
+
+    a = create_appointment!(principal, service, %{client_id: client.id})
+    refute a.professional_referral
+    assert a.referral_professional_id == referrer.id
+
+    AppointmentService
+    |> Ash.Changeset.for_create(
+      :create,
+      %{appointment_id: a.id, professional_id: referrer.id, service_id: service.id},
+      actor: admin
+    )
+    |> Ash.create!()
+
+    done =
+      a
+      |> Ash.Changeset.for_update(:confirm, %{}, actor: admin)
+      |> Ash.update!()
+      |> Ash.Changeset.for_update(:start, %{}, actor: admin)
+      |> Ash.update!()
+      |> Ash.Changeset.for_update(:finalize, %{payment_method: :pix}, actor: admin)
+      |> Ash.update!()
+
+    assert done.referral_professional_id == referrer.id
+    assert Decimal.equal?(done.referral_bonus_percent, Decimal.new(15))
+  end
+
+  test "admin pode retirar indicação ao agendar sem deixar bônus residual" do
+    admin = create_user!(:admin)
+    professional = create_professional!(create_user!(:profissional))
+    service = create_service!(%{})
+
+    client =
+      create_client!()
+      |> Ash.Changeset.for_update(:set_referrer, %{referring_professional_id: professional.id},
+        actor: admin
+      )
+      |> Ash.update!()
+
+    appointment =
+      Appointment
+      |> Ash.Changeset.for_create(
+        :create,
+        %{
+          client_id: client.id,
+          client_name: client.name,
+          professional_id: professional.id,
+          service_id: service.id,
+          date: Date.utc_today(),
+          time: ~T[16:00:00],
+          professional_referral: false
+        },
+        actor: admin
+      )
+      |> Ash.create!()
+
+    refute appointment.professional_referral
+    assert is_nil(appointment.referral_professional_id)
+    assert is_nil(Ash.get!(Client, client.id, actor: admin).referring_professional_id)
+
+    done =
+      appointment
+      |> Ash.Changeset.for_update(:confirm, %{}, actor: admin)
+      |> Ash.update!()
+      |> Ash.Changeset.for_update(:start, %{}, actor: admin)
+      |> Ash.update!()
+      |> Ash.Changeset.for_update(:finalize, %{payment_method: :pix}, actor: admin)
+      |> Ash.update!()
+
+    assert Decimal.equal?(done.referral_bonus_percent, Decimal.new(0))
+  end
 end

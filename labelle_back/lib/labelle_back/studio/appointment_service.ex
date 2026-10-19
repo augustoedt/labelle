@@ -45,6 +45,7 @@ defmodule LabelleBack.Studio.AppointmentService do
       argument :edit_comment, :string
 
       accept [
+        :professional_id,
         :appointment_id,
         :service_id,
         :service_variant_id,
@@ -57,6 +58,7 @@ defmodule LabelleBack.Studio.AppointmentService do
                 fields: [:price, :duration_minutes]}
 
       change LabelleBack.Studio.Changes.SnapshotServiceItemFields
+      change LabelleBack.Studio.Changes.AssignServiceItemProfessional
       change LabelleBack.Studio.Changes.AuditCompletedEdit
     end
 
@@ -79,9 +81,17 @@ defmodule LabelleBack.Studio.AppointmentService do
       require_atomic? false
       argument :edit_comment, :string
 
-      accept [:service_id, :service_variant_id, :price, :duration_minutes, :unplanned]
+      accept [
+        :professional_id,
+        :service_id,
+        :service_variant_id,
+        :price,
+        :duration_minutes,
+        :unplanned
+      ]
 
       change LabelleBack.Studio.Changes.SnapshotServiceItemFields
+      change LabelleBack.Studio.Changes.AssignServiceItemProfessional
       change LabelleBack.Studio.Changes.AuditCompletedEdit
     end
   end
@@ -98,7 +108,13 @@ defmodule LabelleBack.Studio.AppointmentService do
       authorize_if LabelleBack.Studio.Checks.ActorIsServiceItemProfessional
     end
 
-    policy action_type([:read, :destroy]) do
+    policy action_type(:read) do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if expr(appointment.professional.user_id == ^actor(:id))
+      authorize_if expr(professional.user_id == ^actor(:id))
+    end
+
+    policy action_type(:destroy) do
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if expr(appointment.professional.user_id == ^actor(:id))
     end
@@ -111,6 +127,8 @@ defmodule LabelleBack.Studio.AppointmentService do
 
   attributes do
     uuid_primary_key :id
+
+    attribute :professional_name, :string, public?: true
 
     attribute :service_name, :string, public?: true
     attribute :variant_name, :string, public?: true
@@ -128,6 +146,8 @@ defmodule LabelleBack.Studio.AppointmentService do
   end
 
   relationships do
+    belongs_to :professional, LabelleBack.Studio.Professional, public?: true, allow_nil?: false
+
     belongs_to :appointment, LabelleBack.Studio.Appointment do
       allow_nil? false
       public? true

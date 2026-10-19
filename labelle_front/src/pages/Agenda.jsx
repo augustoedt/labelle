@@ -1,3 +1,5 @@
+import {serviceScheduleEntries} from "@/lib/serviceSchedule";
+import AdditionalServices from "@/components/agenda/AdditionalServices";
 import CommissionEditor from "@/components/agenda/CommissionEditor";
 import AppointmentActions from "@/components/agenda/AppointmentActions";
 import NextAppointmentSheet from "@/components/agenda/NextAppointmentSheet";
@@ -7,7 +9,7 @@ import { hasPhone } from "@/lib/phonePending";
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AppointmentsApi, ServicesApi, ProfessionalsApi, ClientsApi } from "@/server/api";
+import { AppointmentsApi, ServicesApi, ProfessionalsApi, ClientsApi,AppointmentServicesApi } from "@/server/api";
 import { Plus, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -85,6 +87,9 @@ export default function Agenda() {
     queryKey: ["clients"],
     queryFn: () => ClientsApi.list(),
   });
+
+  const additional=useQuery({queryKey:["appointment-services"],queryFn:()=>AppointmentServicesApi.list({limit:10000})});
+  const calendarServices=serviceScheduleEntries(appointments,additional.data || []);
 
   const createMutation = useMutation({
     mutationFn: (data) => AppointmentsApi.create({ data }),
@@ -277,10 +282,10 @@ export default function Agenda() {
         <div className="four-week-scroll"><div className="four-week-calendar">
           {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map(day=><div className="four-week-heading" key={day}>{day}</div>)}
           {calendarDays.map(day=>{
-            const key=format(day,"yyyy-MM-dd"), daily=appointments.filter(a=>a.date===key);
-            return <button key={key} className={`four-week-day ${key === format(new Date(),"yyyy-MM-dd") ? "is-today" : ""}`} onClick={()=>{navigateDate(format(day,"yyyy-MM-dd"));setView("day");}} aria-label={`${format(day,"dd/MM/yyyy")}, ${daily.length} agendamentos`}>
+            const key=format(day,"yyyy-MM-dd"), daily=calendarServices.filter(a=>a.date===key);
+            return <button key={key} className={`four-week-day ${key === format(new Date(),"yyyy-MM-dd") ? "is-today" : ""}`} onClick={()=>{navigateDate(format(day,"yyyy-MM-dd"));setView("day");}} aria-label={`${format(day,"dd/MM/yyyy")}, ${daily.length} serviços`}>
               <strong>{format(day,"d MMM",{locale:ptBR})}</strong>
-              <span className="four-week-count">{daily.length ? `${daily.length} agendamento${daily.length>1 ? "s" : ""}` : "Sem agendamentos"}</span>
+              <span className="four-week-count">{daily.length ? `${daily.length} serviço${daily.length>1 ? "s" : ""}` : "Sem agendamentos"}</span>
               {daily.slice().sort((a,b)=>(a.time || "").localeCompare(b.time || "")).slice(0,3).map(a=><span className={`four-week-event ${!hasPhone(a.client_phone) ? "appointment-phone-missing" : ""} ${a.status === "cancelado" ? "is-cancelled" : ""}`} key={a.id}>{a.time?.slice(0,5)} {a.client_name}<PhonePendingBadge phone={a.client_phone}/><small>{a.professional_name}</small></span>)}
               {daily.length>3 && <small>+{daily.length-3} · ver dia</small>}
             </button>;
@@ -366,7 +371,7 @@ export default function Agenda() {
         professionals={professionals}
         clients={clients}
         appointment={editingApt}
-        footerActions={editingApt ? <AppointmentActions appointment={editingApt}/> : null}
+        footerActions={editingApt ? <><AdditionalServices appointment={editingApt}/><AppointmentActions appointment={editingApt}/></> : null}
         initialDate={dateStr}
         initialTime={typeof search.time === "string" ? search.time : undefined}
         initialProfessional={typeof search.professional === "string" ? search.professional : undefined}

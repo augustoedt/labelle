@@ -70,7 +70,28 @@ defmodule LabelleBack.Studio.Changes.RememberClientReferral do
         end
       end
 
-      cs
+      indicated = Ash.Changeset.get_attribute(cs, :professional_referral)
+
+      referrer =
+        cond do
+          indicated ->
+            professional_id
+
+          explicit? && persist? && client && client.referring_professional_id == professional_id ->
+            nil
+
+          cs.action_type == :create ->
+            client && client.referring_professional_id
+
+          explicit? && persist? &&
+              Ash.Changeset.get_attribute(cs, :referral_professional_id) == professional_id ->
+            nil
+
+          true ->
+            Ash.Changeset.get_attribute(cs, :referral_professional_id)
+        end
+
+      Ash.Changeset.force_change_attribute(cs, :referral_professional_id, referrer)
     end)
   end
 

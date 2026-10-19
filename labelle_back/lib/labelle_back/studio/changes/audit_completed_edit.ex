@@ -9,6 +9,7 @@ defmodule LabelleBack.Studio.Changes.AuditCompletedEdit do
     :service_variant_id,
     :professional_id,
     :professional_referral,
+    :referral_professional_id,
     :date,
     :time,
     :duration_minutes,

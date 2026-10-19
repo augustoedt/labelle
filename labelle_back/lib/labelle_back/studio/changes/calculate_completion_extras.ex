@@ -4,6 +4,10 @@ defmodule LabelleBack.Studio.Changes.CalculateCompletionExtras do
 
   @impl true
   def change(changeset, _opts, _context) do
+    Ash.Changeset.before_action(changeset, &calculate/1)
+  end
+
+  defp calculate(changeset) do
     items =
       LabelleBack.Studio.AppointmentService
       |> Ash.Query.filter(appointment_id == ^changeset.data.id)
@@ -22,13 +26,14 @@ defmodule LabelleBack.Studio.Changes.CalculateCompletionExtras do
         else: input
 
     bonus =
-      if Ash.Changeset.get_attribute(changeset, :professional_referral),
-        do:
-          if(Ash.Changeset.get_attribute(changeset, :payment_method) in [:debito, :credito],
-            do: 10,
-            else: 15
-          ),
-        else: 0
+      if Ash.Changeset.get_attribute(changeset, :referral_professional_id) ||
+           Ash.Changeset.get_attribute(changeset, :professional_referral),
+         do:
+           if(Ash.Changeset.get_attribute(changeset, :payment_method) in [:debito, :credito],
+             do: 10,
+             else: 15
+           ),
+         else: 0
 
     changeset
     |> Ash.Changeset.force_change_attribute(:tip_amount, Decimal.round(tip, 2))

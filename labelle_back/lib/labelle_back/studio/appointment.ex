@@ -275,6 +275,7 @@ defmodule LabelleBack.Studio.Appointment do
     policy action_type(:read) do
       authorize_if actor_attribute_equals(:role, :admin)
       authorize_if expr(professional.user_id == ^actor(:id))
+      authorize_if expr(exists(service_items, professional.user_id == ^actor(:id)))
     end
 
     # Reatribuição, preço e duração são alteráveis somente pela recepção.
@@ -358,6 +359,8 @@ defmodule LabelleBack.Studio.Appointment do
   end
 
   relationships do
+    belongs_to :referral_professional, LabelleBack.Studio.Professional, public?: true
+
     belongs_to :client, LabelleBack.Studio.Client do
       allow_nil? true
       public? true

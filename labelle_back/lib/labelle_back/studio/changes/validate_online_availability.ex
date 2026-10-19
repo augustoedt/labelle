@@ -1,7 +1,7 @@
 defmodule LabelleBack.Studio.Changes.ValidateOnlineAvailability do
   use Ash.Resource.Change
   require Ash.Query
-  alias LabelleBack.Studio.{Appointment, Professional, ProfessionalService}
+  alias LabelleBack.Studio.{Professional, ProfessionalService}
 
   @impl true
   def change(changeset, _opts, _context) do
@@ -15,18 +15,46 @@ defmodule LabelleBack.Studio.Changes.ValidateOnlineAvailability do
     date = Ash.Changeset.get_attribute(changeset, :date)
     time = Ash.Changeset.get_attribute(changeset, :time)
     duration = Ash.Changeset.get_attribute(changeset, :duration_minutes)
-    # before_action executes within the creation transaction. Concurrent
-    # online requests for the same professional/day check availability serially.
-    Ecto.Adapters.SQL.query!(
-      LabelleBack.Repo,
-      "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
-      ["#{professional_id}:#{date}"]
-    )
+
+    extras =
+      if changeset.data.id do
+        LabelleBack.Studio.AppointmentService
+        |> Ash.Query.filter(appointment_id == ^changeset.data.id)
+        |> Ash.read!(authorize?: false)
+      else
+        []
+      end
+
+    # Lock every involved professional in deterministic order before moving a shared booking.
+    [professional_id | Enum.map(extras, & &1.professional_id)]
+    |> Enum.uniq()
+    |> Enum.sort()
+    |> Enum.each(fn id ->
+      LabelleBack.Repo.query!("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
+        "#{id}:#{date}"
+      ])
+    end)
 
     with {:ok, %Professional{is_active: true} = professional} <-
            Ash.get(Professional, professional_id, authorize?: false),
          true <- valid_time?(professional, date, time, duration),
-         false <- conflict?(professional_id, date, time, duration, changeset.data.id),
+         false <-
+           LabelleBack.Studio.ProfessionalSchedule.conflict?(
+             professional_id,
+             date,
+             time,
+             duration,
+             changeset.data.id,
+             Ash.Changeset.get_attribute(changeset, :client_id)
+           ),
+         true <-
+           extras_available?(
+             extras,
+             date,
+             time,
+             changeset.data.id,
+             Ash.Changeset.get_attribute(changeset, :client_id)
+           ),
          true <- qualified?(changeset, professional_id) do
       changeset
     else
@@ -52,19 +80,22 @@ defmodule LabelleBack.Studio.Changes.ValidateOnlineAvailability do
       minutes(time) >= minutes(work_start) and minutes(time) + duration <= minutes(work_end)
   end
 
-  defp conflict?(professional_id, date, time, duration, exclude_id) do
-    start = minutes(time)
-
-    Appointment
-    |> Ash.Query.filter(
-      professional_id == ^professional_id and date == ^date and status != :cancelado
-    )
-    |> Ash.read!(authorize?: false)
-    |> Enum.any?(fn appointment ->
-      existing = minutes(appointment.time)
-
-      appointment.id != exclude_id and start < existing + (appointment.duration_minutes || 60) and
-        start + duration > existing
+  defp extras_available?(items, date, time, appointment_id, client_id) do
+    Enum.all?(items, fn item ->
+      with {:ok, %Professional{is_active: true} = professional} <-
+             Ash.get(Professional, item.professional_id, authorize?: false) do
+        valid_time?(professional, date, time, item.duration_minutes || 60) &&
+          !LabelleBack.Studio.ProfessionalSchedule.conflict?(
+            item.professional_id,
+            date,
+            time,
+            item.duration_minutes || 60,
+            appointment_id,
+            client_id
+          )
+      else
+        _ -> false
+      end
     end)
   end
 

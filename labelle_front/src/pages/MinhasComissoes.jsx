@@ -1,4 +1,4 @@
-import {appointmentCommission} from "@/lib/commissions";
+import {professionalCommission} from "@/lib/commissions";
 import { useQuery } from "@tanstack/react-query";
 import { useRouteContext, useLocation, useNavigate } from "@tanstack/react-router";
 import { ProfessionalsApi, AppointmentsApi, AppointmentServicesApi } from "@/server/api";
@@ -46,7 +46,7 @@ export default function MinhasComissoes() {
   // Use os percentuais registrados no atendimento, preservando o histórico.
   // Serviços adicionais lançados durante o atendimento (a policy do backend
   // já limita a lista aos atendimentos do próprio profissional).
-  const { data: extraItems = [] } = useQuery({
+  const { data: extraItems = [],isLoading:isLoadingItems,isError:itemsError } = useQuery({
     queryKey: ["appointment-services"],
     queryFn: () => AppointmentServicesApi.list({ limit: 500 }),
     enabled: !!myProfessional,
@@ -57,19 +57,17 @@ export default function MinhasComissoes() {
   }, {});
 
   const myDone = appointments.filter(
-    a => a.professional_id === myProfessional?.id && a.status === "concluido" && a.date >= monthStart && a.date < monthEnd
+    a => (a.professional_id === myProfessional?.id || extraItems.some(i=>i.appointment_id===a.id && i.professional_id===myProfessional?.id)) && a.status === "concluido" && a.date >= monthStart && a.date < monthEnd
   );
 
-  const revenueFor = apt =>
-    (apt.price || 0) + (itemsByAppointment[apt.id] || []).reduce((s, i) => s + (i.price || 0), 0);
-
-  const commissionFor = apt => appointmentCommission(apt, extraItems).amount;
-  const undefinedCommissions = myDone.filter(a=>appointmentCommission(a,extraItems).missing).length;
-
-  const totalRevenue = myDone.reduce((s, a) => s + revenueFor(a), 0);
-  const totalTips = myDone.reduce((s,a)=>s+Number(a.tip_amount || 0),0);
-  const totalReferralBonus = myDone.reduce((s,a)=>s+appointmentCommission(a,extraItems).referralBonus,0);
-  const myCommission = myDone.reduce((s, a) => s + commissionFor(a), 0);
+  const summaryFor=apt=>professionalCommission(apt,extraItems,myProfessional?.id);
+  const revenueFor=apt=>summaryFor(apt).servicesRevenue;
+  const commissionFor=apt=>summaryFor(apt).amount;
+  const undefinedCommissions=myDone.filter(a=>summaryFor(a).missing).length;
+  const totalRevenue=myDone.reduce((s,a)=>s+revenueFor(a),0);
+  const totalTips=myDone.reduce((s,a)=>s+summaryFor(a).tip,0);
+  const totalReferralBonus=myDone.reduce((s,a)=>s+summaryFor(a).referralBonus,0);
+  const myCommission=myDone.reduce((s,a)=>s+commissionFor(a),0);
 
   if (isLoadingProfessionals) {
     return (
@@ -97,6 +95,7 @@ export default function MinhasComissoes() {
 
   return (
     <div className="space-y-4">
+      {itemsError && <p role="alert" className="mx-5 text-sm text-destructive">Não foi possível carregar os serviços adicionais; a comissão exibida pode estar incompleta.</p>}
       {undefinedCommissions>0 && <p className="mx-5 text-sm text-amber-700">{undefinedCommissions} atendimento(s) aguardam definição de comissão pela administração. O total considera somente comissões registradas.</p>}
       <p className="mx-5 text-sm text-muted-foreground">Inclui {formatBRL(totalTips,{decimals:2})} em gorjetas e {formatBRL(totalReferralBonus,{decimals:2})} em bônus por indicação. Comissão base calculada por serviço.</p>
       <PageHeader
@@ -115,7 +114,7 @@ export default function MinhasComissoes() {
 
       <div className="px-5 space-y-3">
         {/* Resumo */}
-        {isLoadingAppointments ? (
+        {isLoadingAppointments || isLoadingItems ? (
           <>
             <div className="grid grid-cols-3 gap-3">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -151,7 +150,7 @@ export default function MinhasComissoes() {
           myDone.map(apt => {
             const commission = commissionFor(apt);
             const extras = itemsByAppointment[apt.id] || [];
-            const serviceNames = [apt.service_name, ...extras.map(i => i.service_name)].filter(Boolean).join(" + ");
+            const serviceNames=summaryFor(apt).lines.map(i=>i.service_name).filter(Boolean).join(" + ");
             return (
               <div key={apt.id} className="bg-card rounded-2xl border border-border/50 p-4">
                 <div className="flex items-start justify-between">
@@ -162,7 +161,7 @@ export default function MinhasComissoes() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium tabular-nums">{formatBRL(revenueFor(apt))}</p>
-                    <p className="text-xs text-primary font-semibold tabular-nums">{appointmentCommission(apt,extraItems).missing ? "Comissão parcialmente pendente · " : "+ "}{formatBRL(commission)}</p>
+                    <p className="text-xs text-primary font-semibold tabular-nums">{summaryFor(apt).missing ? "Comissão parcialmente pendente · " : "+ "}{formatBRL(commission)}</p>
                   </div>
                 </div>
               </div>

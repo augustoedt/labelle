@@ -1,5 +1,5 @@
 import CommissionPanel from "@/components/finance/CommissionPanel";
-import { appointmentCommission } from "@/lib/commissions";
+import { appointmentCommission,professionalCommission } from "@/lib/commissions";
 import { useQuery } from "@tanstack/react-query";
 import { AppointmentsApi, TransactionsApi, ProfessionalsApi, AppointmentServicesApi,listFinancialEdits } from "@/server/api";
 import { ArrowLeft, TrendingUp, Users, Scissors, DollarSign, FileDown } from "lucide-react";
@@ -55,10 +55,10 @@ export default function Reports() {
 
   // Professional performance
   const profPerformance = professionals.map(p => {
-    const completed = appointments.filter(a => a.professional_id === p.id && a.status === "concluido");
-    const revenue = completed.reduce((s, a) => s + appointmentCommission(a,commissionItems).revenue, 0);
-    const commission = completed.reduce((s,a)=>s+appointmentCommission(a,commissionItems).amount,0);
-    const missing = completed.filter(a=>appointmentCommission(a,commissionItems).missing).length;
+    const completed = appointments.filter(a => (a.professional_id === p.id || commissionItems.some(i=>i.appointment_id===a.id && i.professional_id===p.id)) && a.status === "concluido");
+    const revenue = completed.reduce((s, a) => s + professionalCommission(a,commissionItems,p.id).servicesRevenue, 0);
+    const commission = completed.reduce((s,a)=>s+professionalCommission(a,commissionItems,p.id).amount,0);
+    const missing = completed.filter(a=>professionalCommission(a,commissionItems,p.id).missing).length;
     return { name: p.name, count: completed.length, revenue, commission, missing };
   }).sort((a, b) => b.revenue - a.revenue);
 
@@ -87,6 +87,7 @@ export default function Reports() {
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(apptData), "Agendamentos");
 
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(appointments.filter(a=>a.status==="concluido").flatMap(a=>professionals.map(p=>({a,p,summary:professionalCommission(a,commissionItems,p.id)})).filter(row=>row.summary.lines.length>0).map(({a,p,summary})=>({Data:a.date,Cliente:a.client_name,Profissional:p.name,Serviços:summary.lines.map(i=>i.service_name).join(" + "),"Comissão base":summary.baseCommission,"Bônus indicação":summary.referralBonus,Gorjeta:summary.tip,Total:summary.amount})))),"Comissões por profissional");
     // Aba 2: Transações
     const txData = transactions.map(t => ({
       "Data": t.date,

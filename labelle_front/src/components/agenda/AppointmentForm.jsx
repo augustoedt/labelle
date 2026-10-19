@@ -57,7 +57,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
         service_variant_id: appointment.service_variant_id || null,
         professional_id: appointment.professional_id || "",
         date: appointment.date || new Date().toISOString().split("T")[0],
-        time: appointment.time || "09:00",
+        time: appointment.time?.slice(0, 5) || "09:00",
         notes: appointment.notes || "",
       });
     } else {
@@ -155,12 +155,12 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="max-h-[90vh] rounded-t-3xl overflow-y-auto">
-        <SheetHeader className="pb-4">
+      <SheetContent side="bottom" className="appointment-sheet">
+        <SheetHeader className="appointment-header">
           <SheetTitle className="font-heading">{title || (appointment ? "Editar Agendamento" : "Novo Agendamento")}</SheetTitle>
         </SheetHeader>
-        <div className="space-y-4 pb-8">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="appointment-body">
+          <div className="appointment-pair appointment-wide">
             <div>
               <Label className="text-xs">Nome</Label>
               <Input aria-label="Cliente" disabled={!!appointment} role="combobox" aria-expanded={clientSuggestions} aria-controls="booking-client-options" aria-autocomplete="list" autoComplete="off" value={form.client_name} onFocus={()=>setClientSuggestions(true)} onKeyDown={e=>{if(e.key==="Escape")setClientSuggestions(false);}} onChange={e => {setForm(prev => ({ ...prev, client_id:"", client_phone: prev.client_id ? "" : prev.client_phone, client_name: e.target.value }));setClientSuggestions(true);}} placeholder="Digite o nome da cliente" />
@@ -168,7 +168,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             </div>
             <div>
               <Label className="text-xs">WhatsApp (opcional)</Label>
-              <Input value={form.client_phone} onChange={e => setForm(prev => ({ ...prev, client_phone: maskPhone(e.target.value) }))} placeholder="(00) 00000-0000" /><p className="text-xs text-muted-foreground mt-1">Pode agendar sem celular e preencher depois em Clientes.</p>
+              <Input value={form.client_phone} onChange={e => setForm(prev => ({ ...prev, client_phone: maskPhone(e.target.value) }))} placeholder="(00) 00000-0000" />
             </div>
           </div>
           {variantsQuery.isError && (
@@ -194,7 +194,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
 
           </div>
           <div>
-            {serviceVariantRows.length > 0 && <div className="mb-4"><Label>Opção do serviço</Label><Select value={form.service_variant_id || ""} onValueChange={v => setForm(prev => ({ ...prev, service_variant_id: v }))}><SelectTrigger disabled={!variantsQuery.isSuccess}><SelectValue placeholder="Escolher opção..." /></SelectTrigger><SelectContent>{variantOptions.map(v => <SelectItem key={v.id} value={v.id}>{v.name} — {formatBRL(v.price)} ({v.duration_minutes}min)</SelectItem>)}</SelectContent></Select></div>}
+            {serviceVariantRows.length > 0 && <div className="appointment-variant"><Label>Opção</Label><Select value={form.service_variant_id || ""} onValueChange={v => setForm(prev => ({ ...prev, service_variant_id: v }))}><SelectTrigger disabled={!variantsQuery.isSuccess}><SelectValue placeholder="Escolher opção..." /></SelectTrigger><SelectContent>{variantOptions.map(v => <SelectItem key={v.id} value={v.id}>{v.name} — {formatBRL(v.price)} ({v.duration_minutes}min)</SelectItem>)}</SelectContent></Select></div>}
             <Label className="text-xs">Profissional</Label>
             <Select
               value={form.professional_id}
@@ -212,16 +212,15 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             </Select>
             {form.service_id && qualifiedProfessionals?.filter(p => p.is_active !== false).length === 0 && (
               <p className="text-xs text-destructive mt-1">
-                Nenhuma profissional configurada para este serviço ainda. Cadastre em Profissionais → editar → "Serviços que realiza".
+                Nenhuma profissional habilitada.
               </p>
             )}
           </div>
-          <div className="space-y-2 rounded-xl border p-3">
+          <div className="appointment-referral appointment-wide">
             <label className="flex gap-2 text-sm"><input type="checkbox" checked={referral} disabled={!admin} onChange={e=>setReferral(e.target.checked)}/>Cliente desta profissional</label>
-            <p className="text-xs text-muted-foreground">O vínculo fica salvo para pré-marcar os próximos agendamentos com esta profissional. O admin pode corrigir a marcação. Clientes sem cadastro vinculado precisam ser associadas pelo celular para memorizar o vínculo.</p>
           </div>
-          {appointment?.status==="concluido" && <div><Label>Comentário da alteração após conclusão</Label><Textarea aria-label="Comentário da alteração após conclusão" value={editComment} onChange={e=>setEditComment(e.target.value)} placeholder="Explique a alteração"/>{!editComment.trim() && <p className="text-sm text-red-700">Sem comentário, a alteração terá contorno vermelho e alerta no financeiro.</p>}</div>}
-          <div className="grid grid-cols-2 gap-3">
+          {appointment?.status==="concluido" && <div className="appointment-wide"><Label>Comentário da alteração (opcional)</Label><Textarea aria-label="Comentário da alteração após conclusão" value={editComment} onChange={e=>setEditComment(e.target.value)} rows={2} placeholder="Comentário"/></div>}
+          <div className="appointment-pair appointment-wide">
             <div>
               <Label className="text-xs">Data</Label>
               <Input type="date" value={form.date} onChange={e => setForm(prev => ({ ...prev, date: e.target.value }))} />
@@ -237,21 +236,24 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             </div>
           </div>
           {selectedService && (
-            <div className="bg-secondary/50 rounded-xl p-3 flex justify-between text-sm">
+            <div className="appointment-summary appointment-wide">
               <span className="text-muted-foreground">Duração: {selectedOption.duration_minutes}min</span>
               <span className="font-semibold tabular-nums">{formatBRL(selectedOption.price)}</span>
             </div>
           )}
-          <div>
+          <div className="appointment-wide">
             <Label className="text-xs">Observações</Label>
             <Textarea value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Observações..." rows={2} />
           </div>
           {submitError && <p role="alert" className="text-sm text-destructive">{submitError}</p>}
           {contactError && <p role="alert" className="text-sm text-destructive">{contactError}</p>}
-          <Button disabled={isSaving || savingContact || !form.date || !form.time || !variantsQuery.isSuccess || !professionalServicesQuery.isSuccess || !form.client_name.trim() || !form.service_id || !form.professional_id || (serviceVariantRows.length > 0 && !form.service_variant_id)} onClick={handleSubmit} className="w-full rounded-full h-12 font-semibold">
+          {footerActions && <div className="appointment-wide">{footerActions}</div>}
+        </div>
+        <div className="appointment-footer">
+          <Button variant="outline" onClick={onClose}>Voltar</Button>
+          <Button disabled={isSaving || savingContact || !form.date || !form.time || !variantsQuery.isSuccess || !professionalServicesQuery.isSuccess || !form.client_name.trim() || !form.service_id || !form.professional_id || (serviceVariantRows.length > 0 && !form.service_variant_id)} onClick={handleSubmit} className="font-semibold">
             {isSaving ? "Salvando…" : appointment ? "Atualizar" : "Agendar"}
           </Button>
-          {footerActions}
         </div>
       </SheetContent>
     </Sheet>

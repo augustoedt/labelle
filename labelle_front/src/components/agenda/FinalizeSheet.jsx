@@ -2,7 +2,7 @@ import AdditionalServices from "@/components/agenda/AdditionalServices";
 import {appointmentCommission,commissionAllocations,roundMoney} from "@/lib/commissions";
 import CommissionEditor from "@/components/agenda/CommissionEditor";
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient,useIsMutating } from "@tanstack/react-query";
 import {
   AppointmentsApi,
   AppointmentServicesApi,
@@ -45,6 +45,7 @@ export default function FinalizeSheet({
   canEditPrice = false,
 }) {
   const queryClient = useQueryClient();
+  const changingItems=useIsMutating({mutationKey:["service-item-change",appointment?.id]});
   const [bookNext,setBookNext]=useState(false);
   useEffect(()=>setBookNext(false),[appointment?.id,open]);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -53,7 +54,7 @@ export default function FinalizeSheet({
   const [referral,setReferral]=useState(false);
   useEffect(()=>{setTipMode("amount");setTipInput("");setReferral(Boolean(appointment?.professional_referral));setPaymentMethod("");},[appointment?.id,open]);
 
-  const { data: items = [] } = useQuery({
+  const { data: items = [],isPending:loadingItems,isError:itemsError } = useQuery({
     queryKey: ["appointment-services", appointment?.id],
     queryFn: () =>
       AppointmentServicesApi.list({
@@ -96,95 +97,28 @@ export default function FinalizeSheet({
   const previewAllocations=commissionAllocations(previewAppointment,items);
   const commissionPreview=appointmentCommission(previewAppointment,items);
 
-  return (
-    <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent
-        side="bottom"
-        className="max-h-[90vh] rounded-t-3xl overflow-y-auto"
-      >
-        <SheetHeader className="pb-3">
-          <SheetTitle className="font-heading">
-            Atendimento — {appointment.client_name}
-          </SheetTitle>
-        </SheetHeader>
-
-        <div className="space-y-4 pb-8">
-          {/* Serviços realizados */}
-          <div className="space-y-2">
-            <Label className="text-xs">Serviços realizados</Label>
-
-            <div className="flex items-center justify-between bg-secondary/50 rounded-xl p-3 text-sm">
-              <span>{appointment.service_name}</span>
-              <span className="font-semibold tabular-nums">
-                {formatBRL(appointment.price, { decimals: 2 })}
-              </span>
-            </div>
-
-            <CommissionEditor record={appointment}/>
-            <AdditionalServices appointment={appointment}/>
-          </div>
-          <div className="space-y-2 rounded-xl border p-3">
-            <Label>Gorjeta — repassada integralmente à profissional</Label>
-            <Select value={tipMode} onValueChange={setTipMode}><SelectTrigger aria-label="Tipo de gorjeta"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="amount">Valor em R$</SelectItem><SelectItem value="percent">Percentual dos serviços</SelectItem></SelectContent></Select>
-            <Input aria-label="Gorjeta" type="number" min="0" step="0.01" value={tipInput} onChange={e=>setTipInput(e.target.value)} placeholder="0" />
-            {canEditPrice && <label className="flex gap-2 text-sm"><input type="checkbox" checked={referral} onChange={e=>setReferral(e.target.checked)} />Cliente indicada por esta profissional — memorizar vínculo (admin)</label>}
-            {previewReferrer && <p className="text-sm">Bônus de indicação: +{["debito","credito"].includes(paymentMethod) ? 10 : 15} pontos percentuais somente sobre os serviços executados por quem indicou a cliente. No cartão, a diferença de 5 pontos cobre a máquina; sem desconto adicional.</p>}
-            <p className="text-sm">Gorjeta: {formatBRL(tipAmount,{decimals:2})} · Bônus: {formatBRL(commissionPreview.referralBonus,{decimals:2})} · Total de comissões da equipe: {formatBRL(commissionPreview.amount,{decimals:2})}{commissionPreview.missing ? " + comissão base pendente" : ""}</p>
-            {previewAllocations.map(allocation=><p key={allocation.professional_id || "principal"} className="text-sm">{allocation.professional_name}: {formatBRL(allocation.amount,{decimals:2})}{allocation.referralBonus>0 ? ` (inclui bônus de ${formatBRL(allocation.referralBonus,{decimals:2})})` : ""}</p>)}
-            <p className="text-xs text-muted-foreground">A gorjeta informada aqui é da profissional principal. Cada profissional recebe bônus de indicação somente sobre os serviços que ela mesma executou para uma cliente indicada por ela. A comissão base vem de cada serviço ou opção P/M/G. A gorjeta é somada à cobrança.</p>
-          </div>
-          {/* Total */}
-          <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl p-3">
-            <span className="text-sm font-medium">Total a cobrar</span>
-            <span className="text-lg font-heading font-bold tracking-tight text-primary tabular-nums">
-              {formatBRL(total + tipAmount, { decimals: 2 })}
-            </span>
-          </div>
-
-          {/* Cobrança */}
-          <div>
-            <Label className="text-xs">Forma de pagamento</Label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecionar..." />
-              </SelectTrigger>
-              <SelectContent>
-                {paymentMethods.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>
-                    {m.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {finalizeMutation.isError && (
-            <p className="text-xs text-destructive">
-              Não foi possível finalizar. Tente novamente.
-            </p>
-          )}
-
-          {onBookNext && <label className="same-client-option"><input type="checkbox" checked={bookNext} onChange={e=>setBookNext(e.target.checked)}/><span>Agendar a próxima visita após concluir este atendimento</span></label>}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="rounded-xl h-12 flex-1"
-              onClick={onClose}
-            >
-              Voltar
-            </Button>
-            <Button
-              className="rounded-xl h-12 flex-1 font-semibold"
-              disabled={!paymentMethod || !Number.isFinite(Number(tipInput)) || Number(tipInput)<0 || finalizeMutation.isPending}
-              onClick={() => finalizeMutation.mutate()}
-            >
-              {finalizeMutation.isPending
-                ? "Finalizando..."
-                : bookNext ? "Concluir e agendar próxima" : "Finalizar e cobrar"}
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
+  return <Sheet open={open} onOpenChange={onClose}>
+    <SheetContent side="bottom" className="finalize-sheet">
+      <SheetHeader className="finalize-header"><SheetTitle>Atendimento — {appointment.client_name}</SheetTitle></SheetHeader>
+      <div className="finalize-body">
+        <section className="finalize-services">
+          <h3>Serviços</h3>
+          <div className="finalize-primary"><div><strong>{appointment.service_name}</strong><span>{appointment.professional_name}</span></div><strong>{formatBRL(appointment.price,{decimals:2})}</strong></div>
+          <CommissionEditor compact record={appointment}/>
+          <AdditionalServices appointment={appointment}/>
+        </section>
+        <section className="finalize-payment">
+          <h3>Pagamento</h3>
+          <Select value={paymentMethod} onValueChange={setPaymentMethod}><SelectTrigger aria-label="Forma de pagamento"><SelectValue placeholder="Forma de pagamento"/></SelectTrigger><SelectContent>{paymentMethods.map(m=><SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent></Select>
+          <Label>Gorjeta</Label>
+          <div className="finalize-tip"><Select value={tipMode} onValueChange={setTipMode}><SelectTrigger aria-label="Tipo de gorjeta"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="amount">R$</SelectItem><SelectItem value="percent">%</SelectItem></SelectContent></Select><Input aria-label="Gorjeta" type="number" min="0" step="0.01" value={tipInput} onChange={e=>setTipInput(e.target.value)} placeholder="0,00"/></div>
+          {canEditPrice && <label className="finalize-check"><input type="checkbox" checked={referral} onChange={e=>setReferral(e.target.checked)}/>Cliente da profissional</label>}
+          <div className="finalize-commissions"><div><span>Comissões</span><strong>{formatBRL(commissionPreview.amount,{decimals:2})}</strong></div>{previewAllocations.map(a=><div key={a.professional_id || "principal"}><span>{a.professional_name}</span><span>{formatBRL(a.amount,{decimals:2})}</span></div>)}{commissionPreview.referralBonus>0 && <div><span>Bônus de indicação</span><span>{formatBRL(commissionPreview.referralBonus,{decimals:2})}</span></div>}{commissionPreview.missing && <p role="status">Comissão pendente</p>}</div>
+          {onBookNext && <label className="finalize-check"><input type="checkbox" checked={bookNext} onChange={e=>setBookNext(e.target.checked)}/>Agendar próxima visita</label>}
+          {(finalizeMutation.isError || itemsError) && <p role="alert">Não foi possível concluir. Tente novamente.</p>}
+        </section>
+      </div>
+      <footer className="finalize-footer"><div><span>Total a cobrar</span><strong>{formatBRL(total+tipAmount,{decimals:2})}</strong></div><Button variant="outline" onClick={onClose}>Voltar</Button><Button disabled={!paymentMethod || loadingItems || itemsError || changingItems>0 || !Number.isFinite(Number(tipInput)) || Number(tipInput)<0 || finalizeMutation.isPending} onClick={()=>finalizeMutation.mutate()}>{finalizeMutation.isPending?"Finalizando…":"Finalizar"}</Button></footer>
+    </SheetContent>
+  </Sheet>;
 }

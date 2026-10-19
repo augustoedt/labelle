@@ -3,7 +3,7 @@ defmodule LabelleBack.Studio.Changes.AssignServiceItemProfessional do
   require Ash.Query
   alias LabelleBack.Studio.{Appointment, Professional, ProfessionalService, ProfessionalSchedule}
   @impl true
-  def change(changeset, _opts, context) do
+  def change(changeset, _opts, _context) do
     changeset =
       if is_nil(Ash.Changeset.get_attribute(changeset, :professional_id)) do
         case Ash.get(Appointment, Ash.Changeset.get_attribute(changeset, :appointment_id),
@@ -43,12 +43,6 @@ defmodule LabelleBack.Studio.Changes.AssignServiceItemProfessional do
           |> Ash.exists?(authorize?: false)
 
       cond do
-        context.actor && context.actor.role != :admin && id != appointment.professional_id ->
-          Ash.Changeset.add_error(cs,
-            field: :professional_id,
-            message: "somente a administração pode atribuir outra profissional"
-          )
-
         explicit_change? && (!professional.is_active || !qualified?) ->
           Ash.Changeset.add_error(cs,
             field: :professional_id,

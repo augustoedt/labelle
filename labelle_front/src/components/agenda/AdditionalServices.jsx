@@ -1,3 +1,4 @@
+import {Plus,X} from "lucide-react";
 import {useState} from "react";
 import {useQuery,useMutation,useQueryClient} from "@tanstack/react-query";
 import {AppointmentServicesApi,ServicesApi,ServiceVariantsApi,ProfessionalsApi,ProfessionalServicesApi} from "@/server/api";
@@ -17,33 +18,36 @@ export default function AdditionalServices({appointment}) {
  const owner=(professionals.data || []).some(p=>p.id===appointment.professional_id && p.user_id===user?.id);
  const canManage=(admin || owner) && appointment.status!=="cancelado" && (appointment.status!=="concluido" || admin);
  const invalidate=()=>{for(const key of ["appointment-services","commission-items","appointments","professional-appointments","commission-appointments","transactions","financial-edits"])qc.invalidateQueries({queryKey:[key]});};
- const save=useMutation({mutationFn:()=>AppointmentServicesApi.create({data:{appointment_id:appointment.id,service_id:serviceId,professional_id:professionalId,...(variantId?{service_variant_id:variantId}:{}),unplanned:appointment.status==="em_atendimento",edit_comment:comment}}),onSuccess:()=>{setServiceId("");setVariantId("");setProfessionalId("");setComment("");invalidate();}});
- const assign=useMutation({mutationFn:({id,professional_id})=>AppointmentServicesApi.update({id,attributes:{professional_id,edit_comment:comment}}),onSuccess:invalidate});
- const remove=useMutation({mutationFn:id=>AppointmentServicesApi.delete({id}),onSuccess:invalidate});
+ const save=useMutation({mutationKey:["service-item-change",appointment.id],mutationFn:()=>AppointmentServicesApi.create({data:{appointment_id:appointment.id,service_id:serviceId,professional_id:professionalId,...(variantId?{service_variant_id:variantId}:{}),unplanned:appointment.status==="em_atendimento",edit_comment:comment}}),onSuccess:()=>{setServiceId("");setVariantId("");setProfessionalId("");setComment("");invalidate();}});
+ const assign=useMutation({mutationKey:["service-item-change",appointment.id],mutationFn:({id,professional_id})=>AppointmentServicesApi.update({id,attributes:{professional_id,edit_comment:comment}}),onSuccess:invalidate});
+ const remove=useMutation({mutationKey:["service-item-change",appointment.id],mutationFn:id=>AppointmentServicesApi.delete({id}),onSuccess:invalidate});
  const options=(variants.data || []).filter(v=>v.service_id===serviceId && v.is_active!==false);
- const qualified=id=>(professionals.data || []).filter(p=>p.is_active!==false && (admin || p.id===appointment.professional_id) && (links.data || []).some(l=>l.professional_id===p.id && l.service_id===id));
+ const qualified=id=>(professionals.data || []).filter(p=>p.is_active!==false && (links.data || []).some(l=>l.professional_id===p.id && l.service_id===id));
  const selectedProfessionals=qualified(serviceId);
  const ready=services.isSuccess && variants.isSuccess && professionals.isSuccess && links.isSuccess;
  return <section className="additional-services" aria-label="Serviços adicionais" onClick={e=>e.stopPropagation()}>
- <h3>Serviços adicionais por profissional</h3>
+ <h3>Adicionar serviço</h3>
  {items.isPending && <p role="status">Carregando serviços adicionais…</p>}
  {(items.isError || services.isError || variants.isError || professionals.isError || links.isError) && <p role="alert">Não foi possível carregar os serviços e profissionais.</p>}
  {(items.data || []).map(item=><div className="additional-service-row" key={item.id}>
- <strong>{item.service_name}</strong><span>{formatBRL(item.price,{decimals:2})} · {item.professional_name || appointment.professional_name}</span>
- <small>{(appointment.referral_professional_id || (appointment.professional_referral ? appointment.professional_id : null)) === (item.professional_id || appointment.professional_id) ? "Serviço da profissional que indicou: bônus de +15 p.p. em Pix/dinheiro ou +10 p.p. no cartão." : "Somente comissão base para quem executa; sem bônus de indicação neste serviço."}</small>
+ <div className="additional-service-name"><strong>{item.service_name}</strong><span>{formatBRL(item.price,{decimals:2})}</span></div>
+
  {admin && appointment.status!=="cancelado" && <Select value={item.professional_id || appointment.professional_id} onValueChange={id=>assign.mutate({id:item.id,professional_id:id})}><SelectTrigger aria-label={`Profissional de ${item.service_name}`}><SelectValue /></SelectTrigger><SelectContent>{[...(professionals.data || []).filter(p=>p.id===(item.professional_id || appointment.professional_id)),...qualified(item.service_id).filter(p=>p.id!==(item.professional_id || appointment.professional_id))].map(p=><SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select>}
- <CommissionEditor record={item} kind="item" completed={appointment.status==="concluido"}/>
- {canManage && <button type="button" className="text-sm text-destructive" disabled={remove.isPending} onClick={()=>remove.mutate(item.id)}>Remover serviço adicional</button>}
+
+ {!admin && <span className="additional-service-professional">{item.professional_name || appointment.professional_name}</span>}
+ {canManage && <button type="button" className="additional-remove" aria-label={`Remover ${item.service_name}`} title="Remover serviço adicional" disabled={remove.isPending} onClick={()=>remove.mutate(item.id)}><X size={15}/></button>}
+ <div className="additional-service-commission"><CommissionEditor compact record={item} kind="item" completed={appointment.status==="concluido"}/></div>
  </div>)}
- {canManage && <div className="additional-service-form">
+ {canManage && <div className="additional-service-form"><div className={`additional-pickers ${options.length ? "has-variants" : ""}`}>
  <Select value={serviceId} onValueChange={id=>{setServiceId(id);setVariantId("");setProfessionalId(qualified(id).some(p=>p.id===appointment.professional_id)?appointment.professional_id:"");}}><SelectTrigger aria-label="Adicionar serviço"><SelectValue placeholder="Adicionar serviço…"/></SelectTrigger><SelectContent>{(services.data || []).filter(s=>s.is_active!==false && (!(variants.data || []).some(v=>v.service_id===s.id) || (variants.data || []).some(v=>v.service_id===s.id && v.is_active!==false))).map(s=><SelectItem key={s.id} value={s.id}>{s.name} · {formatBRL(s.price)}</SelectItem>)}</SelectContent></Select>
- {options.length>0 && <Select value={variantId} onValueChange={setVariantId}><SelectTrigger aria-label="Opção do serviço adicional"><SelectValue placeholder="Escolha P/M/G ou outra opção"/></SelectTrigger><SelectContent>{options.map(v=><SelectItem key={v.id} value={v.id}>{v.name} · {formatBRL(v.price)}</SelectItem>)}</SelectContent></Select>}
- <Select value={professionalId} onValueChange={setProfessionalId}><SelectTrigger aria-label="Profissional do serviço adicional"><SelectValue placeholder="Quem fará este serviço?"/></SelectTrigger><SelectContent>{selectedProfessionals.map(p=><SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select>
- {serviceId && ready && !selectedProfessionals.length && <p role="alert">Vincule uma profissional ativa a este serviço em Profissionais.</p>}
- {appointment.status==="concluido" && <label>Comentário da inclusão ou troca de profissional<textarea aria-label="Comentário do serviço adicional" value={comment} onChange={e=>setComment(e.target.value)} placeholder="Motivo da alteração após conclusão"/>{!comment.trim() && <small className="text-red-700">Sem comentário, a alteração terá alerta vermelho no financeiro.</small>}</label>}
- <p className="text-xs text-muted-foreground">É permitido incluir vários serviços no mesmo horário, inclusive para a mesma profissional. Cada serviço mantém sua comissão base.</p>
- <Button type="button" disabled={!ready || !serviceId || !professionalId || !selectedProfessionals.some(p=>p.id===professionalId) || (options.length>0 && !variantId) || save.isPending} onClick={()=>save.mutate()}>{save.isPending?"Incluindo…":"Incluir serviço"}</Button>
+ {options.length>0 && <Select value={variantId} onValueChange={setVariantId}><SelectTrigger aria-label="Opção do serviço adicional"><SelectValue placeholder="Opção"/></SelectTrigger><SelectContent>{options.map(v=><SelectItem key={v.id} value={v.id}>{v.name} · {formatBRL(v.price)}</SelectItem>)}</SelectContent></Select>}
+ <Select value={professionalId} onValueChange={setProfessionalId}><SelectTrigger disabled={!ready || !selectedProfessionals.length} aria-label="Profissional do serviço adicional"><SelectValue placeholder="Profissional"/></SelectTrigger><SelectContent>{selectedProfessionals.map(p=><SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select>
+ <Button type="button" aria-label="Incluir serviço" title="Incluir serviço" disabled={!ready || !serviceId || !professionalId || !selectedProfessionals.some(p=>p.id===professionalId) || (options.length>0 && !variantId) || save.isPending} onClick={()=>save.mutate()}>{save.isPending?"…":<Plus size={18}/>}</Button>
+ </div>
+ {serviceId && ready && !selectedProfessionals.length && <p role="alert">Nenhuma profissional habilitada.</p>}
+ {appointment.status==="concluido" && <label>Comentário<textarea aria-label="Comentário do serviço adicional" value={comment} onChange={e=>setComment(e.target.value)} placeholder="Comentário da alteração"/></label>}
+
  </div>}
- {(save.isError || assign.isError || remove.isError) && <p role="alert">Não foi possível salvar. Confira vínculo, disponibilidade da profissional e permissões.</p>}
+ {(save.isError || assign.isError || remove.isError) && <p role="alert">Não foi possível salvar. Verifique a profissional e o horário.</p>}
  </section>;
 }

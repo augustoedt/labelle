@@ -1,10 +1,11 @@
+import {Pencil} from "lucide-react";
 import {useState} from "react";
 import {useMutation,useQueryClient} from "@tanstack/react-query";
 import {editRecordedService} from "@/server/api";
 import {useUser} from "@/lib/auth";
 import {commissionLine,roundMoney} from "@/lib/commissions";
 import {formatBRL} from "@/lib/format";
-export default function CommissionEditor({record,kind="appointment",completed=false}) {
+export default function CommissionEditor({record,kind="appointment",completed=false,compact=false}) {
  const user=useUser(),qc=useQueryClient(),line=commissionLine(record);
  const [editing,setEditing]=useState(false),[percent,setPercent]=useState(""),[price,setPrice]=useState(""),[comment,setComment]=useState("");
  const validPercent=(percent==="" && line.missing) || (percent!=="" && Number.isFinite(Number(percent)) && Number(percent)>=0 && Number(percent)<=100);
@@ -14,7 +15,7 @@ export default function CommissionEditor({record,kind="appointment",completed=fa
  if(user?.role!=="admin")return null;
  return <div className="commission-editor" onClick={e=>e.stopPropagation()}>
  <span>{line.missing ? "Comissão não registrada" : `Comissão: ${line.percent}% · ${formatBRL(line.amount,{decimals:2})}`}</span>
- {!editing ? <button type="button" onClick={()=>{setPercent(line.percent===null ? "" : String(line.percent));setPrice(String(line.price));setComment("");setEditing(true);save.reset();}}>Editar valor / comissão</button> : <div className="commission-edit-fields">
+ {!editing ? <button type="button" aria-label="Editar valor / comissão" title="Editar valor / comissão" onClick={()=>{setPercent(line.percent===null ? "" : String(line.percent));setPrice(String(line.price));setComment("");setEditing(true);save.reset();}}>{compact ? <Pencil size={13}/> : "Editar valor / comissão"}</button> : <div className="commission-edit-fields">
  <label>Valor do serviço (R$)<input aria-label="Valor do serviço (R$)" type="number" step="0.01" min="0" value={price} onChange={e=>setPrice(e.target.value)}/></label>
  <label>Comissão (%)<input aria-label="Comissão (%)" type="number" step="0.000001" min="0" max="100" value={percent} onChange={e=>setPercent(e.target.value)}/></label>
  <label>Comissão (R$)<input aria-label="Comissão (R$)" type="number" step="0.01" min="0" max={Number(price)} value={valid && percent!=="" ? roundMoney(Number(price)*Number(percent)/100) : ""} disabled={Number(price)<=0} onChange={e=>setPercent(e.target.value==="" ? "" : String(Number((Number(e.target.value)/Number(price)*100).toFixed(6))))}/></label>

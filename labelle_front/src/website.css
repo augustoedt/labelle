@@ -1533,3 +1533,52 @@ button.schedule-slot:hover,button.schedule-slot:focus-visible { background:#e9d3
 .additional-service-row>small { color:#8d7565; }
 .additional-service-form { display:flex; flex-direction:column; gap:10px; }
 .additional-service-form textarea { display:block; width:100%; min-height:65px; padding:8px; border:1px solid #d9c8c0; border-radius:8px; background:white; }
+
+/* Atendimento compacto, com ações sempre visíveis. */
+.finalize-sheet { width:calc(100% - 28px); max-width:1020px; max-height:94dvh; bottom:3dvh; padding:0; border:1px solid #e6d7ce; border-radius:22px; display:flex; flex-direction:column; overflow:hidden; }
+.finalize-header { padding:20px 24px 14px; text-align:left; flex-shrink:0; }
+.finalize-header h2 { font-size:25px; padding-right:28px; }
+.finalize-body { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:22px; padding:0 24px 18px; min-height:0; overflow:auto; }
+.finalize-body h3 { font-size:14px; font-weight:600; margin:0 0 10px; }
+.finalize-primary { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px; border-radius:12px; background:#f5eee9; font-size:14px; }
+.finalize-primary>div { min-width:0; }
+.finalize-primary span { display:block; font-size:12px; color:#8a7668; margin-top:3px; }
+.finalize-payment { background:#f8f3ef; border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:12px; align-self:start; }
+.finalize-payment h3 { margin-bottom:0; }
+.finalize-tip { display:grid; grid-template-columns:76px minmax(0,1fr); gap:8px; margin-top:-6px; }
+.finalize-check { display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; }
+.finalize-check input { accent-color:#a66c65; width:15px; height:15px; flex-shrink:0; }
+.finalize-commissions { border-top:1px solid #e8dcd4; padding-top:10px; font-size:12px; }
+.finalize-commissions>div { display:flex; justify-content:space-between; gap:10px; margin:4px 0; }
+.finalize-commissions>div:first-child { font-size:13px; margin-bottom:7px; }
+.finalize-footer { display:flex; align-items:center; gap:10px; flex-shrink:0; border-top:1px solid #e6d7ce; padding:12px 24px; background:#fffaf6; }
+.finalize-footer>div { margin-right:auto; }
+.finalize-footer span { display:block; font-size:11px; color:#8a7668; }
+.finalize-footer strong { font-size:22px; color:#88564f; }
+.finalize-footer button { border-radius:10px; min-width:90px; height:40px; }
+.additional-services h3 { font-size:13px; }
+.additional-service-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(90px,.8fr) 26px; gap:6px 8px; padding:9px; align-items:center; }
+.additional-service-name { display:flex; flex-direction:column; font-size:12px; min-width:0; }
+.additional-service-name strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.additional-service-name span,.additional-service-professional { font-size:11px; color:#8a7668; }
+.additional-remove { color:#ae5148; display:flex; align-items:center; justify-content:center; padding:4px; }
+.additional-service-commission { grid-column:1/-1; }
+.additional-service-commission:empty { display:none; }
+.additional-service-row .commission-editor { margin:0; font-size:11px; gap:6px; }
+.additional-pickers { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) 38px; gap:7px; }
+.additional-pickers.has-variants { grid-template-columns:minmax(0,1fr) 70px minmax(0,1fr) 38px; }
+.additional-pickers>button { min-width:0; height:36px; font-size:12px; border-radius:9px; }
+.additional-service-form { gap:7px; }
+.additional-service-form>label { font-size:12px; }
+.additional-service-form textarea { min-height:42px; margin-top:4px; }
+@media(max-width:680px) {
+ .finalize-sheet { width:calc(100% - 12px); max-height:96dvh; bottom:1dvh; border-radius:18px; }
+ .finalize-header { padding:16px 16px 10px; }
+ .finalize-header h2 { font-size:21px; }
+ .finalize-body { grid-template-columns:1fr; gap:14px; padding:0 16px 14px; }
+ .finalize-payment { padding:12px; gap:10px; }
+ .finalize-footer { padding:10px 16px; gap:7px; }
+ .finalize-footer button { min-width:70px; height:38px; padding:0 12px; }
+ .finalize-footer strong { font-size:20px; }
+ .additional-pickers.has-variants { grid-template-columns:minmax(0,1fr) 62px; }
+}

@@ -1224,7 +1224,7 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
                )
                |> Ash.update()
 
-      assert {:error, _} =
+      assert {:ok, by_owner} =
                AppointmentService
                |> Ash.Changeset.for_create(
                  :create,
@@ -1232,6 +1232,16 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
                  actor: user
                )
                |> Ash.create()
+
+      assert by_owner.professional_id == other.id
+      assert Decimal.equal?(by_owner.commission_percent, Decimal.new(40))
+
+      assert {:error, _} =
+               by_owner
+               |> Ash.Changeset.for_update(:set_commission, %{commission_percent: 90},
+                 actor: user
+               )
+               |> Ash.update()
 
       done =
         a
@@ -1253,7 +1263,7 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
           Ecto.UUID.dump!(a.id)
         ]).rows
 
-      assert Decimal.equal?(amount, Decimal.new(400))
+      assert Decimal.equal?(amount, Decimal.new(500))
 
       extra =
         AppointmentService
@@ -1276,7 +1286,7 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
           Ecto.UUID.dump!(a.id)
         ]).rows
 
-      assert Decimal.equal?(amount, Decimal.new(500))
+      assert Decimal.equal?(amount, Decimal.new(600))
       assert length(Ash.read!(LabelleBack.Studio.FinancialEdit, actor: admin)) == 1
     end
 

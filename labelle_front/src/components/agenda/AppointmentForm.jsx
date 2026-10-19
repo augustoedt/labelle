@@ -219,7 +219,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
           <div className="appointment-referral appointment-wide">
             <label className="flex gap-2 text-sm"><input type="checkbox" checked={referral} disabled={!admin} onChange={e=>setReferral(e.target.checked)}/>Cliente desta profissional</label>
           </div>
-          {appointment?.status==="concluido" && <div className="appointment-wide"><Label>Comentário da alteração (opcional)</Label><Textarea aria-label="Comentário da alteração após conclusão" value={editComment} onChange={e=>setEditComment(e.target.value)} rows={2} placeholder="Comentário"/></div>}
+
           <div className="appointment-pair appointment-wide">
             <div>
               <Label className="text-xs">Data</Label>
@@ -241,7 +241,8 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
               <span className="font-semibold tabular-nums">{formatBRL(selectedOption.price)}</span>
             </div>
           )}
-          <div className="appointment-wide">
+          {appointment?.status==="concluido" && <div className="appointment-comment"><Label>Comentário da alteração (opcional)</Label><Textarea aria-label="Comentário da alteração após conclusão" value={editComment} onChange={e=>setEditComment(e.target.value)} rows={2} placeholder="Comentário"/></div>}
+          <div className={appointment?.status === "concluido" ? "" : "appointment-wide"}>
             <Label className="text-xs">Observações</Label>
             <Textarea value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Observações..." rows={2} />
           </div>

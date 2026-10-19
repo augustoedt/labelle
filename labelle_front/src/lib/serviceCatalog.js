@@ -56,9 +56,17 @@ export function normalizeSearch(text) {
     .toLocaleLowerCase("pt-BR");
 }
 
+export function isServiceSupplement(service) {
+  const name = normalizeSearch(service.name).trim();
+  const category = normalizeSearch(service.category).trim();
+  return /^(adicional|adicionais|acrescimo|complemento)\b/.test(name) ||
+    /^(complemento|complementos|adicional|adicionais)$/.test(category);
+}
+
 export function availableService(service, variants) {
   return (
     service.is_active !== false &&
+    !isServiceSupplement(service) &&
     (!variants.some((v) => v.service_id === service.id) ||
       activeVariants(variants, service.id).length > 0)
   );

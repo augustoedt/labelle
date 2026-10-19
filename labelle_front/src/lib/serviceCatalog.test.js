@@ -118,3 +118,16 @@ test("P/M/G options use a stable size order and concise duration labels", () => 
   assert.equal(durationLabel(service, options), "30–40 min");
   assert.equal(durationLabel(service, [options[0]]), "40 min");
 });
+
+test("supplements are excluded from public offerings and category starting prices", () => {
+  const offerings = [
+    { id: "cut", name: "Corte", category: "cabelo", price: 50 },
+    { id: "extra5", name: "Adicional", category: "cabelo", price: 5 },
+    { id: "extra10", name: "Adicional química", category: "cabelo", price: 10 },
+    { id: "extra20", name: "Modelagem", category: "Complemento", price: 20 },
+  ];
+  const publicServices = offerings.filter((s) => availableService(s, []));
+  assert.deepEqual(publicServices.map((s) => s.id), ["cut"]);
+  assert.equal(Math.min(...publicServices.map((s) => minimumPrice(s, []))), 50);
+  assert.equal(availableService({ name: "Nail art", price: 5 }, []), true);
+});

@@ -8,6 +8,9 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
     profissional dona do atendimento (o preço entra na cobrança).
   """
   use LabelleBack.DataCase, async: true
+  import Phoenix.ConnTest
+  import Plug.Conn, only: [put_req_header: 3]
+  @endpoint LabelleBackWeb.Endpoint
 
   alias LabelleBack.Studio.{
     Appointment,
@@ -400,6 +403,315 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
         |> Ash.create!()
 
       assert item.appointment_id == appointment.id
+    end
+  end
+
+  describe "cliente no agendamento manual" do
+    test "busca autenticada por telefone normalizado é exata e não expõe nomes a anônimos" do
+      email = "lookup-#{System.unique_integer([:positive])}@test.com"
+      password = "LookupTest123!"
+
+      LabelleBack.Accounts.User
+      |> Ash.Changeset.for_create(
+        :register_with_password,
+        %{email: email, password: password, password_confirmation: password},
+        authorize?: false
+      )
+      |> Ash.create!()
+      |> Ash.Changeset.for_update(:update, %{role: :admin}, authorize?: false)
+      |> Ash.update!()
+
+      client = create_client!()
+
+      {:ok, signed_in} =
+        LabelleBack.Accounts.sign_in_with_password(email, password, authorize?: false)
+
+      headers = fn conn ->
+        conn
+        |> put_req_header("accept", "application/vnd.api+json")
+        |> put_req_header("authorization", "Bearer #{signed_in.__metadata__.token}")
+      end
+
+      full =
+        build_conn()
+        |> headers.()
+        |> get("/api/json/clients?filter[phone_normalized]=#{client.phone_normalized}")
+
+      assert full.status == 200, full.resp_body
+      assert [result] = Jason.decode!(full.resp_body)["data"]
+      assert result["id"] == client.id
+      assert result["attributes"]["visit_count"] == 0
+
+      partial =
+        build_conn()
+        |> headers.()
+        |> get(
+          "/api/json/clients?filter[phone_normalized]=#{String.slice(client.phone_normalized, 0, 9)}"
+        )
+
+      assert partial.status == 200, partial.resp_body
+      assert Jason.decode!(partial.resp_body)["data"] == []
+
+      anonymous =
+        build_conn()
+        |> get("/api/json/clients?filter[phone_normalized]=#{client.phone_normalized}")
+
+      assert anonymous.status in [200, 401, 403]
+      if anonymous.status == 200, do: assert(Jason.decode!(anonymous.resp_body)["data"] == [])
+    end
+
+    test "telefone completo novo cria cadastro e vincula; o mesmo número reutiliza o cadastro" do
+      owner = create_user!(:profissional)
+      professional = create_professional!(owner)
+      service = create_service!(%{})
+
+      attrs = %{
+        client_name: "Nova Cliente",
+        client_phone: "(11) 98765-4321",
+        professional_id: professional.id,
+        service_id: service.id,
+        date: Date.utc_today(),
+        time: ~T[10:00:00]
+      }
+
+      first =
+        Appointment
+        |> Ash.Changeset.for_create(:create, attrs, actor: owner)
+        |> Ash.create!()
+
+      assert first.client_id
+      client = Ash.get!(Client, first.client_id, authorize?: false)
+      assert client.name == "Nova Cliente"
+      assert client.source == :atendimento
+      assert client.phone_normalized == "5511987654321"
+
+      second =
+        Appointment
+        |> Ash.Changeset.for_create(
+          :create,
+          %{
+            attrs
+            | client_name: "Nome não confirmado",
+              client_phone: "11987654321",
+              time: ~T[11:00:00]
+          },
+          actor: owner
+        )
+        |> Ash.create!()
+
+      assert second.client_id == client.id
+      assert second.client_name == client.name
+      assert length(Ash.read!(Client, authorize?: false)) == 1
+    end
+
+    test "aceita número nacional de 10 dígitos e rejeita incompletos sem criar cadastro" do
+      owner = create_user!(:profissional)
+      professional = create_professional!(owner)
+      service = create_service!(%{})
+
+      attrs = %{
+        client_name: "Fixo",
+        client_phone: "1133334444",
+        professional_id: professional.id,
+        service_id: service.id,
+        date: Date.utc_today(),
+        time: ~T[10:00:00]
+      }
+
+      fixed =
+        Appointment
+        |> Ash.Changeset.for_create(:create, attrs, actor: owner)
+        |> Ash.create!()
+
+      assert Ash.get!(Client, fixed.client_id, authorize?: false).phone_normalized ==
+               "551133334444"
+
+      for phone <- ["113333444", "113333444455", "0000000000"] do
+        assert {:error, _} =
+                 Appointment
+                 |> Ash.Changeset.for_create(:create, %{attrs | client_phone: phone},
+                   actor: owner
+                 )
+                 |> Ash.create()
+      end
+
+      assert length(Ash.read!(Client, authorize?: false)) == 1
+    end
+
+    test "agendamento inválido não deixa cadastro novo órfão" do
+      owner = create_user!(:profissional)
+      professional = create_professional!(owner)
+      service = create_service!(%{})
+      phone = "11921234567"
+
+      assert {:error, _} =
+               Appointment
+               |> Ash.Changeset.for_create(
+                 :book_return,
+                 %{
+                   client_name: "Cadastro temporário",
+                   client_phone: phone,
+                   professional_id: professional.id,
+                   service_id: service.id,
+                   date: Date.add(Date.utc_today(), -1),
+                   time: ~T[10:00:00]
+                 },
+                 actor: owner
+               )
+               |> Ash.create()
+
+      assert {:ok, nil} =
+               LabelleBack.Studio.get_client_by_phone_normalized("55" <> phone,
+                 authorize?: false
+               )
+    end
+
+    test "seleção usa dados canônicos e recusa telefone de outra cliente" do
+      owner = create_user!(:profissional)
+      professional = create_professional!(owner)
+      service = create_service!(%{})
+      client = create_client!()
+
+      attrs = %{
+        client_id: client.id,
+        client_name: "Nome incorreto",
+        professional_id: professional.id,
+        service_id: service.id,
+        date: Date.utc_today(),
+        time: ~T[10:00:00]
+      }
+
+      selected =
+        Appointment
+        |> Ash.Changeset.for_create(:create, attrs, actor: owner)
+        |> Ash.create!()
+
+      assert selected.client_name == client.name
+      assert selected.client_phone == client.phone
+
+      assert {:error, _} =
+               Appointment
+               |> Ash.Changeset.for_create(
+                 :create,
+                 Map.put(attrs, :client_phone, "11911112222"),
+                 actor: owner
+               )
+               |> Ash.create()
+    end
+
+    test "próxima visita resolve telefone novo; agendamento sem contato preserva pendência" do
+      owner = create_user!(:profissional)
+      professional = create_professional!(owner)
+      service = create_service!(%{})
+
+      attrs = %{
+        client_name: "Sem contato",
+        professional_id: professional.id,
+        service_id: service.id,
+        date: Date.add(Date.utc_today(), 1),
+        time: ~T[10:00:00]
+      }
+
+      pending =
+        Appointment
+        |> Ash.Changeset.for_create(:create, attrs, actor: owner)
+        |> Ash.create!()
+
+      assert is_nil(pending.client_id)
+
+      booked =
+        Appointment
+        |> Ash.Changeset.for_create(
+          :book_return,
+          Map.merge(attrs, %{client_phone: "11911112222", time: ~T[11:00:00]}),
+          actor: owner
+        )
+        |> Ash.create!()
+
+      assert booked.client_id
+      assert Ash.get!(Client, booked.client_id, authorize?: false).name == "Sem contato"
+    end
+  end
+
+  describe "visitas realizadas" do
+    test "conta só atendimentos concluídos mesmo sem pagamento e inclui vínculo posterior" do
+      admin = create_user!(:admin)
+      professional = create_professional!(create_user!(:profissional))
+      service = create_service!(%{})
+      client = create_client!()
+
+      count = fn ->
+        Client
+        |> Ash.get!(client.id, authorize?: false)
+        |> Ash.load!(:visit_count, authorize?: false)
+        |> Map.fetch!(:visit_count)
+      end
+
+      pending = create_appointment!(professional, service, %{client_id: client.id})
+      assert count.() == 0
+
+      cancelled =
+        create_appointment!(professional, service, %{client_id: client.id})
+        |> Ash.Changeset.for_update(:cancel, %{}, authorize?: false)
+        |> Ash.update!()
+
+      assert cancelled.status == :cancelado
+      assert count.() == 0
+
+      done =
+        pending
+        |> Ash.Changeset.for_update(:start, %{}, authorize?: false)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(:finalize, %{payment_status: :pendente_confirmacao},
+          actor: admin
+        )
+        |> Ash.update!()
+
+      assert done.status == :concluido
+      assert count.() == 1
+
+      [charge] = LabelleBack.Studio.Transaction |> Ash.read!(authorize?: false)
+      assert charge.status == :pendente_confirmacao
+
+      no_link =
+        create_appointment!(professional, service, %{
+          client_id: nil,
+          client_phone: nil,
+          client_name: client.name
+        })
+        |> Ash.Changeset.for_update(:start, %{}, authorize?: false)
+        |> Ash.update!()
+        |> Ash.Changeset.for_update(:finalize, %{payment_status: :pendente_confirmacao},
+          actor: admin
+        )
+        |> Ash.update!()
+
+      assert count.() == 1
+
+      linked =
+        no_link
+        |> Ash.Changeset.for_update(:complete_phone, %{client_phone: client.phone}, actor: admin)
+        |> Ash.update!()
+
+      assert linked.client_id == client.id
+      assert count.() == 2
+
+      another_professional = create_user!(:profissional)
+
+      staff_view =
+        Client
+        |> Ash.get!(client.id, actor: another_professional)
+        |> Ash.load!(:visit_count, actor: another_professional)
+
+      assert staff_view.visit_count == 2
+
+      public_loyalty =
+        build_conn()
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/client/loyalty", Jason.encode!(%{phone: client.phone}))
+
+      assert public_loyalty.status == 200
+      assert Jason.decode!(public_loyalty.resp_body)["client"]["visit_count"] == 2
     end
   end
 

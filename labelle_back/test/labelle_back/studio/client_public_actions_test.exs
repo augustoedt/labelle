@@ -44,24 +44,29 @@ defmodule LabelleBack.Studio.ClientPublicActionsTest do
 
   describe "upsert_client_from_booking" do
     test "cria cliente novo com origem app_cliente e telefone normalizado com 55" do
-      client = Studio.upsert_client_from_booking!("  Maria Silva  ", "(11) 98888-7777", authorize?: false)
+      client =
+        Studio.upsert_client_from_booking!("  Maria Silva  ", "(11) 98888-7777",
+          authorize?: false
+        )
 
       assert client.name == "Maria Silva"
       assert client.source == :app_cliente
       assert client.phone_normalized == "5511988887777"
-      assert client.visit_count == 0
-      assert client.first_appointment_date == Date.utc_today()
-      assert client.last_appointment_date == Date.utc_today()
+      assert Ash.load!(client, :visit_count).visit_count == 0
+      assert is_nil(client.first_appointment_date)
+      assert is_nil(client.last_appointment_date)
     end
 
-    test "segunda vez com o mesmo telefone (outra máscara) atualiza e incrementa visita" do
+    test "segunda consulta com o mesmo telefone atualiza nome mas não cria visita" do
       first = Studio.upsert_client_from_booking!("Maria", "11988887777", authorize?: false)
-      second = Studio.upsert_client_from_booking!("Maria S.", "55 11 98888-7777", authorize?: false)
+
+      second =
+        Studio.upsert_client_from_booking!("Maria S.", "55 11 98888-7777", authorize?: false)
 
       assert second.id == first.id
       assert second.name == "Maria S."
-      assert second.visit_count == 1
-      assert second.last_appointment_date == Date.utc_today()
+      assert Ash.load!(second, :visit_count).visit_count == 0
+      assert is_nil(second.last_appointment_date)
     end
   end
 
@@ -69,7 +74,9 @@ defmodule LabelleBack.Studio.ClientPublicActionsTest do
     test "encontra pela identidade normalizada; retorna nil para desconhecido" do
       client =
         Client
-        |> Ash.Changeset.for_create(:create, %{name: "Ana", phone: "11977776666"}, authorize?: false)
+        |> Ash.Changeset.for_create(:create, %{name: "Ana", phone: "11977776666"},
+          authorize?: false
+        )
         |> Ash.create!()
 
       assert client.phone_normalized == "5511977776666"

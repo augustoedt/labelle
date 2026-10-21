@@ -70,6 +70,7 @@ defmodule LabelleBack.Studio.Appointment do
                 fields: [:price, :duration_minutes, :payment_method, :professional_referral]}
 
       change LabelleBack.Studio.Changes.SnapshotAppointmentFields
+      change LabelleBack.Studio.Changes.ResolveManualBookingClient
       change LabelleBack.Studio.Changes.RememberClientReferral
 
       # Agendamento feito pela cliente no app público: o estúdio manda a
@@ -147,6 +148,7 @@ defmodule LabelleBack.Studio.Appointment do
 
       change set_attribute(:source, :manual)
       change LabelleBack.Studio.Changes.SnapshotAppointmentFields
+      change LabelleBack.Studio.Changes.ResolveManualBookingClient
       change LabelleBack.Studio.Changes.RememberClientReferral
       change LabelleBack.Studio.Changes.ValidateOnlineAvailability
     end

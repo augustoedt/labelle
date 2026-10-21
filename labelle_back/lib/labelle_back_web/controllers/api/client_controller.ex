@@ -50,13 +50,15 @@ defmodule LabelleBackWeb.Api.ClientController do
         json(conn, %{client: nil})
 
       {:ok, client} ->
+        visits = client |> Ash.load!(:visit_count, authorize?: false) |> Map.fetch!(:visit_count)
+
         json(conn, %{
           client: %{
             id: client.id,
             name: client.name,
             loyalty_tier: client.loyalty_tier,
             loyalty_points: client.loyalty_points,
-            visit_count: client.visit_count,
+            visit_count: visits,
             total_spent: decimal_to_number(client.total_spent)
           }
         })

@@ -73,7 +73,7 @@ export default function MinhaAgenda() {
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients"],
-    queryFn: () => ClientsApi.list({ limit: 500 }),
+    queryFn: () => ClientsApi.list({ limit: 10000 }),
   });
 
   // Confirmar, iniciar, cancelar e lembrete são transições/actions no

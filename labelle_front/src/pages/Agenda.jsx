@@ -85,7 +85,7 @@ export default function Agenda() {
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients"],
-    queryFn: () => ClientsApi.list(),
+    queryFn: () => ClientsApi.list({ limit: 10000 }),
   });
 
   const additional=useQuery({queryKey:["appointment-services"],queryFn:()=>AppointmentServicesApi.list({limit:10000})});

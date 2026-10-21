@@ -13,6 +13,28 @@ defmodule LabelleBack.Studio.Client do
 
   json_api do
     type "client"
+    # Incluir explicitamente o agregado no contrato JSON, preservando os
+    # demais campos públicos que a interface já consome.
+    default_fields [
+      :id,
+      :name,
+      :phone,
+      :phone_normalized,
+      :email,
+      :birthday,
+      :notes,
+      :preferences,
+      :loyalty_points,
+      :loyalty_tier,
+      :total_spent,
+      :visit_count,
+      :avatar_url,
+      :is_active,
+      :source,
+      :first_appointment_date,
+      :last_appointment_date,
+      :referring_professional_id
+    ]
   end
 
   actions do
@@ -53,7 +75,6 @@ defmodule LabelleBack.Studio.Client do
         :loyalty_points,
         :loyalty_tier,
         :total_spent,
-        :visit_count,
         :avatar_url,
         :is_active,
         :first_appointment_date,
@@ -114,7 +135,6 @@ defmodule LabelleBack.Studio.Client do
     end
 
     attribute :total_spent, :decimal, default: 0, public?: true
-    attribute :visit_count, :integer, default: 0, public?: true
     attribute :avatar_url, :string, public?: true
     attribute :is_active, :boolean, default: true, public?: true
 
@@ -133,6 +153,17 @@ defmodule LabelleBack.Studio.Client do
     has_many :appointments, LabelleBack.Studio.Appointment
     has_many :transactions, LabelleBack.Studio.Transaction
     has_many :payments, LabelleBack.Studio.Payment
+  end
+
+  aggregates do
+    # Uma visita por atendimento concluído, independentemente do pagamento.
+    # A contagem global já era visível às profissionais; os detalhes de
+    # agendamentos de outras profissionais permanecem protegidos pela policy.
+    count :visit_count, :appointments do
+      public? true
+      authorize? false
+      filter expr(status == :concluido)
+    end
   end
 
   identities do

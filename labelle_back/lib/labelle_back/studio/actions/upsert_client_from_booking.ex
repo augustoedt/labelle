@@ -1,9 +1,8 @@
 defmodule LabelleBack.Studio.Actions.UpsertClientFromBooking do
   @moduledoc """
   Upsert de cliente a partir de um agendamento online (app público, sem
-  login): se o telefone já existe, atualiza o nome, incrementa
-  `visit_count` e marca `last_appointment_date`; senão cria com origem
-  `:app_cliente` e as datas de primeiro/último atendimento.
+  login): se o telefone já existe, atualiza o nome; senão cria com origem
+  `:app_cliente`. Consulta ou cadastro não prova que houve atendimento.
 
   Roda sem actor (endpoint público) — por isso os `authorize?: false`
   internos; quem chama de fora deve fazer o mesmo.
@@ -20,7 +19,6 @@ defmodule LabelleBack.Studio.Actions.UpsertClientFromBooking do
     name = String.trim(input.arguments.name)
     phone = input.arguments.phone
     phone_norm = NormalizePhone.normalize(phone)
-    today = Date.utc_today()
 
     existing =
       Client
@@ -32,11 +30,7 @@ defmodule LabelleBack.Studio.Actions.UpsertClientFromBooking do
         existing
         |> Ash.Changeset.for_update(
           :update,
-          %{
-            name: name,
-            visit_count: (existing.visit_count || 0) + 1,
-            last_appointment_date: today
-          },
+          %{name: name},
           authorize?: false
         )
         |> Ash.update!()
@@ -48,9 +42,7 @@ defmodule LabelleBack.Studio.Actions.UpsertClientFromBooking do
             name: name,
             phone: phone,
             is_active: true,
-            source: :app_cliente,
-            first_appointment_date: today,
-            last_appointment_date: today
+            source: :app_cliente
           },
           authorize?: false
         )

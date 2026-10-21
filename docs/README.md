@@ -35,6 +35,8 @@ Comece pelo [estado do projeto](checkpoints/project-state.md). Para mudanças, c
 - [verificar-waha.md](runbooks/verificar-waha.md): consulta somente leitura da sessão WAHA a partir da release Railway; executado em 2026-10-17.
 
 ### `issues/` — pendências abertas
+- [clientes-dados-invalidos-mesclagem.md](issues/clientes-dados-invalidos-mesclagem.md): marcação e mesclagem auditada de cadastros com dados errados; adiada até existir um caso concreto.
+- [reconciliar-agendamentos-sem-cliente.md](issues/reconciliar-agendamentos-sem-cliente.md): conciliação pontual dos atendimentos antigos sem vínculo, somente após prévia e autorização.
 - [issue-002-configuracao-estudio.md](issues/issue-002-configuracao-estudio.md): cadastrar telefone/endereço reais do estúdio.
 - [issue-003-profissionais-e-seguranca.md](issues/issue-003-profissionais-e-seguranca.md): confirmar serviços realizados por cada profissional no cadastro.
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { TransactionsApi, PaymentsApi } from "@/server/api";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { recordTransactionPayment, PaymentsApi } from "@/server/api";
 import { Plus, Trash2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import {paymentBalance} from "@/lib/paymentBalance";
 import { formatBRL } from "@/lib/format";
 
 const METHOD_LABELS = {
@@ -29,22 +30,26 @@ function calcFee(amount, percent) {
 
 export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
   const queryClient = useQueryClient();
+  const {data:payments=[],isPending:loadingPayments,isError:paymentsError}=useQuery({queryKey:["payments"],queryFn:()=>PaymentsApi.list({limit:10000})});
+  const [reference,setReference]=useState("");
+  const balance=transaction ? paymentBalance(transaction,payments) : {paid:0,remaining:0};
   const [lines, setLines] = useState([newPaymentLine()]);
 
   useEffect(() => {
     if (open && transaction) {
-      setLines([{ ...newPaymentLine(), amount: transaction.amount || "" }]);
+      setLines([{ ...newPaymentLine(), amount: balance.remaining || "" }]);
+      setReference(crypto.randomUUID());
     }
-  }, [open, transaction]);
+  }, [open, transaction, balance.remaining]);
 
-  const total = parseFloat(transaction?.amount) || 0;
+  const total = balance.remaining;
   const sumPaid = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
   const totalFees = lines.reduce((s, l) => s + calcFee(l.amount, l.fee_percent), 0);
   const netAmount = sumPaid - totalFees;
   const remaining = parseFloat((total - sumPaid).toFixed(2));
-  const isOver = remaining < -0.01;
-  const isExact = Math.abs(remaining) < 0.01;
-  const isPartial = remaining > 0.01;
+  const isOver = remaining < 0;
+  const isExact = remaining === 0;
+  const isPartial = remaining > 0;
 
   const updateLine = (idx, field, value) => {
     setLines(prev => prev.map((l, i) => i === idx ? { ...l, [field]: value } : l));
@@ -53,65 +58,19 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
   const removeLine = (idx) => setLines(prev => prev.filter((_, i) => i !== idx));
   const addLine = () => setLines(prev => [...prev, newPaymentLine()]);
 
-  const txMutation = useMutation({
-    mutationFn: ({ id, data }) => TransactionsApi.update({ id, attributes: data }),
+  const receiptMutation=useMutation({
+    mutationFn:()=>recordTransactionPayment({data:{id:transaction.id,reference,payment_date:new Date(Date.now()-3*3600000).toISOString().slice(0,10),receipts:lines.map(line=>({payment_method:line.method,amount:Number(line.amount),installments:Number(line.installments || 1),card_brand:line.card_brand,fee_percent:Number(line.fee_percent || 0)}))}}),
+    onSuccess:()=>{queryClient.invalidateQueries({queryKey:["transactions"]});queryClient.invalidateQueries({queryKey:["payments"]});onClose();}
   });
-
-  const payMutation = useMutation({
-    mutationFn: (data) => PaymentsApi.create({ data }),
-  });
-
-  const handleConfirm = async () => {
-    if (isOver) return;
-
-    const newStatus = isExact ? "pago" : "pagamento_parcial";
-    const mainMethod = lines.length === 1 ? lines[0].method : "multiplo";
-
-    // Update transaction
-    await txMutation.mutateAsync({
-      id: transaction.id,
-      data: {
-        status: newStatus,
-        payment_method: mainMethod,
-        net_amount: parseFloat(netAmount.toFixed(2)),
-        total_fees: parseFloat(totalFees.toFixed(2)),
-      },
-    });
-
-    // Create payment records
-    for (const line of lines) {
-      const feeAmt = calcFee(line.amount, line.fee_percent);
-      await payMutation.mutateAsync({
-        transaction_id: transaction.id,
-        appointment_id: transaction.appointment_id || "",
-        client_id: transaction.client_id || "",
-        professional_id: transaction.professional_id || "",
-        payment_date: transaction.date,
-        payment_method: line.method,
-        amount: parseFloat(line.amount) || 0,
-        fee_percent: parseFloat(line.fee_percent) || 0,
-        fee_amount: feeAmt,
-        net_amount: parseFloat((parseFloat(line.amount || 0) - feeAmt).toFixed(2)),
-        installments: parseInt(line.installments) || 1,
-        card_brand: line.card_brand || "",
-        status: "confirmado",
-        origin: "manual",
-      });
-    }
-
-    queryClient.invalidateQueries({ queryKey: ["transactions"] });
-    queryClient.invalidateQueries({ queryKey: ["payments"] });
-    onClose();
-  };
-
+  const handleConfirm=()=>receiptMutation.mutate();
   const isCard = (method) => method === "credito" || method === "debito";
-  const isBusy = txMutation.isPending || payMutation.isPending;
+  const isBusy = receiptMutation.isPending;
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent side="bottom" className="max-h-[92vh] rounded-t-3xl overflow-y-auto">
         <SheetHeader className="pb-3">
-          <SheetTitle className="font-heading">Confirmar Pagamento</SheetTitle>
+          <SheetTitle className="font-heading">Registrar pagamento</SheetTitle>
         </SheetHeader>
 
         {transaction && (
@@ -125,7 +84,7 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
             {/* Totals bar */}
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-card rounded-xl border border-border/50 p-2">
-                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-xs text-muted-foreground">Saldo anterior</p>
                 <p className="font-semibold text-sm tabular-nums">{formatBRL(total, { decimals: 2 })}</p>
               </div>
               <div className="bg-card rounded-xl border border-border/50 p-2">
@@ -261,10 +220,11 @@ export default function ConfirmPaymentSheet({ transaction, open, onClose }) {
               </div>
             )}
 
+            {(receiptMutation.isError || paymentsError) && <p role="alert" className="text-red-700">Não foi possível registrar. Confira o saldo e tente novamente.</p>}
             <Button
               className="w-full rounded-full h-12 font-semibold bg-emerald-600 hover:bg-emerald-700 gap-2"
               onClick={handleConfirm}
-              disabled={isBusy || isOver || lines.some(l => !l.amount || parseFloat(l.amount) <= 0)}
+              disabled={isBusy || loadingPayments || paymentsError || isOver || lines.some(l => !l.amount || !Number.isFinite(Number(l.amount)) || Number(l.amount) <= 0 || !Number.isFinite(Number(l.fee_percent)) || Number(l.fee_percent) < 0 || Number(l.fee_percent)>100)}
             >
               <CheckCircle2 className="w-4 h-4" />
               {isBusy ? "Salvando..." : isPartial ? "Confirmar Pagamento Parcial" : "Confirmar Pagamento"}

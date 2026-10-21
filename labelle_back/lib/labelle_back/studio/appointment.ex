@@ -193,15 +193,17 @@ defmodule LabelleBack.Studio.Appointment do
 
       accept [:payment_method, :tip_mode, :tip_input, :professional_referral]
 
+      argument :payment_status, :atom,
+        default: :pago,
+        constraints: [one_of: [:pago, :pendente_confirmacao, :pagamento_parcial]]
+
+      argument :amount_paid, :decimal, constraints: [min: 0]
+
       validate {LabelleBack.Studio.Validations.AdminOnlyFinancialInputs,
                 fields: [:professional_referral]}
 
       change LabelleBack.Studio.Changes.RememberClientReferral
       change LabelleBack.Studio.Changes.CalculateCompletionExtras
-
-      validate present(:payment_method) do
-        message "informe a forma de pagamento para finalizar o atendimento"
-      end
 
       change transition_state(:concluido)
       change LabelleBack.Studio.Changes.RegisterChargeOnFinalize

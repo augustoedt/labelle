@@ -1,7 +1,8 @@
+import {cashEntries,paymentBalance} from "@/lib/paymentBalance";
 import CommissionPanel from "@/components/finance/CommissionPanel";
 import { appointmentCommission,professionalCommission } from "@/lib/commissions";
 import { useQuery } from "@tanstack/react-query";
-import { AppointmentsApi, TransactionsApi, ProfessionalsApi, AppointmentServicesApi,listFinancialEdits } from "@/server/api";
+import { AppointmentsApi, TransactionsApi, PaymentsApi, ProfessionalsApi, AppointmentServicesApi,listFinancialEdits } from "@/server/api";
 import { ArrowLeft, TrendingUp, Users, Scissors, DollarSign, FileDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,8 @@ export default function Reports() {
     queryFn: () => TransactionsApi.list({ sort: "-date", limit: 500 }),
   });
 
+  const paymentsQuery=useQuery({queryKey:["payments"],queryFn:()=>PaymentsApi.list({limit:10000})});
+  const receipts=cashEntries(transactions,paymentsQuery.data || []);
   const { data: professionals = [] } = useQuery({
     queryKey: ["professionals"],
     queryFn: () => ProfessionalsApi.list(),
@@ -32,13 +35,13 @@ export default function Reports() {
 
   const edits=useQuery({queryKey:["financial-edits"],queryFn:()=>listFinancialEdits({data:{limit:10000,sort:"-inserted_at"}})});
   const noComment=id=>(edits.data || []).some(e=>e.appointment_id===id && !e.comment?.trim());
-  const isLoading = isLoadingAppointments || isLoadingTransactions;
+  const isLoading = isLoadingAppointments || isLoadingTransactions || paymentsQuery.isPending;
 
   // Last 7 days revenue chart
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const date = subDays(new Date(), 6 - i);
     const dateStr = format(date, "yyyy-MM-dd");
-    const dayRevenue = transactions
+    const dayRevenue = receipts
       .filter(t => t.date === dateStr && t.type === "entrada")
       .reduce((s, t) => s + (t.amount || 0), 0);
     return { day: format(date, "EEE", { locale: ptBR }), value: dayRevenue };
@@ -95,6 +98,9 @@ export default function Reports() {
       "Categoria": t.category || "",
       "Descrição": t.description || "",
       "Valor (R$)": t.amount || 0,
+      "Recebido (R$)": paymentBalance(t,paymentsQuery.data || []).paid,
+      "Saldo pendente (R$)": paymentBalance(t,paymentsQuery.data || []).remaining,
+      "Situação": t.status || "pago",
       "Pagamento": t.payment_method || "",
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(txData), "Transações");
@@ -124,8 +130,8 @@ export default function Reports() {
   };
 
   const monthStart = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd");
-  const monthEntradas = transactions.filter(t => t.date >= monthStart && t.type === "entrada").reduce((s, t) => s + (t.amount || 0), 0);
-  const monthSaidas = transactions.filter(t => t.date >= monthStart && t.type === "saida").reduce((s, t) => s + (t.amount || 0), 0);
+  const monthEntradas = receipts.filter(t => t.date >= monthStart && t.type === "entrada").reduce((s, t) => s + (t.amount || 0), 0);
+  const monthSaidas = receipts.filter(t => t.date >= monthStart && t.type === "saida").reduce((s, t) => s + (t.amount || 0), 0);
   const monthCompleted = appointments.filter(a => a.date >= monthStart && a.status === "concluido");
   const ticketMedio = monthCompleted.length > 0 ? monthEntradas / monthCompleted.length : 0;
 

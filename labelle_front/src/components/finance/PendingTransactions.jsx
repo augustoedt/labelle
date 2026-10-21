@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/format";
+import {paymentBalance} from "@/lib/paymentBalance";
 import ConfirmPaymentSheet from "./ConfirmPaymentSheet";
 
 const STATUS_CONFIG = {
@@ -17,7 +18,7 @@ const STATUS_CONFIG = {
   pagamento_parcial: { label: "Parcial", className: "bg-orange-50 border-orange-200", badge: "text-orange-600" },
 };
 
-export default function PendingTransactions({ transactions, isLoading }) {
+export default function PendingTransactions({ transactions, payments = [], isLoading }) {
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -68,7 +69,7 @@ export default function PendingTransactions({ transactions, isLoading }) {
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-amber-500" />
           <h3 className="text-xs font-semibold text-amber-600 uppercase tracking-wider">
-            Pendentes de confirmação ({pending.length})
+            Pendências de pagamento ({pending.length}) · {formatBRL(pending.reduce((s,t)=>s+paymentBalance(t,payments).remaining,0),{decimals:2})}
           </h3>
         </div>
 
@@ -87,8 +88,9 @@ export default function PendingTransactions({ transactions, isLoading }) {
                     {" • "}<span className={cn("font-medium", cfg.badge)}>{cfg.label}</span>
                   </p>
                 </div>
-                <p className="font-semibold text-sm text-amber-700 ml-2 tabular-nums">{formatBRL(t.amount, { decimals: 2 })}</p>
+                <p className="font-semibold text-sm text-amber-700 ml-2 tabular-nums">{formatBRL(paymentBalance(t,payments).remaining, { decimals: 2 })} em aberto</p>
               </div>
+              <p className="text-xs">Total: {formatBRL(t.amount,{decimals:2})} · Recebido: {formatBRL(paymentBalance(t,payments).paid,{decimals:2})}</p>
               <div className="flex gap-1.5 flex-wrap">
                 <Button
                   size="sm"
@@ -96,7 +98,7 @@ export default function PendingTransactions({ transactions, isLoading }) {
                   onClick={() => setConfirming(t)}
                 >
                   <CheckCircle2 className="w-3 h-3" />
-                  {t.status === "pagamento_parcial" ? "Completar" : "Confirmar"}
+                  {t.status === "pagamento_parcial" ? "Receber saldo" : "Registrar pagamento"}
                 </Button>
                 <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg gap-1" onClick={() => handleEdit(t)}>
                   <Pencil className="w-3 h-3" /> Editar

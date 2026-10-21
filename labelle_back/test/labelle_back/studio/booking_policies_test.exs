@@ -1500,4 +1500,159 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
 
     assert Decimal.equal?(done.referral_bonus_percent, Decimal.new(0))
   end
+
+  describe "pagamento pendente e parcial" do
+    test "conclui sem receber e registra parcelas cumulativas sem duplicação" do
+      admin = create_user!(:admin)
+      user = create_user!(:profissional)
+      pro = create_professional!(user)
+
+      a =
+        create_appointment!(pro, create_service!(%{commission_percent: 40}), %{
+          professional_referral: true
+        })
+
+      a = a |> Ash.Changeset.for_update(:confirm, %{}, authorize?: false) |> Ash.update!()
+      a = a |> Ash.Changeset.for_update(:start, %{}, authorize?: false) |> Ash.update!()
+
+      done =
+        a
+        |> Ash.Changeset.for_update(:finalize, %{payment_status: :pendente_confirmacao},
+          actor: user
+        )
+        |> Ash.update!()
+
+      assert done.status == :concluido
+      [tx] = LabelleBack.Studio.Transaction |> Ash.read!(authorize?: false)
+      assert tx.status == :pendente_confirmacao
+      assert LabelleBack.Studio.Receivables.payments(tx.id) == []
+
+      reference = Ash.UUID.generate()
+
+      params = %{
+        reference: reference,
+        payment_date: ~D[2026-10-20],
+        receipts: [%{"payment_method" => "pix", "amount" => 40}]
+      }
+
+      assert {:error, _} =
+               tx
+               |> Ash.Changeset.for_update(:record_payment, params, actor: user)
+               |> Ash.update()
+
+      partial =
+        tx |> Ash.Changeset.for_update(:record_payment, params, actor: admin) |> Ash.update!()
+
+      assert partial.status == :pagamento_parcial
+
+      assert Decimal.equal?(
+               LabelleBack.Studio.Receivables.sum(LabelleBack.Studio.Receivables.payments(tx.id)),
+               40
+             )
+
+      partial |> Ash.Changeset.for_update(:record_payment, params, actor: admin) |> Ash.update!()
+      assert length(LabelleBack.Studio.Receivables.payments(tx.id)) == 1
+
+      too_much = %{
+        params
+        | reference: Ash.UUID.generate(),
+          receipts: [%{"payment_method" => "pix", "amount" => 61}]
+      }
+
+      assert {:error, _} =
+               partial
+               |> Ash.Changeset.for_update(:record_payment, too_much, actor: admin)
+               |> Ash.update()
+
+      final = %{
+        params
+        | reference: Ash.UUID.generate(),
+          payment_date: ~D[2026-10-21],
+          receipts: [%{"payment_method" => "credito", "amount" => 60}]
+      }
+
+      paid =
+        partial |> Ash.Changeset.for_update(:record_payment, final, actor: admin) |> Ash.update!()
+
+      assert paid.status == :pago
+
+      assert Decimal.equal?(
+               LabelleBack.Studio.Receivables.sum(LabelleBack.Studio.Receivables.payments(tx.id)),
+               100
+             )
+
+      assert length(LabelleBack.Studio.Receivables.payments(tx.id)) == 2
+
+      assert Ash.get!(Appointment, a.id, authorize?: false).referral_bonus_percent ==
+               Decimal.new(10)
+    end
+
+    test "conclusão parcial inclui adicionais e gorjeta e rejeita valores inválidos" do
+      pro = create_professional!(create_user!(:profissional))
+      service = create_service!(%{})
+      a = create_appointment!(pro, service)
+
+      AppointmentService
+      |> Ash.Changeset.for_create(:create, %{appointment_id: a.id, service_id: service.id},
+        authorize?: false
+      )
+      |> Ash.create!()
+
+      a = a |> Ash.Changeset.for_update(:confirm, %{}, authorize?: false) |> Ash.update!()
+      a = a |> Ash.Changeset.for_update(:start, %{}, authorize?: false) |> Ash.update!()
+
+      for amount <- [nil, -1, 0, 210, 300] do
+        assert {:error, _} =
+                 a
+                 |> Ash.Changeset.for_update(
+                   :finalize,
+                   %{
+                     payment_method: :pix,
+                     payment_status: :pagamento_parcial,
+                     amount_paid: amount,
+                     tip_input: 10
+                   },
+                   authorize?: false
+                 )
+                 |> Ash.update()
+      end
+
+      done =
+        a
+        |> Ash.Changeset.for_update(
+          :finalize,
+          %{
+            payment_method: :pix,
+            payment_status: :pagamento_parcial,
+            amount_paid: 60,
+            tip_input: 10
+          },
+          authorize?: false
+        )
+        |> Ash.update!()
+
+      assert done.status == :concluido
+      [tx] = LabelleBack.Studio.Transaction |> Ash.read!(authorize?: false)
+      assert tx.status == :pagamento_parcial
+      assert Decimal.equal?(tx.amount, 210)
+      [receipt] = LabelleBack.Studio.Receivables.payments(tx.id)
+      assert Decimal.equal?(receipt.amount, 60)
+      assert receipt.payment_date == LabelleBack.Studio.Receivables.today()
+
+      tx
+      |> Ash.Changeset.for_update(:update, %{status: :cancelado}, authorize?: false)
+      |> Ash.update!()
+
+      done
+      |> Ash.Changeset.for_update(
+        :edit_financial,
+        %{price: 90, edit_comment: "Correção de preço sem reabrir cobrança cancelada"},
+        authorize?: false
+      )
+      |> Ash.update!()
+
+      assert Ash.get!(LabelleBack.Studio.Transaction, tx.id, authorize?: false).status ==
+               :cancelado
+    end
+  end
 end

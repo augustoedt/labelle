@@ -4,7 +4,7 @@ import CommissionPanel from "@/components/finance/CommissionPanel";
 import { useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { TransactionsApi,AppointmentsApi,AppointmentServicesApi,listFinancialEdits } from "@/server/api";
+import { TransactionsApi,PaymentsApi,AppointmentsApi,AppointmentServicesApi,listFinancialEdits } from "@/server/api";
 import { Plus, TrendingUp, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,8 @@ export default function Finance() {
     queryFn: () => TransactionsApi.list({ sort: "-date", limit: 10000 }),
   });
 
+  const paymentsQuery=useQuery({queryKey:["payments"],queryFn:()=>PaymentsApi.list({limit:10000})});
+  const payments=paymentsQuery.data || [];
   const commissionAppointments=useQuery({queryKey:["commission-appointments"],queryFn:()=>AppointmentsApi.list({limit:10000,sort:"-date"})});
   const commissionItems=useQuery({queryKey:["commission-items"],queryFn:()=>AppointmentServicesApi.list({limit:10000})});
   const edits=useQuery({queryKey:["financial-edits"],queryFn:()=>listFinancialEdits({data:{limit:10000,sort:"-inserted_at"}})});
@@ -64,9 +66,9 @@ export default function Finance() {
 
   const { start, end } = getRange();
 
-  const totals=financialTotals(transactions,commissionAppointments.data || [],commissionItems.data || [],start,end);
-  const totalsLoading=isLoading || commissionAppointments.isPending || commissionItems.isPending;
-  const totalsError=commissionAppointments.isError || commissionItems.isError;
+  const totals=financialTotals(transactions,commissionAppointments.data || [],commissionItems.data || [],start,end,payments);
+  const totalsLoading=isLoading || paymentsQuery.isPending || commissionAppointments.isPending || commissionItems.isPending;
+  const totalsError=paymentsQuery.isError || commissionAppointments.isError || commissionItems.isError;
 
   // Lista filtrada por período + status selecionado
   const filtered = transactions
@@ -130,10 +132,10 @@ export default function Finance() {
         )}
       </div>
 
-      <p className="px-5 text-xs text-muted-foreground">Saldo após comissões considera os atendimentos concluídos recebidos no período, incluindo bônus e gorjetas. Repasses já lançados em Saídas → Comissão não são descontados duas vezes.</p>
+      <p className="px-5 text-xs text-muted-foreground">Saldo após comissões considera os atendimentos concluídos recebidos no período, incluindo bônus e gorjetas. Pagamentos parciais entram pela data do recebimento; a comissão dos recebidos é proporcional. Repasses já lançados em Saídas → Comissão não são descontados duas vezes.</p>
       {(totals.missing || totalsError) && <p role="alert" className="px-5 text-sm text-amber-700">{totalsError?"Não foi possível carregar as comissões.":"Existem comissões sem percentual definido: o saldo após comissões é parcial."}</p>}
       {/* Pendentes de confirmação */}
-      <PendingTransactions transactions={transactions} isLoading={isLoading} />
+      {paymentsQuery.isError ? <p role="alert" className="px-5 text-red-700">Não foi possível carregar os recebimentos. <button onClick={()=>paymentsQuery.refetch()}>Tentar novamente</button></p> : <PendingTransactions transactions={transactions} payments={payments} isLoading={isLoading || paymentsQuery.isPending} />}
 
       {/* Status filter */}
       <div className="px-5">

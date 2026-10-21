@@ -34,7 +34,7 @@ const paymentMethods = [
 
 // Painel do atendimento: gerencia os serviços realizados (inclusive os não
 // previstos, adicionados durante o atendimento) e finaliza com a cobrança —
-// o backend soma tudo e registra a transação como paga na forma escolhida.
+// o backend soma tudo e registra a cobrança e o valor recebido.
 export default function FinalizeSheet({
   open,
   onClose,
@@ -49,10 +49,12 @@ export default function FinalizeSheet({
   const [bookNext,setBookNext]=useState(false);
   useEffect(()=>setBookNext(false),[appointment?.id,open]);
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentStatus,setPaymentStatus]=useState("pago");
+  const [amountPaid,setAmountPaid]=useState("");
   const [tipMode,setTipMode]=useState("amount");
   const [tipInput,setTipInput]=useState("");
   const [referral,setReferral]=useState(false);
-  useEffect(()=>{setTipMode("amount");setTipInput("");setReferral(Boolean(appointment?.professional_referral));setPaymentMethod("");},[appointment?.id,open]);
+  useEffect(()=>{setTipMode("amount");setTipInput("");setReferral(Boolean(appointment?.professional_referral));setPaymentMethod("");setPaymentStatus("pago");setAmountPaid("");},[appointment?.id,open]);
 
   const { data: items = [],isPending:loadingItems,isError:itemsError } = useQuery({
     queryKey: ["appointment-services", appointment?.id],
@@ -67,7 +69,9 @@ export default function FinalizeSheet({
     mutationFn: () =>
       AppointmentsApi.finalize({
         id: appointment.id,
-        payment_method: paymentMethod,
+        payment_method: paymentStatus === "pendente_confirmacao" ? undefined : paymentMethod,
+        payment_status:paymentStatus,
+        ...(paymentStatus === "pagamento_parcial" ? {amount_paid:Number(amountPaid)} : {}),
         tip_mode: tipMode,
         tip_input: Number(tipInput || 0),
         ...(canEditPrice ? {professional_referral:referral} : {}),
@@ -78,6 +82,7 @@ export default function FinalizeSheet({
         queryKey: ["professional-appointments"],
       });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       queryClient.invalidateQueries({ queryKey: ["commission-appointments"] });
       queryClient.invalidateQueries({ queryKey: ["commission-items"] });
@@ -109,7 +114,10 @@ export default function FinalizeSheet({
         </section>
         <section className="finalize-payment">
           <h3>Pagamento</h3>
-          <Select value={paymentMethod} onValueChange={setPaymentMethod}><SelectTrigger aria-label="Forma de pagamento"><SelectValue placeholder="Forma de pagamento"/></SelectTrigger><SelectContent>{paymentMethods.map(m=><SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent></Select>
+          <Select value={paymentStatus} onValueChange={setPaymentStatus}><SelectTrigger aria-label="Situação do pagamento"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="pago">Pago integralmente</SelectItem><SelectItem value="pagamento_parcial">Pagamento parcial</SelectItem><SelectItem value="pendente_confirmacao">Pagamento pendente</SelectItem></SelectContent></Select>
+          {paymentStatus !== "pendente_confirmacao" && <Select value={paymentMethod} onValueChange={setPaymentMethod}><SelectTrigger aria-label="Forma de pagamento"><SelectValue placeholder="Forma de pagamento"/></SelectTrigger><SelectContent>{paymentMethods.map(m=><SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent></Select>}
+          {paymentStatus === "pagamento_parcial" && <div><Label>Valor recebido</Label><Input aria-label="Valor recebido" type="number" min="0.01" max={total+tipAmount} step="0.01" value={amountPaid} onChange={e=>setAmountPaid(e.target.value)} placeholder="0,00"/></div>}
+          {paymentStatus !== "pago" && <div className="text-sm font-semibold text-amber-700">Saldo pendente: {formatBRL(Math.max(0,total+tipAmount-(paymentStatus === "pagamento_parcial" ? Number(amountPaid || 0) : 0)),{decimals:2})}</div>}
           <Label>Gorjeta</Label>
           <div className="finalize-tip"><Select value={tipMode} onValueChange={setTipMode}><SelectTrigger aria-label="Tipo de gorjeta"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="amount">R$</SelectItem><SelectItem value="percent">%</SelectItem></SelectContent></Select><Input aria-label="Gorjeta" type="number" min="0" step="0.01" value={tipInput} onChange={e=>setTipInput(e.target.value)} placeholder="0,00"/></div>
           {canEditPrice && <label className="finalize-check"><input type="checkbox" checked={referral} onChange={e=>setReferral(e.target.checked)}/>Cliente da profissional</label>}
@@ -118,7 +126,7 @@ export default function FinalizeSheet({
           {(finalizeMutation.isError || itemsError) && <p role="alert">Não foi possível concluir. Tente novamente.</p>}
         </section>
       </div>
-      <footer className="finalize-footer"><div><span>Total a cobrar</span><strong>{formatBRL(total+tipAmount,{decimals:2})}</strong></div><Button variant="outline" onClick={onClose}>Voltar</Button><Button disabled={!paymentMethod || loadingItems || itemsError || changingItems>0 || !Number.isFinite(Number(tipInput)) || Number(tipInput)<0 || finalizeMutation.isPending} onClick={()=>finalizeMutation.mutate()}>{finalizeMutation.isPending?"Finalizando…":"Finalizar"}</Button></footer>
+      <footer className="finalize-footer"><div><span>Total a cobrar</span><strong>{formatBRL(total+tipAmount,{decimals:2})}</strong></div><Button variant="outline" onClick={onClose}>Voltar</Button><Button disabled={(paymentStatus !== "pendente_confirmacao" && !paymentMethod) || (paymentStatus === "pagamento_parcial" && (!Number.isFinite(Number(amountPaid)) || Number(amountPaid)<=0 || Number(amountPaid)>=total+tipAmount)) || loadingItems || itemsError || changingItems>0 || !Number.isFinite(Number(tipInput)) || Number(tipInput)<0 || finalizeMutation.isPending} onClick={()=>finalizeMutation.mutate()}>{finalizeMutation.isPending?"Finalizando…":"Finalizar"}</Button></footer>
     </SheetContent>
   </Sheet>;
 }

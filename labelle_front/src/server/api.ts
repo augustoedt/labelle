@@ -269,10 +269,12 @@ export const completeAppointmentPhone = createServerFn({ method: 'POST' })
   .validator((data: { id: string; phone: string; sameClientAppointmentIds?: string[] }) => data)
   .handler(({ data }) => jsonApiAction('appointments', 'appointment', data.id, 'complete_phone', { client_phone: data.phone, same_client_appointment_ids: data.sameClientAppointmentIds || [] }))
 export const finalizeAppointment = createServerFn({ method: 'POST' })
-  .validator((data: { id: string; payment_method: string; tip_mode?: string; tip_input?: number; professional_referral?: boolean }) => data)
+  .validator((data: { id: string; payment_method?: string; payment_status?: string; amount_paid?: number; tip_mode?: string; tip_input?: number; professional_referral?: boolean }) => data)
   .handler(({ data }) =>
     jsonApiAction('appointments', 'appointment', data.id, 'finalize', {
       payment_method: data.payment_method,
+      ...(data.payment_status !== undefined ? {payment_status:data.payment_status} : {}),
+      ...(data.amount_paid !== undefined ? {amount_paid:data.amount_paid} : {}),
       ...(data.tip_mode !== undefined ? {tip_mode:data.tip_mode} : {}),
       ...(data.tip_input !== undefined ? {tip_input:data.tip_input} : {}),
       ...(data.professional_referral !== undefined ? {professional_referral:data.professional_referral} : {}),
@@ -355,6 +357,10 @@ export const createTransaction = createServerFn({ method: 'POST' })
 export const updateTransaction = createServerFn({ method: 'POST' })
   .validator((data: { id: string; attributes: Record<string, any> }) => data)
   .handler(({ data }) => jsonApiUpdate('transactions', 'transaction', data.id, data.attributes))
+
+export const recordTransactionPayment = createServerFn({ method: 'POST' })
+  .validator((data: { id: string; receipts: Record<string, any>[]; reference: string; payment_date: string }) => data)
+  .handler(({ data }) => jsonApiAction('transactions', 'transaction', data.id, 'record_payment', {receipts:data.receipts,reference:data.reference,payment_date:data.payment_date}))
 
 export const listPayments = createServerFn({ method: 'GET' })
   .validator((data?: ListParams) => data)

@@ -1,8 +1,9 @@
+import {cashEntries} from "@/lib/paymentBalance";
 import CommissionPanel from "@/components/finance/CommissionPanel";
 import PhonePendingPanel from "@/components/clients/PhonePendingPanel";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { AppointmentsApi, TransactionsApi, ProductsApi } from "@/server/api";
+import { AppointmentsApi, TransactionsApi, PaymentsApi, ProductsApi } from "@/server/api";
 import { DollarSign, Users, CalendarDays, TrendingUp } from "lucide-react";
 import {
   BarChart,
@@ -36,6 +37,7 @@ export default function Dashboard() {
     queryKey: ["transactions"],
     queryFn: () => TransactionsApi.list({ sort: "-date", limit: 200 }),
   });
+  const paymentQuery=useQuery({queryKey:["payments"],queryFn:()=>PaymentsApi.list({limit:10000})});
   const productQuery = useQuery({
     queryKey: ["products"],
     queryFn: () => ProductsApi.list(),
@@ -45,11 +47,11 @@ export default function Dashboard() {
   const products = productQuery.data || [];
   const loading =
     appointmentQuery.isPending ||
-    transactionQuery.isPending ||
+    transactionQuery.isPending || paymentQuery.isPending ||
     productQuery.isPending;
   const failed =
     appointmentQuery.isError ||
-    transactionQuery.isError ||
+    transactionQuery.isError || paymentQuery.isError ||
     productQuery.isError;
   const todayAppointments = appointments.filter(
     (a) => a.date === today && a.status !== "cancelado",
@@ -57,9 +59,7 @@ export default function Dashboard() {
   const completed = appointments.filter(
     (a) => a.date === today && a.status === "concluido",
   );
-  const paid = transactions.filter(
-    (t) => t.type === "entrada" && t.status === "pago",
-  );
+  const paid = cashEntries(transactions,paymentQuery.data || []).filter(t=>t.type === "entrada");
   const todayRevenue = paid
     .filter((t) => t.date === today)
     .reduce((sum, t) => sum + Number(t.amount || 0), 0);

@@ -18,3 +18,13 @@ test("tips, referral and paid commission expenses counted once; unpaid and other
  assert.equal(financialTotals([charge(100)],[{...appointment,commission_percent:null}],[],start,end).missing,true);
  assert.equal(financialTotals([{...charge(100),status:"cancelado"}],[appointment],[],start,end).commission,0);
 });
+
+test("partial receipts count on their actual dates without counting the whole debt",()=>{
+ const tx={...charge(100),status:"pagamento_parcial"};
+ const payments=[{id:"p1",transaction_id:"t",status:"confirmado",payment_date:start,amount:40},{id:"p2",transaction_id:"t",status:"confirmado",payment_date:"2026-10-19",amount:60}];
+ assert.equal(financialTotals([tx],[appointment],[],start,end,payments).income,40);
+ assert.equal(financialTotals([tx],[appointment],[],start,end,payments).commission,16);
+ assert.equal(financialTotals([{...tx,status:"pago"}],[appointment],[],"2026-10-19","2026-10-19",payments).income,60);
+ assert.equal(financialTotals([{...tx,status:"pago"}],[appointment],[],start,"2026-10-19",payments).income,100);
+ assert.equal(financialTotals([{...tx,status:"pendente_confirmacao"}],[appointment],[],start,end).income,0);
+});

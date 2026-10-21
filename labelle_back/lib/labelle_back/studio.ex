@@ -106,6 +106,7 @@ defmodule LabelleBack.Studio do
       end
 
       base_route "/transactions", LabelleBack.Studio.Transaction do
+        patch :record_payment, route: "/:id/record_payment"
         get :read
         index :read
         post :create

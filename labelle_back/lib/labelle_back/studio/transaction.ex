@@ -12,7 +12,8 @@ defmodule LabelleBack.Studio.Transaction do
 
     check_constraints do
       check_constraint :status, "transactions_status_valid",
-        check: "status IN ('pendente_confirmacao', 'pagamento_parcial', 'pago', 'cancelado', 'estornado')",
+        check:
+          "status IN ('pendente_confirmacao', 'pagamento_parcial', 'pago', 'cancelado', 'estornado')",
         message: "status inválido"
 
       check_constraint :amount, "transactions_amount_non_negative",
@@ -43,6 +44,15 @@ defmodule LabelleBack.Studio.Transaction do
         :client_id,
         :status
       ]
+    end
+
+    update :record_payment do
+      require_atomic? false
+      accept []
+      argument :receipts, {:array, :map}, allow_nil?: false
+      argument :reference, :uuid, allow_nil?: false
+      argument :payment_date, :date, allow_nil?: false
+      change LabelleBack.Studio.Changes.RecordPayment
     end
 
     update :update do

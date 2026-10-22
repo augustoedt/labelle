@@ -1,6 +1,6 @@
 # Conciliar atendimentos históricos sem cadastro vinculado
 
-**Estado:** conciliação parcial autorizada; atendimentos restantes aguardam conferência de identidade e telefone pela equipe.
+**Estado:** atendimentos concluídos com telefone da prévia conciliados; dois sem telefone mantidos sem vínculo por decisão do responsável, além de um cancelado.
 
 As novas criações manuais com telefone completo passam a vincular cadastro, e `visit_count` é calculado a partir dos agendamentos concluídos com `client_id`. Atendimentos **antigos** sem vínculo continuam sem visita atribuída, mesmo que tenham nome ou telefone gravados.
 
@@ -24,6 +24,12 @@ Após a conciliação inicial, surgiram mais **8 atendimentos concluídos sem `c
 
 O responsável confirmou a criação de **um único cadastro** para os dois atendimentos de mesmo telefone, com o nome do atendimento mais recente (18h, em vez do nome das 9h). Foram reconfirmados o telefone de 11 dígitos idêntico nos dois, o status `concluido`, a ausência de cliente existente e de outros atendimentos com esse número. Em uma transação, criou-se 1 cliente, vincularam-se os 2 atendimentos e registraram-se 2 auditorias com o autorizador identificado. A verificação somente leitura confirmou 2 visitas concluídas para o cliente. As 2 cobranças permaneceram sem `client_id`; pagamentos não foram alterados.
 
-Prévia posterior: **6 concluídos com telefone completo ainda sem vínculo, 2 concluídos sem telefone e 1 cancelado**. Esses números podem mudar com novos atendimentos; repetir a prévia antes de qualquer outra conciliação.
+Prévia posterior: **6 concluídos com telefone completo ainda sem vínculo, 2 concluídos sem telefone e 1 cancelado**.
 
-A equipe precisa obter os telefones corretos e confirmar a identidade dos atendimentos concluídos sem telefone; não inferir pelo nome. O cancelado não conta como visita e ficou sem alteração. Reatribuição financeira dos lançamentos antigos requer plano e auditoria específicos, sem alterar valores ou status por efeito deste vínculo. Para novas conciliações, repetir a prévia imediatamente antes de qualquer escrita.
+## Criação autorizada dos seis cadastros restantes com telefone (22/10/2026)
+
+O responsável dispensou a confirmação individual para **criar clientes dos atendimentos com nome e telefone**, determinando manter sem alteração os dois sem telefone. A nova prévia encontrou seis atendimentos concluídos com nomes preenchidos, seis números nacionais distintos de 11 dígitos, sem cadastro correspondente nem outros agendamentos com os mesmos números e sem vínculos financeiros conflitantes. Em uma única transação foram criados 6 clientes, vinculados os 6 atendimentos e gravadas 6 auditorias com autorizador identificado; qualquer mudança nos registros-alvo abortaria a operação. A verificação posterior confirmou 1 visita concluída por novo cliente, 6 auditorias e 6 cobranças preservadas sem `client_id`. Nenhum pagamento foi alterado.
+
+Na prévia final permaneceram sem vínculo **2 atendimentos concluídos sem telefone** e **1 cancelado**. Os números podem mudar com novos atendimentos; repetir a prévia antes de qualquer outra conciliação.
+
+Os dois concluídos sem telefone permanecem assim por decisão do responsável. Uma eventual conciliação futura exigirá obter os números corretos e confirmar a identidade; não inferir pelo nome. O cancelado não conta como visita e ficou sem alteração. Reatribuição financeira dos lançamentos antigos requer plano e auditoria específicos, sem alterar valores ou status por efeito deste vínculo. Para novas conciliações, repetir a prévia imediatamente antes de qualquer escrita.

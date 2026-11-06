@@ -1,3 +1,4 @@
+import ProfessionalNavigator,{useProfessionalAgenda} from "@/components/agenda/ProfessionalNavigator";
 import {serviceScheduleEntries} from "@/lib/serviceSchedule";
 import AdditionalServices from "@/components/agenda/AdditionalServices";
 import CommissionEditor from "@/components/agenda/CommissionEditor";
@@ -63,15 +64,17 @@ export default function Agenda() {
     } else if (!search.view) { setShowForm(false); setEditingApt(null); setFinalizingApt(null); }
   }, [search.view, search.appointment, appointments, isLoading]);
 
-  // Mantém o dia selecionado visível na fileira scrollável (centraliza).
+  // Reposiciona a data também ao mudar a largura, sem deslocar a página verticalmente.
   useEffect(() => {
-    const row = weekRowRef.current;
-    if (!row) return;
-    const chip = row.querySelector(`[data-date="${dateStr}"]`);
-    if (!chip) return;
-    const target = chip.offsetLeft - row.clientWidth / 2 + chip.offsetWidth / 2;
-    row.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
-  }, [dateStr, isLoading]);
+    const row=weekRowRef.current;if(!row)return;
+    const center=()=>{
+      const chip=row.querySelector(`[data-date="${dateStr}"]`);if(!chip)return;
+      const target=chip.getBoundingClientRect().left-row.getBoundingClientRect().left+row.scrollLeft-row.clientWidth/2+chip.clientWidth/2;
+      row.scrollTo({left:Math.max(0,target),behavior:"auto"});
+    };
+    center();const resize=new ResizeObserver(center);resize.observe(row);
+    return ()=>resize.disconnect();
+  },[dateStr,isLoading,view]);
 
   const { data: services = [] } = useQuery({
     queryKey: ["services"],
@@ -90,6 +93,12 @@ export default function Agenda() {
 
   const additional=useQuery({queryKey:["appointment-services"],queryFn:()=>AppointmentServicesApi.list({limit:10000})});
   const calendarServices=serviceScheduleEntries(appointments,additional.data || []);
+  const calendarStart=startOfWeek(selectedDate,{weekStartsOn:1});
+  const calendarStartStr=format(calendarStart,"yyyy-MM-dd");
+  const calendarEndStr=format(addDays(calendarStart,27),"yyyy-MM-dd");
+  const selectionEntries=calendarServices.filter(a=>view==="fourWeeks" ? a.date>=calendarStartStr && a.date<=calendarEndStr : a.date===dateStr);
+  const professionalSelection=useProfessionalAgenda(professionals,selectionEntries,selectedDate.getDay());
+  const visibleCalendarServices=calendarServices.filter(a=>professionalSelection.id==="all" || a.professional_id===professionalSelection.id || (professionalSelection.id==="unassigned" && !professionals.some(p=>p.id===a.professional_id)));
 
   const createMutation = useMutation({
     mutationFn: (data) => AppointmentsApi.create({ data }),
@@ -172,7 +181,7 @@ export default function Agenda() {
   });
 
   const dayAppointments = appointments
-    .filter(a => a.date === dateStr)
+    .filter(a => a.date === dateStr && (professionalSelection.id==="all" || visibleCalendarServices.some(item=>item.date===dateStr && (item.root_appointment_id || item.id)===a.id)))
     .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
 
   const handleSubmit = (data) => {
@@ -206,7 +215,6 @@ export default function Agenda() {
     return d;
   });
 
-  const calendarStart = startOfWeek(selectedDate, {weekStartsOn: 1});
   const calendarDays = Array.from({length:28}, (_,i)=>addDays(calendarStart,i));
 
   return (
@@ -221,7 +229,7 @@ export default function Agenda() {
         }
       />
 
-      <div className="agenda-view-toggle px-5" role="group" aria-label="Visualização da agenda">
+      <div className="agenda-view-toggle agenda-toolbar px-5" role="group" aria-label="Visualização da agenda">
         <Button variant={view === "day" ? "default" : "outline"} onClick={()=>setView("day")}>Dia</Button>
         <Button variant={view === "fourWeeks" ? "default" : "outline"} onClick={()=>setView("fourWeeks")}>4 semanas</Button>
         <label>Data <input type="date" aria-label="Selecionar data" value={dateStr} onChange={e=>{if(e.target.value) navigateDate(e.target.value);}} /></label>
@@ -230,13 +238,13 @@ export default function Agenda() {
       {/* Date navigation */}
       <div className="px-5">
         <div className="flex items-center justify-between mb-3">
-          <Button variant="ghost" size="icon" onClick={() => navigateDate(format(subDays(selectedDate, view === "fourWeeks" ? 28 : 1), "yyyy-MM-dd"))} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={() => navigateDate(format(subDays(selectedDate, view === "fourWeeks" ? 28 : 1), "yyyy-MM-dd"))} className="agenda-period-button">
             <ChevronLeft className="w-4 h-4" /><span className="sr-only">Período anterior</span>
           </Button>
           <Button variant="ghost" size="sm" onClick={() => navigateDate(format(new Date(), "yyyy-MM-dd"))} className="text-xs text-primary">
             Hoje
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => navigateDate(format(addDays(selectedDate, view === "fourWeeks" ? 28 : 1), "yyyy-MM-dd"))} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={() => navigateDate(format(addDays(selectedDate, view === "fourWeeks" ? 28 : 1), "yyyy-MM-dd"))} className="agenda-period-button">
             <ChevronRight className="w-4 h-4" /><span className="sr-only">Próximo período</span>
           </Button>
         </div>
@@ -249,7 +257,7 @@ export default function Agenda() {
           weekDays.map((d) => {
             const isToday = format(d, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
             const isSelected = format(d, "yyyy-MM-dd") === dateStr;
-            const dayAppts = appointments.filter(a => a.date === format(d, "yyyy-MM-dd"));
+            const dayAppts = visibleCalendarServices.filter(a => a.date === format(d, "yyyy-MM-dd"));
             const hasAppts = dayAppts.some(a => a.status !== "cancelado");
             // Dia só com cancelados ganha um pontinho cinza, para não parecer vazio.
             const hasOnlyCancelled = !hasAppts && dayAppts.length > 0;
@@ -257,6 +265,8 @@ export default function Agenda() {
               <button
                 key={d.toISOString()}
                 data-date={format(d, "yyyy-MM-dd")}
+                aria-pressed={isSelected}
+                aria-label={format(d,"EEEE, dd/MM/yyyy",{locale:ptBR})}
                 onClick={() => navigateDate(format(d, "yyyy-MM-dd"))}
                 className={cn(
                   "flex flex-col items-center py-2 px-3 rounded-xl transition-all duration-150 shrink-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -277,21 +287,25 @@ export default function Agenda() {
         </div>}
       </div>
 
-      {view === "fourWeeks" ? <div className="px-5">
+      {view === "fourWeeks" ? <div className="px-5 four-week-container">
+        <ProfessionalNavigator selection={professionalSelection}/>
         <p className="mb-3 text-sm font-medium">{format(calendarStart,"dd/MM")} – {format(addDays(calendarStart,27),"dd/MM/yyyy")}</p>
-        <div className="four-week-scroll"><div className="four-week-calendar">
+        {additional.isError ? <div role="alert" className="schedule-message">
+          <p>Não foi possível carregar os serviços adicionais da agenda.</p>
+          <Button variant="outline" onClick={()=>additional.refetch()} disabled={additional.isFetching}>Tentar novamente</Button>
+        </div> : additional.isPending || isLoading || loadingProfessionals ? <p role="status" className="schedule-message">Carregando agenda e profissionais…</p> : <div className="four-week-scroll"><div className="four-week-calendar">
           {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map(day=><div className="four-week-heading" key={day}>{day}</div>)}
           {calendarDays.map(day=>{
-            const key=format(day,"yyyy-MM-dd"), daily=calendarServices.filter(a=>a.date===key);
+            const key=format(day,"yyyy-MM-dd"), daily=visibleCalendarServices.filter(a=>a.date===key);
             return <button key={key} className={`four-week-day ${key === format(new Date(),"yyyy-MM-dd") ? "is-today" : ""}`} onClick={()=>{navigateDate(format(day,"yyyy-MM-dd"));setView("day");}} aria-label={`${format(day,"dd/MM/yyyy")}, ${daily.length} serviços`}>
-              <strong>{format(day,"d MMM",{locale:ptBR})}</strong>
+              <strong><span className="four-week-day-name">{format(day,"EEEE",{locale:ptBR})}, </span>{format(day,"d MMM",{locale:ptBR})}</strong>
               <span className="four-week-count">{daily.length ? `${daily.length} serviço${daily.length>1 ? "s" : ""}` : "Sem agendamentos"}</span>
               {daily.slice().sort((a,b)=>(a.time || "").localeCompare(b.time || "")).slice(0,3).map(a=><span className={`four-week-event ${!hasPhone(a.client_phone) ? "appointment-phone-missing" : ""} ${a.status === "cancelado" ? "is-cancelled" : ""}`} key={a.id}>{a.time?.slice(0,5)} {a.client_name}<PhonePendingBadge phone={a.client_phone}/><small>{a.professional_name}</small></span>)}
               {daily.length>3 && <small>+{daily.length-3} · ver dia</small>}
             </button>;
           })}
-        </div></div>
-      </div> : <div className="px-5"><DaySchedule date={selectedDate} professionals={professionals} appointments={appointments} isLoading={isLoading || loadingProfessionals} onAppointment={apt=>hasPhone(apt.client_phone) ? updateSearch({appointment:apt.id,view:"edit"},false) : setPhoneAppointment(apt)} onSlot={slot=>updateSearch({date:slot.date,time:slot.time,professional:slot.professional_id,view:"new",appointment:undefined},false)} /></div>}
+        </div></div>}
+      </div> : <div className="px-5"><DaySchedule selection={professionalSelection} date={selectedDate} professionals={professionals} appointments={appointments} isLoading={isLoading || loadingProfessionals} onAppointment={apt=>hasPhone(apt.client_phone) ? updateSearch({appointment:apt.id,view:"edit"},false) : setPhoneAppointment(apt)} onSlot={slot=>updateSearch({date:slot.date,time:slot.time,professional:slot.professional_id,view:"new",appointment:undefined},false)} /></div>}
 
       {/* Appointments list and existing status actions */}
       {view === "day" && <div className="px-5 space-y-3">
@@ -374,7 +388,7 @@ export default function Agenda() {
         footerActions={editingApt ? <><AdditionalServices appointment={editingApt}/><AppointmentActions appointment={editingApt}/></> : null}
         initialDate={dateStr}
         initialTime={typeof search.time === "string" ? search.time : undefined}
-        initialProfessional={typeof search.professional === "string" ? search.professional : undefined}
+        initialProfessional={typeof search.professional === "string" ? search.professional : professionalSelection.id!=="all" && professionalSelection.id!=="unassigned" ? professionalSelection.id : undefined}
       />
 
       <NextAppointmentSheet appointment={nextAppointment} onClose={()=>setNextAppointment(null)}/>

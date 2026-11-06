@@ -1,5 +1,9 @@
 # Estado do projeto
 
+## Agenda responsiva e profissionais — 2026-11-06
+
+[Entrega e testes](../changes/agenda-responsiva-e-exclusao-profissionais.md): botões compactos de profissionais, gesto horizontal sincronizado, rolagem vertical livre com enquadramento suave, quatro semanas em lista em áreas estreitas e exclusão lógica/restauração restritas ao admin. Frontend: 43 testes, build e TypeScript; backend: 88 testes via mix precommit. Validação visual com dados fictícios locais; sem alteração de cadastros de produção.
+
 ## Vínculo manual e visitas — 2026-10-21
 
 Implementado e verificado localmente; commit `1062a77` enviado à `main` e **publicado em produção em 22/10/2026**. Após uma pausa do Railway e a ausência de deployments automáticos, o backend (`d837ff01-4a16-40c3-92ef-50394f5baef4`) e depois o frontend (`7464dabb-1009-4146-b13d-29fc88c10e2b`) foram publicados explicitamente nesse commit; ambos terminaram em `SUCCESS`.

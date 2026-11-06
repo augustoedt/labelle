@@ -30,7 +30,14 @@ defmodule LabelleBack.Studio.Professional do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
+
+    # Excluir retira a profissional de novas agendas sem apagar seu histórico.
+    destroy :destroy do
+      primary? true
+      soft? true
+      change set_attribute(:is_active, false)
+    end
 
     create :create do
       accept [

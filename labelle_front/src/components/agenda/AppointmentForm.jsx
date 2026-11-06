@@ -195,7 +195,7 @@ export default function AppointmentForm({ open, onClose, onSubmit, services, pro
             <Button type="button" variant={clientMode === "select" ? "default" : "outline"} onClick={() => changeClientMode("select")}>Selecionar cliente</Button>
             <Button type="button" variant={clientMode === "phone" ? "default" : "outline"} onClick={() => changeClientMode("phone")}>Informar telefone</Button>
           </div>}
-          <div className="appointment-pair appointment-wide">
+          <div className="appointment-pair appointment-contact appointment-wide">
             {(appointment || clientMode === "select") ? <div>
               <Label className="text-xs">{appointment ? "Nome" : "Buscar cliente por nome ou telefone"}</Label>
               <Input aria-label="Cliente" disabled={!!appointment} role="combobox" aria-expanded={clientSuggestions} aria-controls="booking-client-options" aria-autocomplete="list" autoComplete="off" value={appointment ? form.client_name : clientSearch} onFocus={()=>setClientSuggestions(true)} onKeyDown={e=>{if(e.key==="Escape")setClientSuggestions(false);}} onChange={e => {setClientSearch(e.target.value);setForm(prev => ({ ...prev, client_id:"", client_phone:"", client_name:"" }));setClientSuggestions(true);}} placeholder="Nome ou parte do telefone" />

@@ -116,7 +116,7 @@ export default function Finance() {
       </div>
 
       {/* Stats — apenas lançamentos pagos */}
-      <div className="px-5 grid grid-cols-2 xl:grid-cols-5 gap-2">
+      <div className="finance-stats px-5 grid gap-2">
         {totalsLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-24 rounded-2xl" />

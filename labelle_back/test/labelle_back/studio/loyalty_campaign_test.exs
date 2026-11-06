@@ -159,4 +159,47 @@ defmodule LabelleBack.Studio.LoyaltyCampaignTest do
     assert {:ok, _} = Campaign.refresh(~D[2027-01-20])
     assert points(ctx) == 50
   end
+
+  test "customer statistics use lifetime days and actual receipts, not stale stored values",
+       ctx do
+    a = completed(ctx, ~D[2026-09-30], %{tip_input: 20})
+    completed(ctx, ~D[2026-09-30])
+    completed(ctx, ~D[2026-10-01], %{payment_status: :pagamento_parcial, amount_paid: 25})
+    completed(ctx, ~D[2026-10-02], %{payment_status: :pendente_confirmacao, payment_method: nil})
+    completed(ctx, ~D[2027-01-01])
+    other = create(Client, %{name: "Outra", phone: "11988887777"})
+    completed(%{ctx | client: other}, ~D[2026-10-01])
+    change(ctx.client, :update, %{total_spent: 9999})
+    stats = LabelleBack.Studio.ClientStatistics.for_client(ctx.client.id, ~D[2026-11-06])
+    assert stats.visit_count == 3
+    assert Decimal.equal?(stats.total_spent, 225)
+    change(transaction(a), :update, %{status: :estornado})
+    stats = LabelleBack.Studio.ClientStatistics.for_client(ctx.client.id, ~D[2026-11-06])
+    assert stats.visit_count == 3
+    assert Decimal.equal?(stats.total_spent, 125)
+
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Conn.put_req_header("content-type", "application/json")
+
+    conn =
+      Phoenix.ConnTest.dispatch(
+        conn,
+        LabelleBackWeb.Endpoint,
+        :post,
+        "/api/client/loyalty",
+        Jason.encode!(%{phone: ctx.client.phone})
+      )
+
+    response = Jason.decode!(conn.resp_body)["client"]
+    assert response["visit_count"] == 3
+    assert response["total_spent"] == 125
+  end
+
+  test "customer with no completed history sees zero totals", ctx do
+    assert %{visit_count: 0, total_spent: spent} =
+             LabelleBack.Studio.ClientStatistics.for_client(ctx.client.id)
+
+    assert Decimal.equal?(spent, 0)
+  end
 end

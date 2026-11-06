@@ -19,3 +19,9 @@ Datas do atendimento e recebimento devem estar dentro do encerramento da campanh
 Antes desta entrega: 61 de 88 clientes receberam 11.980 pontos pela operação autorizada, com R$8.330 em serviços e 73 dias de visita; nenhuma atingiu bônus mensal nos dados vinculados. Backup e comprovante privados em ~/projetos/labelle-auditoria/fidelidade-20261106. Dois concluídos sem vínculo ficaram de fora. A automação reaplica a mesma fórmula, preservando esses pontos sem duplicação.
 
 mix precommit: 107 testes, zero falhas (oito novos). Cenários: conclusão real via Ash, idempotência/auditoria, visitas no mesmo dia e bônus mensal, pagamento parcial seguido de recebimento idempotente, estorno de cobrança/recibo, cortesia/voucher, gorjeta, frações, setembro/outubro/dezembro/janeiro e edição de serviço adicional. Banco local isolado, sem clientes reais de teste em produção. Migração aditiva cria apenas tabela de auditoria e índice; não muda pagamentos ou cobranças.
+
+## Correção do resumo da área cliente
+
+A API pública de fidelidade passa a calcular os totais diretamente do histórico vinculado, em vez de mostrar clients.total_spent (campo persistido sem atualização automática). Visitas são dias distintos com serviços concluídos, mesmo ainda não pagos; vários atendimentos no mesmo dia não multiplicam visitas. Total gasto corresponde a serviços efetivamente recebidos, com as mesmas exclusões e prioridades de recibos da campanha, mas considerando todo o histórico até a data local atual, sem limitar a outubro–dezembro. Não soma gorjetas, inadimplência ou estornos, nem dados de outra cliente. Não alterado o agregado histórico da gestão, que ainda conta atendimentos concluídos individualmente.
+
+mix precommit após correção: 109 testes, zero falhas, com cenários de totais persistidos desatualizados, mesmo dia, histórico anterior à campanha, parcial, pendência, gorjeta, estorno, data futura, isolamento por cliente, ausência de histórico e resposta da API.

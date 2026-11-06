@@ -711,7 +711,7 @@ defmodule LabelleBack.Studio.BookingPoliciesTest do
         |> post("/api/client/loyalty", Jason.encode!(%{phone: client.phone}))
 
       assert public_loyalty.status == 200
-      assert Jason.decode!(public_loyalty.resp_body)["client"]["visit_count"] == 2
+      assert Jason.decode!(public_loyalty.resp_body)["client"]["visit_count"] == 1
     end
   end
 

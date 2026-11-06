@@ -17,3 +17,7 @@ Na aba Profissionais, somente admin pode excluir e restaurar. Excluir solicita c
 - Chrome com viewports emulados de 320, 390, 768, 1024, 1280 e 1440 px: formulários, agenda, quatro semanas, painel e financeiro. Valores fictícios longos (R$ 9.876.543,21), seis profissionais e nomes extensos usados para verificar quebras.
 - Testados botão de profissional, arraste direita/esquerda, parada vertical em 11h30, clique em horário livre com preenchimento correto, inclusão de adicional com outra profissional, exclusão lógica e restauração pelo admin.
 - Reservas, recebimentos e exclusão de teste ocorreram somente no banco local isolado, com cadastros fictícios. Nenhum registro de produção foi editado durante essa validação. Dispositivo físico e Safari não foram testados.
+
+## Publicação — 2026-11-06
+
+Commit funcional `9294cb2` enviado à `main` de `augustoedt/labelle`. Os status do aplicativo Railway no GitHub confirmaram sucesso para frontend (`ec0b40b7-b151-4e18-b865-4ff908fde9f9`) e backend (`022e2d80-61e0-4cf5-b5b6-64d4d2366fef`). Após o deploy, `/cliente` e `/login` responderam HTTP 200; `/admin` redirecionou para login com HTTP 307. A sessão CLI Railway estava expirada; a evidência de sucesso foi consultada nos status do commit enviados pelo próprio Railway. Não houve teste autenticado nem gravação de dados em produção neste ciclo; os testes funcionais com cadastros fictícios foram locais.

@@ -2,6 +2,8 @@
 
 ## Agenda responsiva e profissionais — 2026-11-06
 
+Commit `9294cb2` publicado via GitHub/main; frontend e backend confirmados com sucesso pelo Railway nos status do commit.
+
 [Entrega e testes](../changes/agenda-responsiva-e-exclusao-profissionais.md): botões compactos de profissionais, gesto horizontal sincronizado, rolagem vertical livre com enquadramento suave, quatro semanas em lista em áreas estreitas e exclusão lógica/restauração restritas ao admin. Frontend: 43 testes, build e TypeScript; backend: 88 testes via mix precommit. Validação visual com dados fictícios locais; sem alteração de cadastros de produção.
 
 ## Vínculo manual e visitas — 2026-10-21

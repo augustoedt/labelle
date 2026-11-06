@@ -1,6 +1,6 @@
 # Operar e publicar os serviços Railway
 
-**Verificado em:** 2026-10-17 — fonte GitHub `main` ligada a backend/frontend; deployments do commit `5f8fc2e` em `SUCCESS` e instâncias `RUNNING` (`back` `2f41d344-e3fa-4aa3-9161-a50e549d255d`, `front` `5b63a7bc-9e91-4bf0-b6b0-c2784197cad0`). Verificações técnicas descritas abaixo foram executadas; login autenticado e envio WhatsApp não foram testados neste deploy e exigem conta/número de teste autorizados no próximo ciclo.
+**Verificado em:** 2026-11-06 — commit funcional `9294cb2` em `augustoedt/labelle`/`main`. Status do Railway no GitHub: frontend e backend com sucesso (front `ec0b40b7-b151-4e18-b865-4ff908fde9f9`, back `022e2d80-61e0-4cf5-b5b6-64d4d2366fef`). `/cliente` e `/login`: HTTP 200; `/admin`: HTTP 307 para login. Fluxos autenticados e alterações com fixtures foram testados somente no ambiente local isolado; nenhuma reserva/cobrança de teste criada em produção. [Registro da entrega](../changes/agenda-responsiva-e-exclusao-profissionais.md). As observações operacionais abaixo identificadas como 2026-10-17 são históricas.
 
 ## Quando usar
 

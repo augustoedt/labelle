@@ -1,5 +1,9 @@
 # Estado do projeto
 
+## Pontuação automática — 2026-11-06
+
+Regras da campanha aprovadas e retroativo aplicado (61 clientes, 11.980 pontos). [Entrega automática](../changes/pontuacao-automatica-2026.md): cálculo após operações Ash, pagamentos e estornos, auditoria e reconciliação Oban. 107 testes backend aprovados. Faixas/benefícios e resgate não foram alterados.
+
 ## Lembretes e fidelidade — 2026-11-06
 
 [Auditoria e alterações](../changes/lembretes-automaticos-e-fidelidade.md): falhas de retorno confirmadas em produção; correção dos 45 dias, novas tentativas, lembrete automático 2h antes e filtro de falhas. 99 testes backend e 43 frontend, build e TypeScript aprovados. Fidelidade ainda manual/divergente; proposta registrada, sem alterar pontos/benefícios existentes.

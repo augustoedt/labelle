@@ -16,7 +16,10 @@ config :labelle_back, Oban,
   repo: LabelleBack.Repo,
   plugins: [
     {Oban.Plugins.Cron,
-     crontab: [{"* * * * *", LabelleBack.Studio.Reminders.ScheduleAppointments}]}
+     crontab: [
+       {"* * * * *", LabelleBack.Studio.Reminders.ScheduleAppointments},
+       {"*/5 * * * *", LabelleBack.Studio.Loyalty.Reconcile}
+     ]}
   ]
 
 # Envio de WhatsApp (lembretes pós-atendimento). Nenhum provedor integrado

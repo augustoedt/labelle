@@ -9,6 +9,7 @@ defmodule LabelleBack.Studio.AppointmentService do
   use Ash.Resource,
     otp_app: :labelle_back,
     domain: LabelleBack.Studio,
+    notifiers: [LabelleBack.Studio.Loyalty.Notifier],
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshJsonApi.Resource]

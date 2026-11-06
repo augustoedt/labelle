@@ -1,3 +1,5 @@
+> Atualização 06/11/2026: regras da campanha de outubro–dezembro foram aprovadas e a pontuação retroativa aplicada. A [automação e critérios vigentes](../changes/pontuacao-automatica-2026.md) substituem a ausência de cálculo descrita no histórico abaixo. Faixas e benefícios continuam pendentes; este documento anterior é histórico.
+
 > Revalidado em 06/11/2026: divergência e ausência de cálculo automático continuam presentes. A consulta de produção encontrou 88 cadastros com zero pontos. Veja a [proposta atualizada e critérios de implementação](../changes/lembretes-automaticos-e-fidelidade.md#fidelidade-proposta-ainda-não-aplicada). Nenhuma nova regra foi aplicada sem decisão do responsável.
 
 # Decisão necessária — Programa de Fidelidade

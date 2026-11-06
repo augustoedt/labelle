@@ -6,8 +6,8 @@ defmodule LabelleBack.Studio.Reminders.GenerateDue do
   último atendimento concluído:
 
   - cliente com novo agendamento em aberto → cancela pendentes e não gera nada;
-  - nenhum lembrete no ciclo e 20+ dias desde o atendimento → `:agradecimento`;
-  - último lembrete do ciclo enviado há 45+ dias sem novo serviço → `:reengajamento`;
+  - nenhum agradecimento no ciclo e 20 a 44 dias desde o atendimento → `:agradecimento`;
+  - 45+ dias desde o atendimento → `:reengajamento`, repetido a cada 45 dias;
   - lembrete pendente no ciclo → aguarda (não acumula).
 
   Implementação em lote: 3 queries no total (clientes, agendamentos
@@ -28,8 +28,10 @@ defmodule LabelleBack.Studio.Reminders.GenerateDue do
 
   @impl true
   def run(_input, _opts, _context) do
-    today = Date.utc_today()
+    generate(LabelleBack.Studio.Reminders.AppointmentReminder.local_date(DateTime.utc_now()))
+  end
 
+  def generate(today) do
     clients =
       Client
       |> Ash.Query.filter(is_active == true and not is_nil(phone))
@@ -46,7 +48,9 @@ defmodule LabelleBack.Studio.Reminders.GenerateDue do
 
     reminders_by_client =
       ClientReminder
-      |> Ash.Query.filter(client_id in ^client_ids and status in [:pendente, :enviado, :falhou])
+      |> Ash.Query.filter(
+        client_id in ^client_ids and status in [:pendente, :enviado, :falhou, :cancelado]
+      )
       |> Ash.read!(authorize?: false)
       |> Enum.group_by(& &1.client_id)
 
@@ -79,27 +83,52 @@ defmodule LabelleBack.Studio.Reminders.GenerateDue do
   end
 
   defp maybe_create(client, reminders, last_done, today) do
-    case latest_reminder_in_cycle(reminders, last_done) do
-      nil ->
-        if Date.diff(today, last_done) >= @days_until_thanks do
-          create_reminder(client, :agradecimento, today)
-        else
-          false
-        end
+    kind = kind_for(last_done, today)
+    cycle = Enum.filter(reminders, &(Date.compare(&1.due_date, last_done) != :lt))
 
-      %{status: :pendente} ->
+    stale =
+      Enum.filter(
+        reminders,
+        &(Date.compare(&1.due_date, last_done) == :lt or
+            (kind == :reengajamento and &1.kind == :agradecimento))
+      )
+
+    cancel_pending(stale)
+    same_kind = Enum.filter(cycle, &(&1.kind == kind))
+    latest = latest_reminder_in_cycle(same_kind, last_done)
+
+    cond do
+      not LabelleBack.Studio.Reminders.AppointmentReminder.valid_phone?(client.phone) ->
         false
 
-      # :falhou conta como tentativa de contato — espera o próximo ciclo de
-      # 45 dias em vez de gerar um lembrete novo por dia.
-      latest ->
-        last_contact = if latest.sent_at, do: DateTime.to_date(latest.sent_at), else: latest.due_date
+      is_nil(kind) ->
+        false
 
-        if Date.diff(today, last_contact) >= @days_between_reengagements do
-          create_reminder(client, :reengajamento, today)
-        else
-          false
-        end
+      latest && latest.status in [:pendente, :falhou, :cancelado] ->
+        false
+
+      is_nil(latest) ->
+        create_reminder(client, kind, today)
+
+      kind == :reengajamento &&
+          Date.diff(
+            today,
+            if(latest.sent_at, do: DateTime.to_date(latest.sent_at), else: latest.due_date)
+          ) >= @days_between_reengagements ->
+        create_reminder(client, kind, today)
+
+      true ->
+        false
+    end
+  end
+
+  def kind_for(last_done, today) do
+    days = Date.diff(today, last_done)
+
+    cond do
+      days >= 45 -> :reengajamento
+      days >= @days_until_thanks -> :agradecimento
+      true -> nil
     end
   end
 
@@ -153,7 +182,7 @@ defmodule LabelleBack.Studio.Reminders.GenerateDue do
 
   defp cancel_pending(reminders) do
     reminders
-    |> Enum.filter(&(&1.status == :pendente))
+    |> Enum.filter(&(&1.status in [:pendente, :falhou]))
     |> Enum.each(fn reminder ->
       reminder
       |> Ash.Changeset.for_update(:cancel, %{}, authorize?: false)

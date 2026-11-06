@@ -69,6 +69,7 @@ export default function Reminders() {
 
   const filtered = reminders.filter((r) => (statusFilter === "todos" ? true : r.status === statusFilter));
   const pendingCount = reminders.filter((r) => r.status === "pendente").length;
+  const failedCount = reminders.filter((r) => r.status === "falhou").length;
 
   const handleSend = (reminder) => {
     deliverMutation.mutate(reminder);
@@ -78,20 +79,22 @@ export default function Reminders() {
     <div className="space-y-4">
       <PageHeader
         title="Lembretes"
-        subtitle={pendingCount > 0 ? `${pendingCount} pendente${pendingCount > 1 ? "s" : ""}` : "Nenhum pendente"}
+        subtitle={[pendingCount ? `${pendingCount} pendentes` : "Nenhum pendente", failedCount ? `${failedCount} falhas` : ""].filter(Boolean).join(" · ")}
       />
 
-      <div className="px-5 flex gap-2">
+      <p className="px-5 text-xs text-muted-foreground">Retorno: 20 e 45 dias · Agenda: automático 2h antes</p>
+      <div className="px-5 flex flex-wrap gap-2">
         {[
           { v: "pendente", l: "Pendentes" },
           { v: "enviado", l: "Enviados" },
+          { v: "falhou", l: `Falhas (${failedCount})` },
           { v: "todos", l: "Todos" },
         ].map(({ v, l }) => (
           <button
             key={v}
             onClick={() => setStatusFilter(v)}
             className={cn(
-              "px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "min-h-11 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               statusFilter === v ? "bg-primary text-primary-foreground" : "bg-card border border-border/50"
             )}
           >
@@ -109,7 +112,7 @@ export default function Reminders() {
           <div className="text-center py-12 text-muted-foreground text-sm">
             <p>Nenhum lembrete {statusFilter !== "todos" ? statusLabels[statusFilter]?.toLowerCase() : ""}</p>
             <p className="text-xs mt-1">
-              Os lembretes são gerados automaticamente: 20 dias após o atendimento e a cada 45 dias sem retorno.
+              Os lembretes são gerados automaticamente: 20 dias após a última visita e reativação aos 45 dias sem retorno.
             </p>
           </div>
         ) : (
@@ -133,11 +136,11 @@ export default function Reminders() {
                 {reminder.message}
               </p>
 
-              {reminder.status === "pendente" && (
-                <div className="flex gap-1.5 mt-3">
+              {["pendente", "falhou"].includes(reminder.status) && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
                   <Button
                     size="sm"
-                    className="h-8 text-xs rounded-lg gap-1"
+                    className="min-h-11 text-xs rounded-lg gap-1"
                     disabled={deliverMutation.isPending && deliverMutation.variables?.id === reminder.id}
                     onClick={() => handleSend(reminder)}
                   >
@@ -146,7 +149,7 @@ export default function Reminders() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 text-xs rounded-lg gap-1 text-emerald-600"
+                    className="min-h-11 text-xs rounded-lg gap-1 text-emerald-600"
                     onClick={() => markSentMutation.mutate(reminder.id)}
                   >
                     <Check className="w-3 h-3" /> Marcar enviado
@@ -154,7 +157,7 @@ export default function Reminders() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-8 text-xs rounded-lg gap-1 text-destructive"
+                    className="min-h-11 text-xs rounded-lg gap-1 text-destructive"
                     onClick={() => cancelMutation.mutate(reminder.id)}
                   >
                     <X className="w-3 h-3" /> Cancelar

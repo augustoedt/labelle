@@ -1,3 +1,5 @@
+> Revalidado em 06/11/2026: divergência e ausência de cálculo automático continuam presentes. A consulta de produção encontrou 88 cadastros com zero pontos. Veja a [proposta atualizada e critérios de implementação](../changes/lembretes-automaticos-e-fidelidade.md#fidelidade-proposta-ainda-não-aplicada). Nenhuma nova regra foi aplicada sem decisão do responsável.
+
 # Decisão necessária — Programa de Fidelidade
 
 > Documento para a pessoa responsável pelo negócio. Nada de código aqui — só o que

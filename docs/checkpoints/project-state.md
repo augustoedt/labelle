@@ -1,5 +1,9 @@
 # Estado do projeto
 
+## Lembretes e fidelidade — 2026-11-06
+
+[Auditoria e alterações](../changes/lembretes-automaticos-e-fidelidade.md): falhas de retorno confirmadas em produção; correção dos 45 dias, novas tentativas, lembrete automático 2h antes e filtro de falhas. 99 testes backend e 43 frontend, build e TypeScript aprovados. Fidelidade ainda manual/divergente; proposta registrada, sem alterar pontos/benefícios existentes.
+
 ## Agenda responsiva e profissionais — 2026-11-06
 
 Commit `9294cb2` publicado via GitHub/main; frontend e backend confirmados com sucesso pelo Railway nos status do commit.

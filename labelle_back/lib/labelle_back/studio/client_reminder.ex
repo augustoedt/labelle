@@ -4,7 +4,7 @@ defmodule LabelleBack.Studio.ClientReminder do
 
   - `:agradecimento` — 20 dias após o último atendimento concluído, agradece
     a preferência e sugere um novo agendamento;
-  - `:reengajamento` — a cada 45 dias depois do último lembrete enviado,
+  - `:reengajamento` — 45 dias após a última visita e a cada 45 dias após o reengajamento enviado,
     enquanto o cliente não fizer um novo serviço.
 
   Enquanto não há provedor de WhatsApp conectado (ver
@@ -68,6 +68,7 @@ defmodule LabelleBack.Studio.ClientReminder do
       end
 
       change set_attribute(:status, :enviado)
+      change set_attribute(:failure_reason, nil)
       change atomic_update(:sent_at, expr(^arg(:sent_at)))
       change atomic_update(:sent_via, expr(^arg(:sent_via)))
     end

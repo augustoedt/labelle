@@ -14,7 +14,10 @@ config :labelle_back, Oban,
   notifier: Oban.Notifiers.Postgres,
   queues: [default: 10, reminders: 5],
   repo: LabelleBack.Repo,
-  plugins: [{Oban.Plugins.Cron, []}]
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [{"* * * * *", LabelleBack.Studio.Reminders.ScheduleAppointments}]}
+  ]
 
 # Envio de WhatsApp (lembretes pós-atendimento). Nenhum provedor integrado
 # ainda: o adapter NotConfigured deixa os lembretes pendentes para envio

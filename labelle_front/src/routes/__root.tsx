@@ -12,6 +12,7 @@ import websiteCss from '~/website.css?url'
 import { fetchUser } from '~/server/auth'
 import { queryClientInstance } from '~/lib/query-client'
 import { Toaster } from '~/components/ui/toaster'
+import { observeMobileViewport } from '~/lib/mobileViewport'
 
 export const Route = createRootRoute({
   beforeLoad: async () => {
@@ -52,6 +53,7 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  React.useEffect(() => observeMobileViewport(window, document.documentElement.style), [])
   return (
     <html lang="pt-BR">
       <head>

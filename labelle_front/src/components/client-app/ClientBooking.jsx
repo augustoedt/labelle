@@ -586,6 +586,7 @@ export default function ClientBooking({
                 <div>
                   <Label className="text-xs">Nome completo</Label>
                   <Input
+                    autoComplete="name"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
                     placeholder="Seu nome"
@@ -595,6 +596,9 @@ export default function ClientBooking({
                 <div>
                   <Label className="text-xs">WhatsApp</Label>
                   <Input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={formPhone}
                     onChange={(e) => setFormPhone(maskPhone(e.target.value))}
                     placeholder="(00) 00000-0000"

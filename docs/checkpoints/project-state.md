@@ -1,5 +1,9 @@
 # Estado do projeto
 
+## Agendamento no celular — 06/11/2026
+
+[Correção de foco/teclado](../changes/agendamento-mobile-zoom.md): campos de toque com fonte 16px nas três áreas, sheets acompanhando VisualViewport e zoom manual preservado. 46 testes frontend, build e TypeScript aprovados; sem teste em iPhone físico.
+
 ## Pontuação automática — 2026-11-06
 
 Regras da campanha aprovadas e retroativo aplicado (61 clientes, 11.980 pontos). [Entrega automática](../changes/pontuacao-automatica-2026.md): cálculo após operações Ash, pagamentos e estornos, auditoria e reconciliação Oban. 109 testes backend aprovados após correção dos totais públicos: visitas por dia e valor efetivamente recebido em serviços no histórico completo. Faixas/benefícios e resgate não foram alterados.

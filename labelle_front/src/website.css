@@ -1799,3 +1799,30 @@ button.schedule-slot:hover,button.schedule-slot:focus-visible { background:#e9d3
 
 .appointment-body [aria-label="Identificar cliente"] { flex-wrap:wrap; }
 .appointment-body [aria-label="Identificar cliente"]>button { flex:1;min-height:44px; }
+
+/* Touch forms: avoid focus zoom and keep actions inside the keyboard viewport. */
+@media (max-width: 1023px), (hover: none) and (pointer: coarse) {
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=hidden]):not([type=button]):not([type=submit]):not([type=reset]):not([type=color]),
+  textarea,
+  select,
+  button[role=combobox] {
+    font-size: 16px !important;
+    min-width: 0;
+    max-width: 100%;
+    scroll-margin-block: 76px;
+  }
+  .appointment-sheet,
+  .finalize-sheet {
+    max-height: calc(var(--visible-viewport-height, 100dvh) - 12px);
+    bottom: calc(var(--keyboard-inset, 0px) + 6px);
+  }
+  .appointment-body,
+  .finalize-body {
+    overscroll-behavior-y: contain;
+    scroll-padding-block: 16px;
+  }
+  .appointment-footer,
+  .finalize-footer { flex-wrap: wrap; }
+  .appointment-footer button,
+  .finalize-footer button { min-height: 44px; }
+}
